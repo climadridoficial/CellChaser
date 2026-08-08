@@ -29,6 +29,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   // Availability for this station
   useEffect(() => {
