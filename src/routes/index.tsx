@@ -101,24 +101,17 @@ function Home() {
           Radar<span className="text-primary">ES</span>
         </span>
         <div className="h-5 w-px bg-border/80" aria-hidden />
-        <button
-          onClick={() => setShowPrecip((v) => !v)}
-          className={showPrecip ? "chip chip-active" : "chip"}
-        >
-          {usingLibre ? "LibreWXR (self-hosted tiles)" : "RainViewer (reflectivity, blue only)"}
-        </button>
-        <button
-          onClick={() => setShowStations((v) => !v)}
-          className={showStations ? "chip chip-active" : "chip"}
-        >
-          OPERA raw stations
-          {visibleStations.length > 0 && (
-            <span className="ml-1.5 text-[0.6rem] text-muted-foreground">{visibleStations.length}</span>
-          )}
-        </button>
-        <button onClick={() => setSettingsOpen(true)} className="chip">
-          Settings
-        </button>
+        <LayerMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          source={tileSource}
+          onSourceChange={setTileSource}
+          showStations={showStations}
+          onShowStationsChange={setShowStations}
+          stationCount={visibleStations.length}
+          librewxrConfigured={usingLibre}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
       </div>
 
       {(stations.isLoading || stations.isError) && (
