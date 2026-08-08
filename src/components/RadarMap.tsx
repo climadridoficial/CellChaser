@@ -50,7 +50,7 @@ export default function RadarMap({
     };
   }, []);
 
-  // Precipitation tiles (RainViewer or LibreWXR)
+  // Precipitation tiles (RainViewer or LibreWXR) — hidden while a raw scan is shown
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -58,10 +58,10 @@ export default function RadarMap({
       tileRef.current.remove();
       tileRef.current = null;
     }
-    if (tileUrl) {
+    if (tileUrl && !scan) {
       tileRef.current = L.tileLayer(tileUrl, { opacity: 0.75, maxZoom: 12, zIndex: 300 }).addTo(map);
     }
-  }, [tileUrl]);
+  }, [tileUrl, scan]);
 
   // Station markers
   useEffect(() => {
@@ -96,9 +96,10 @@ export default function RadarMap({
     }
     if (scan) {
       overlayRef.current = L.imageOverlay(scan.dataUrl, scan.bounds, {
-        opacity: 0.85,
+        opacity: 1,
         zIndex: 400,
         className: "radar-overlay",
+        interactive: false,
       }).addTo(map);
     }
   }, [scan]);

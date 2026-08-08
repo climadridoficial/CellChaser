@@ -48,11 +48,11 @@ export function productInfo(key: string): ProductInfo {
 type Stop = [number, [number, number, number]];
 
 const REFLECTIVITY_STOPS: Stop[] = [
-  [-32, [10, 22, 40]],
-  [-10, [30, 50, 80]],
-  [5, [40, 120, 190]],
-  [15, [60, 190, 220]],
-  [25, [60, 200, 120]],
+  [-15, [70, 90, 140]],
+  [-5, [60, 130, 210]],
+  [5, [55, 175, 235]],
+  [15, [70, 220, 235]],
+  [25, [60, 210, 120]],
   [35, [240, 220, 70]],
   [45, [240, 140, 40]],
   [55, [225, 45, 45]],
@@ -99,9 +99,9 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
   if (info.scale === "reflectivity") {
-    if (value < -5) return [0, 0, 0, 0];
+    if (value < -15) return [0, 0, 0, 0];
     const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
-    return [r, g, b, 235];
+    return [r, g, b, 255];
   }
   if (info.scale === "velocity") {
     const [r, g, b] = interp(VELOCITY_STOPS, value);
