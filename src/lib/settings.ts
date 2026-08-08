@@ -46,10 +46,18 @@ export function useSettings() {
   return { settings, update, loaded };
 }
 
-/** Tile template for the precipitation layer, respecting the LibreWXR override. */
-export function tileTemplate(settings: RadarSettings, timestampPath: string | null): string | null {
+export type TileSource = "rainviewer" | "librewxr" | "none";
+
+/** Tile template for the precipitation layer for the chosen source. */
+export function tileTemplate(
+  settings: RadarSettings,
+  timestampPath: string | null,
+  source: TileSource = "rainviewer",
+): string | null {
+  if (source === "none") return null;
   const base = settings.librewxrUrl.trim().replace(/\/+$/, "");
-  if (base) {
+  if (source === "librewxr") {
+    if (!base) return null;
     return `${base}/v2/radar/latest/256/{z}/{x}/{y}/2/1_1.png`;
   }
   if (!timestampPath) return null;
