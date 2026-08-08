@@ -35,7 +35,8 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { settings, update, loaded } = useSettings();
-  const [showPrecip, setShowPrecip] = useState(true);
+  const [tileSource, setTileSource] = useState<TileSource>("rainviewer");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showStations, setShowStations] = useState(true);
   const [selected, setSelected] = useState<RadarStation | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
@@ -45,7 +46,7 @@ function Home() {
 
   const rainviewer = useQuery({
     queryKey: ["rainviewer-index"],
-    enabled: !usingLibre,
+    enabled: tileSource === "rainviewer",
     staleTime: 4 * 60_000,
     queryFn: async () => {
       const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
