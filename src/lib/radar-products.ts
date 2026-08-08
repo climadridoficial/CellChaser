@@ -99,9 +99,9 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
   if (info.scale === "reflectivity") {
-    if (value < -5) return [0, 0, 0, 0];
+    if (value < -15) return [0, 0, 0, 0];
     const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
-    return [r, g, b, 235];
+    return [r, g, b, 255];
   }
   if (info.scale === "velocity") {
     const [r, g, b] = interp(VELOCITY_STOPS, value);
