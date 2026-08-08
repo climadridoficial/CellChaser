@@ -283,6 +283,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
           </section>
         )}
       </div>
+      )}
     </aside>
   );
 }
