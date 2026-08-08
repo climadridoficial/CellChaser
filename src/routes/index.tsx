@@ -4,9 +4,10 @@ import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { fetchStations } from "@/lib/ord";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
-import { tileTemplate, useSettings } from "@/lib/settings";
+import { tileTemplate, useSettings, type TileSource } from "@/lib/settings";
 import StationPanel from "@/components/StationPanel";
 import SettingsSheet from "@/components/SettingsSheet";
+import LayerMenu from "@/components/LayerMenu";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
