@@ -71,7 +71,7 @@ function Home() {
     return all.filter((s) => s.country.replace(/^0+/, "") === code);
   }, [stations.data, settings.country]);
 
-  const tileUrl = showPrecip ? tileTemplate(settings, rainviewer.data ?? null) : null;
+  const tileUrl = tileTemplate(settings, rainviewer.data ?? null, tileSource);
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
   const closePanel = useCallback(() => {
