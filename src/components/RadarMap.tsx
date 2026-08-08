@@ -96,9 +96,10 @@ export default function RadarMap({
     }
     if (scan) {
       overlayRef.current = L.imageOverlay(scan.dataUrl, scan.bounds, {
-        opacity: 0.85,
+        opacity: 1,
         zIndex: 400,
         className: "radar-overlay",
+        interactive: false,
       }).addTo(map);
     }
   }, [scan]);
