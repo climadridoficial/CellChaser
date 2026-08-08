@@ -4,9 +4,10 @@ import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { fetchStations } from "@/lib/ord";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
-import { tileTemplate, useSettings } from "@/lib/settings";
+import { tileTemplate, useSettings, type TileSource } from "@/lib/settings";
 import StationPanel from "@/components/StationPanel";
 import SettingsSheet from "@/components/SettingsSheet";
+import LayerMenu from "@/components/LayerMenu";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -34,7 +35,8 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { settings, update, loaded } = useSettings();
-  const [showPrecip, setShowPrecip] = useState(true);
+  const [tileSource, setTileSource] = useState<TileSource>("rainviewer");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showStations, setShowStations] = useState(true);
   const [selected, setSelected] = useState<RadarStation | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
@@ -44,7 +46,7 @@ function Home() {
 
   const rainviewer = useQuery({
     queryKey: ["rainviewer-index"],
-    enabled: !usingLibre,
+    enabled: tileSource === "rainviewer",
     staleTime: 4 * 60_000,
     queryFn: async () => {
       const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
@@ -69,7 +71,7 @@ function Home() {
     return all.filter((s) => s.country.replace(/^0+/, "") === code);
   }, [stations.data, settings.country]);
 
-  const tileUrl = showPrecip ? tileTemplate(settings, rainviewer.data ?? null) : null;
+  const tileUrl = tileTemplate(settings, rainviewer.data ?? null, tileSource);
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
   const closePanel = useCallback(() => {
@@ -101,24 +103,17 @@ function Home() {
           Radar<span className="text-primary">ES</span>
         </span>
         <div className="h-5 w-px bg-border/80" aria-hidden />
-        <button
-          onClick={() => setShowPrecip((v) => !v)}
-          className={showPrecip ? "chip chip-active" : "chip"}
-        >
-          {usingLibre ? "LibreWXR (self-hosted tiles)" : "RainViewer (reflectivity, blue only)"}
-        </button>
-        <button
-          onClick={() => setShowStations((v) => !v)}
-          className={showStations ? "chip chip-active" : "chip"}
-        >
-          OPERA raw stations
-          {visibleStations.length > 0 && (
-            <span className="ml-1.5 text-[0.6rem] text-muted-foreground">{visibleStations.length}</span>
-          )}
-        </button>
-        <button onClick={() => setSettingsOpen(true)} className="chip">
-          Settings
-        </button>
+        <LayerMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          source={tileSource}
+          onSourceChange={setTileSource}
+          showStations={showStations}
+          onShowStationsChange={setShowStations}
+          stationCount={visibleStations.length}
+          librewxrConfigured={usingLibre}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
       </div>
 
       {(stations.isLoading || stations.isError) && (

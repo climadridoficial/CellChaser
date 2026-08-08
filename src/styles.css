@@ -369,3 +369,7 @@
   border-top-color: oklch(0.32 0.028 252) !important;
 }
 
+
+@utility panel-collapsed {
+  max-height: none;
+}

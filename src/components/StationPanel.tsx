@@ -29,6 +29,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   // Availability for this station
   useEffect(() => {
@@ -141,99 +142,119 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
   return (
-    <aside className="panel">
+    <aside className={collapsed ? "panel panel-collapsed" : "panel"}>
       <header className="flex items-start justify-between gap-3 border-b border-border/70 px-5 py-4">
-        <div>
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className="min-w-0 flex-1 text-left"
+          aria-expanded={!collapsed}
+        >
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
             {countryLabel(station.country)} · OPERA raw station
           </p>
-          <h2 className="mt-1 font-display text-xl leading-tight text-foreground">{station.name}</h2>
-          <p className="text-xs text-muted-foreground">
-            {station.code} · {station.lat.toFixed(3)}°, {station.lon.toFixed(3)}°
+          <h2 className="mt-1 truncate font-display text-lg leading-tight text-foreground">
+            {station.name}
+          </h2>
+          <p className="truncate text-xs text-muted-foreground">
+            {product ?? "—"}
+            {level !== null ? ` · ${level}°` : ""} · tap to {collapsed ? "expand" : "collapse"}
           </p>
-        </div>
-        <button onClick={onClose} className="chip" aria-label="Close station panel">
-          Close
         </button>
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <button onClick={() => setCollapsed((v) => !v)} className="chip justify-center">
+            {collapsed ? "▲" : "▼"}
+          </button>
+          <button onClick={onClose} className="chip justify-center" aria-label="Close station panel">
+            Close
+          </button>
+        </div>
       </header>
 
+      {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         <section>
           <h3 className="section-title">Product</h3>
           {scans === null ? (
-            <p className="hint">Loading availability…</p>
+            <p className="hint mt-2">Loading availability…</p>
           ) : availableProducts.length === 0 ? (
-            <p className="hint">No products published for this radar.</p>
+            <p className="hint mt-2">No products published for this radar.</p>
           ) : (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {availableProducts.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    setProduct(p);
-                    const next = (scans ?? []).filter((s) => s.product === p).map((s) => s.level);
-                    setLevel(next.sort((a, b) => a - b)[0] ?? null);
-                  }}
-                  className={p === product ? "chip chip-active" : "chip"}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-          {missing.length > 0 && availableProducts.length > 0 && (
-            <p className="hint mt-2">
-              Not published for this radar: {missing.join(", ")}.
-            </p>
-          )}
-        </section>
-
-        <section>
-          <h3 className="section-title">Elevation / tilt</h3>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {levels.map((l) => (
-              <button
-                key={l}
-                onClick={() => setLevel(l)}
-                className={l === level ? "chip chip-active" : "chip"}
-              >
-                {l}°
-              </button>
-            ))}
-            {levels.length === 0 && <p className="hint">—</p>}
-          </div>
-        </section>
-
-        <section>
-          <h3 className="section-title">Time range</h3>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {TIME_RANGES.map((r) => (
-              <button
-                key={r.hours}
-                onClick={() => setHours(r.hours)}
-                className={r.hours === hours ? "chip chip-active" : "chip"}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-          {files && files.length > 0 && (
             <select
-              value={selectedTime ?? ""}
-              onChange={(e) => setSelectedTime(e.target.value)}
+              value={product ?? ""}
+              onChange={(e) => {
+                const p = e.target.value;
+                setProduct(p);
+                const next = (scans ?? []).filter((s) => s.product === p).map((s) => s.level);
+                setLevel(next.sort((a, b) => a - b)[0] ?? null);
+              }}
               className="select mt-2"
             >
-              {files.map((f, i) => (
-                <option key={f.href} value={f.time}>
-                  {new Date(f.time).toUTCString().slice(5, 22)} UTC{i === 0 ? " · latest" : ""}
+              {availableProducts.map((p) => (
+                <option key={p} value={p}>
+                  {productInfo(p).label} ({p})
                 </option>
               ))}
             </select>
           )}
+          {missing.length > 0 && availableProducts.length > 0 && (
+            <p className="hint mt-2">Not published for this radar: {missing.join(", ")}.</p>
+          )}
+        </section>
+
+        <div className="grid grid-cols-2 gap-3">
+          <section>
+            <h3 className="section-title">Elevation</h3>
+            <select
+              value={level ?? ""}
+              onChange={(e) => setLevel(Number(e.target.value))}
+              className="select mt-2"
+              disabled={levels.length === 0}
+            >
+              {levels.map((l) => (
+                <option key={l} value={l}>
+                  {l}°
+                </option>
+              ))}
+              {levels.length === 0 && <option value="">—</option>}
+            </select>
+          </section>
+
+          <section>
+            <h3 className="section-title">Time range</h3>
+            <select
+              value={hours}
+              onChange={(e) => setHours(Number(e.target.value))}
+              className="select mt-2"
+            >
+              {TIME_RANGES.map((r) => (
+                <option key={r.hours} value={r.hours}>
+                  Last {r.label}
+                </option>
+              ))}
+            </select>
+          </section>
+        </div>
+
+        <section>
+          <h3 className="section-title">Scan time</h3>
+          <select
+            value={selectedTime ?? ""}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            className="select mt-2"
+            disabled={!files || files.length === 0}
+          >
+            {(files ?? []).map((f, i) => (
+              <option key={f.href} value={f.time}>
+                {new Date(f.time).toUTCString().slice(5, 22)} UTC{i === 0 ? " · latest" : ""}
+              </option>
+            ))}
+            {(!files || files.length === 0) && <option value="">—</option>}
+          </select>
         </section>
 
         {status && <p className="hint">{status}</p>}
         {error && <p className="alert">{error}</p>}
+
 
         {scan && (
           <section>
@@ -263,6 +284,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
           </section>
         )}
       </div>
+      )}
     </aside>
   );
 }
