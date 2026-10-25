@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Use the public OpenStreetMap standard tiles for the background map; this avoids CARTO's API-key-required placeholder tiles.
+- Normalize ODIM range units by the file's declared convention and render onto a Mercator pixel grid using measured azimuths; this preserves scan geography.
+- Discover ORD multi-product volumes without parameter filtering, filter coverage quantities locally, and key file/decode state by the current selection; this avoids empty provider filters and stale product images.

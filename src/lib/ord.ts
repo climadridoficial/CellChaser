@@ -126,16 +126,18 @@ export async function fetchScanFiles(
   const start = new Date(end.getTime() - opts.hours * 3600_000);
   const url =
     `${COLLECTION}/locations/${encodeURIComponent(opts.platform)}` +
-    `?parameter-name=${encodeURIComponent(opts.parameterName)}` +
-    `&level=${opts.level}&format=ODIM` +
+    `?level=${opts.level}&format=ODIM` +
     `&datetime=${start.toISOString().replace(/\.\d+Z$/, "Z")}/${end.toISOString().replace(/\.\d+Z$/, "Z")}`;
 
   const data = await getJson<{
-    coverages?: { links?: { href: string; type?: string; length?: number }[] }[];
+    coverages?: { parameters?: Record<string, unknown>; links?: { href: string; type?: string; length?: number }[] }[];
   }>(url, apiKey);
 
   const files: ScanFile[] = [];
   for (const cov of data.coverages ?? []) {
+    // Some ORD parameter-filtered queries return empty despite publishing the
+    // quantity in multi-product volumes. Discover volumes and filter locally.
+    if (!cov.parameters || !(opts.parameterName in cov.parameters)) continue;
     for (const link of cov.links ?? []) {
       if (link.type !== "application/x-odim") continue;
       const m = FILE_TIME.exec(link.href);
@@ -148,7 +150,7 @@ export async function fetchScanFiles(
     }
   }
   files.sort((a, b) => b.time.localeCompare(a.time));
-  return files;
+  return [...new Map(files.map((f) => [f.href, f])).values()];
 }
 
 export const COUNTRIES: { code: string; label: string }[] = [

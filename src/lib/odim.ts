@@ -2,6 +2,7 @@
 // Runs in the browser only (dynamic jsfive import), never during SSR.
 
 import { colorFor, productInfo, type ProductInfo } from "./radar-products";
+import { rangeStartMetres, mercatorY, latitudeFromY, polarAt, rayLookup } from "./radar-geometry";
 
 export interface RenderedScan {
   dataUrl: string;
@@ -60,7 +61,7 @@ export async function decodeAndRender(opts: {
   const lon = num(rootWhere?.attrs["lon"], opts.fallbackStation.lon);
 
   // Find the dataset (elevation) + data group (quantity) that match the request.
-  let best: { data: H5Dataset; where: H5Group; what: H5Group; elangle: number } | null = null;
+  let best: { data: H5Dataset; where: H5Group; what: H5Group; how: H5Group | null; elangle: number } | null = null;
   for (const dsKey of file.keys.filter((k) => /^dataset\d+$/.test(k))) {
     const ds = file.get(dsKey) as H5Group | null;
     if (!ds) continue;
@@ -70,10 +71,11 @@ export async function decodeAndRender(opts: {
       const dg = ds.get(dKey) as H5Group | null;
       if (!dg) continue;
       const what = dg.get("what") as H5Group | null;
+      if (!where || !what) continue;
       if (str(what?.attrs["quantity"]) !== opts.product) continue;
       const arr = dg.get("data") as H5Dataset | null;
       if (!arr || arr.shape.length !== 2) continue;
-      const candidate = { data: arr, where: where!, what: what!, elangle };
+      const candidate = { data: arr, where, what, how: ds.get("how") as H5Group | null, elangle };
       if (
         !best ||
         Math.abs(elangle - opts.level) < Math.abs(best.elangle - opts.level)
@@ -89,10 +91,11 @@ export async function decodeAndRender(opts: {
   const offset = num(best.what.attrs["offset"], 0);
   const nodata = num(best.what.attrs["nodata"], NaN);
   const undetect = num(best.what.attrs["undetect"], NaN);
-  const nrays = best.data.shape[0]!;
-  const nbins = best.data.shape[1]!;
+  const nrays = best.data.shape[0];
+  const nbins = best.data.shape[1];
+  if (!nrays || !nbins) throw new Error("Radar scan has no range gates.");
   const rscale = num(best.where.attrs["rscale"], 1000) || 1000;
-  const rstart = num(best.where.attrs["rstart"], 0) * 1000;
+  const rstart = rangeStartMetres(num(best.where.attrs["rstart"], 0), str(file.attrs["Conventions"]));
   const rangeM = rstart + nbins * rscale;
 
   const info = productInfo(opts.product);
@@ -100,31 +103,45 @@ export async function decodeAndRender(opts: {
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not create radar image.");
   const image = ctx.createImageData(size, size);
   const px = image.data;
   const values = best.data.value;
 
   let vMin = Infinity;
   let vMax = -Infinity;
-  const half = size / 2;
-  const metersPerPixel = rangeM / half;
+  const radians = Math.PI / 180;
+  const earth = 6378137;
+  const angularRange = rangeM / earth;
+  const south = lat - angularRange / radians;
+  const north = lat + angularRange / radians;
+  const dLon = Math.asin(Math.min(1, Math.sin(angularRange) / Math.cos(lat * radians))) / radians;
+  const west = lon - dLon;
+  const east = lon + dLon;
+  const topY = mercatorY(north);
+  const bottomY = mercatorY(south);
+  const rays = rayLookup(nrays, best.how?.attrs["startazA"] as ArrayLike<number> | undefined, best.how?.attrs["stopazA"] as ArrayLike<number> | undefined);
+  // Effective-Earth beam model: convert ground arc to slant range at this tilt.
+  const effectiveEarth = earth * 4 / 3;
+  const tilt = best.elangle * radians;
 
   for (let y = 0; y < size; y++) {
-    const dy = (half - y - 0.5) * metersPerPixel; // north positive
+    const pixelLat = latitudeFromY(topY - (y + 0.5) / size * (topY - bottomY));
     for (let x = 0; x < size; x++) {
-      const dx = (x + 0.5 - half) * metersPerPixel;
-      const range = Math.hypot(dx, dy);
+      const pixelLon = west + (x + 0.5) / size * (east - west);
+      const { distance, bearing } = polarAt(pixelLat, pixelLon, lat, lon);
+      const arc = distance / effectiveEarth;
+      const range = effectiveEarth * Math.sin(arc) / Math.cos(tilt + arc);
       if (range > rangeM || range < rstart) continue;
-      let azimuth = (Math.atan2(dx, dy) * 180) / Math.PI;
-      if (azimuth < 0) azimuth += 360;
-      const ray = Math.min(nrays - 1, Math.floor((azimuth / 360) * nrays));
+      const ray = rays[Math.floor(bearing * 10)];
+      if (ray === undefined || ray < 0) continue;
       const bin = Math.min(nbins - 1, Math.floor((range - rstart) / rscale));
       const raw = values[ray * nbins + bin];
       if (raw === undefined) continue;
       if (raw === nodata || raw === undetect) continue;
       const value = raw * gain + offset;
-      if (value === nodata || !Number.isFinite(value)) continue;
+      if (!Number.isFinite(value)) continue;
       if (value < vMin) vMin = value;
       if (value > vMax) vMax = value;
       const [r, g, b, a] = colorFor(info, value);
@@ -138,14 +155,11 @@ export async function decodeAndRender(opts: {
   }
   ctx.putImageData(image, 0, 0);
 
-  const dLat = rangeM / 111_320;
-  const dLon = rangeM / (111_320 * Math.cos((lat * Math.PI) / 180));
-
   return {
     dataUrl: canvas.toDataURL("image/png"),
     bounds: [
-      [lat - dLat, lon - dLon],
-      [lat + dLat, lon + dLon],
+      [south, west],
+      [north, east],
     ],
     product: opts.product,
     info,
