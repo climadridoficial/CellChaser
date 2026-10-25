@@ -37,8 +37,8 @@ export default function RadarMap({
       attributionControl: true,
       worldCopyJump: true,
     });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: "&copy; OpenStreetMap, &copy; CARTO · radar: RainViewer / EUMETNET OPERA",
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · radar: RainViewer / EUMETNET OPERA',
       maxZoom: 12,
     }).addTo(map);
     L.control.zoom({ position: "bottomright" }).addTo(map);
