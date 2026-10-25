@@ -25,6 +25,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
   const [level, setLevel] = useState<number | null>(null);
   const [hours, setHours] = useState(1);
   const [files, setFiles] = useState<ScanFile[] | null>(null);
+  const [filesKey, setFilesKey] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -75,12 +76,17 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
     () => (scans ?? []).find((s) => s.product === product && s.level === level) ?? null,
     [scans, product, level],
   );
+  const selectionKey = JSON.stringify([station.id, product, level, hours, apiKey]);
 
   // File list for product + level + time range
   useEffect(() => {
     if (!entry) return;
     let cancelled = false;
     setFiles(null);
+    setFilesKey(null);
+    setSelectedTime(null);
+    setScan(null);
+    onScan(null);
     setError(null);
     setStatus("Looking up scans…");
     fetchScanFiles(
@@ -90,7 +96,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
       .then((list) => {
         if (cancelled) return;
         setFiles(list);
-        setSelectedTime(list[0]?.time ?? null);
+        setFilesKey(selectionKey);
+        setSelectedTime(list[0]?.href ?? null);
         setStatus(list.length ? null : "No scans published in this time range.");
       })
       .catch((e: Error) => {
@@ -103,14 +110,16 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
     return () => {
       cancelled = true;
     };
-  }, [entry, station.id, hours, apiKey]);
+  }, [entry, station.id, hours, apiKey, selectionKey, onScan]);
 
   // Decode + render the selected scan
   useEffect(() => {
-    if (!files || !selectedTime || !product || level === null) return;
-    const file = files.find((f) => f.time === selectedTime);
+    if (filesKey !== selectionKey || !files || !selectedTime || !product || level === null) return;
+    const file = files.find((f) => f.href === selectedTime);
     if (!file) return;
     let cancelled = false;
+    setScan(null);
+    onScan(null);
     setStatus("Decoding ODIM/HDF5 scan…");
     setError(null);
     decodeAndRender({
@@ -136,9 +145,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
     return () => {
       cancelled = true;
     };
-  }, [files, selectedTime, product, level, station.lat, station.lon, onScan]);
+  }, [files, filesKey, selectionKey, selectedTime, product, level, station.lat, station.lon, onScan]);
 
-  const info = productInfo(product ?? "DBZH");
+  const info = scan?.info ?? productInfo(product ?? "DBZH");
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
   return (
@@ -244,7 +253,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
             disabled={!files || files.length === 0}
           >
             {(files ?? []).map((f, i) => (
-              <option key={f.href} value={f.time}>
+              <option key={f.href} value={f.href}>
                 {new Date(f.time).toUTCString().slice(5, 22)} UTC{i === 0 ? " · latest" : ""}
               </option>
             ))}
