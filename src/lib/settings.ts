@@ -5,6 +5,8 @@ export interface RadarSettings {
   librewxrUrl: string;
   /** Optional Meteogate API key for heavier OPERA use. */
   meteogateKey: string;
+  /** Free AEMET OpenData API key for live weather stations. */
+  aemetKey: string;
   /** Radar station country filter (ISO numeric, from the WIGOS id). */
   country: string;
 }
@@ -12,6 +14,7 @@ export interface RadarSettings {
 export const DEFAULT_SETTINGS: RadarSettings = {
   librewxrUrl: "",
   meteogateKey: "",
+  aemetKey: "",
   country: "724",
 };
 
