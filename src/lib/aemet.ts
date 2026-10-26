@@ -5,19 +5,19 @@ export interface AemetObs {
   name: string;
   lat: number;
   lon: number;
-  alt?: number;
+  alt?: number | undefined;
   time: string;
-  ta?: number; // air temp °C
-  tamin?: number;
-  tamax?: number;
-  hr?: number; // humidity %
-  prec?: number; // precip mm (last hour)
-  vv?: number; // wind speed m/s
-  vmax?: number; // gust m/s
-  dv?: number; // wind dir deg
-  pres?: number; // station pressure hPa
-  vis?: number; // visibility km
-  tpr?: number; // dew point °C
+  ta?: number | undefined; // air temp °C
+  tamin?: number | undefined;
+  tamax?: number | undefined;
+  hr?: number | undefined; // humidity %
+  prec?: number | undefined; // precip mm (last hour)
+  vv?: number | undefined; // wind speed m/s
+  vmax?: number | undefined; // gust m/s
+  dv?: number | undefined; // wind dir deg
+  pres?: number | undefined; // station pressure hPa
+  vis?: number | undefined; // visibility km
+  tpr?: number | undefined; // dew point °C
 }
 
 interface Raw {
@@ -25,7 +25,7 @@ interface Raw {
   ubi: string;
   lat: number;
   lon: number;
-  alt?: number;
+  alt?: number | undefined;
   fint: string;
   [k: string]: unknown;
 }
@@ -44,19 +44,19 @@ export function latestPerStation(rows: Raw[]): AemetObs[] {
     name: r.ubi,
     lat: r.lat,
     lon: r.lon,
-    alt: n(r.alt),
+    alt: n(r["alt"]),
     time: r.fint.endsWith("Z") || /[+-]\d{4}$/.test(r.fint) ? r.fint : `${r.fint}Z`,
-    ta: n(r.ta),
-    tamin: n(r.tamin),
-    tamax: n(r.tamax),
-    hr: n(r.hr),
-    prec: n(r.prec),
-    vv: n(r.vv),
-    vmax: n(r.vmax),
-    dv: n(r.dv),
-    pres: n(r.pres),
-    vis: n(r.vis),
-    tpr: n(r.tpr),
+    ta: n(r["ta"]),
+    tamin: n(r["tamin"]),
+    tamax: n(r["tamax"]),
+    hr: n(r["hr"]),
+    prec: n(r["prec"]),
+    vv: n(r["vv"]),
+    vmax: n(r["vmax"]),
+    dv: n(r["dv"]),
+    pres: n(r["pres"]),
+    vis: n(r["vis"]),
+    tpr: n(r["tpr"]),
   }));
 }
 
