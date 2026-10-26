@@ -140,6 +140,8 @@ export async function decodeAndRender(opts: {
       const raw = values[ray * nbins + bin];
       if (raw === undefined) continue;
       if (raw === nodata || raw === undetect) continue;
+      // Velocity: raw 0 is the conventional "no echo" code even if undetect isn't declared.
+      if (info.scale === "velocity" && raw === 0) continue;
       const value = raw * gain + offset;
       if (!Number.isFinite(value)) continue;
       if (value < vMin) vMin = value;
