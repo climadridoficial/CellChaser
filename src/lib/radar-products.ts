@@ -60,14 +60,18 @@ const REFLECTIVITY_STOPS: Stop[] = [
   [75, [250, 240, 255]],
 ];
 
+// Classic Doppler scale: green = toward radar (negative), red = away (positive).
 const VELOCITY_STOPS: Stop[] = [
-  [-35, [20, 200, 120]],
-  [-20, [30, 130, 230]],
-  [-5, [180, 220, 250]],
-  [0, [235, 235, 235]],
-  [5, [255, 210, 170]],
-  [20, [235, 90, 60]],
-  [35, [150, 20, 90]],
+  [-35, [150, 255, 150]],
+  [-25, [0, 230, 0]],
+  [-15, [0, 170, 0]],
+  [-5, [0, 100, 0]],
+  [-0.5, [60, 80, 60]],
+  [0.5, [80, 60, 60]],
+  [5, [110, 0, 0]],
+  [15, [180, 0, 0]],
+  [25, [240, 30, 30]],
+  [35, [255, 160, 160]],
 ];
 
 const GENERIC_STOPS: Stop[] = [
@@ -105,7 +109,7 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
   }
   if (info.scale === "velocity") {
     const [r, g, b] = interp(VELOCITY_STOPS, value);
-    return [r, g, b, 225];
+    return [r, g, b, 255];
   }
   const t = (value - info.min) / (info.max - info.min || 1);
   const [r, g, b] = interp(GENERIC_STOPS, Math.min(1, Math.max(0, t)));
