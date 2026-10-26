@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
+import type { AemetObs } from "@/lib/aemet";
 
 interface Props {
   tileUrl: string | null;
@@ -10,6 +11,9 @@ interface Props {
   selectedId: string | null;
   onSelect: (station: RadarStation) => void;
   scan: RenderedScan | null;
+  aemet: AemetObs[];
+  aemetSelected: string | null;
+  onSelectAemet: (o: AemetObs) => void;
 }
 
 export default function RadarMap({
@@ -19,7 +23,13 @@ export default function RadarMap({
   selectedId,
   onSelect,
   scan,
+  aemet,
+  aemetSelected,
+  onSelectAemet,
 }: Props) {
+  const aemetRef = useRef<L.LayerGroup | null>(null);
+  const aemetHandler = useRef(onSelectAemet);
+  aemetHandler.current = onSelectAemet;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.TileLayer | null>(null);
@@ -43,6 +53,7 @@ export default function RadarMap({
     }).addTo(map);
     L.control.zoom({ position: "bottomright" }).addTo(map);
     stationsRef.current = L.layerGroup().addTo(map);
+    aemetRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     return () => {
       map.remove();
@@ -85,6 +96,29 @@ export default function RadarMap({
       marker.addTo(group);
     }
   }, [stations, showStations, selectedId]);
+
+  // AEMET weather station dots (canvas renderer: ~900 points)
+  useEffect(() => {
+    const group = aemetRef.current;
+    if (!group) return;
+    group.clearLayers();
+    const renderer = L.canvas({ padding: 0.3 });
+    for (const o of aemet) {
+      const active = o.idema === aemetSelected;
+      const dot = L.circleMarker([o.lat, o.lon], {
+        renderer,
+        radius: active ? 7 : 4.5,
+        color: "#0b1020",
+        weight: 1,
+        fillColor: active ? "#ffffff" : "#ffb020",
+        fillOpacity: 0.95,
+        pane: "markerPane",
+      });
+      dot.bindTooltip(`${o.name}${o.ta !== undefined ? ` · ${o.ta} °C` : ""}`, { direction: "top" });
+      dot.on("click", () => aemetHandler.current(o));
+      dot.addTo(group);
+    }
+  }, [aemet, aemetSelected]);
 
   // Decoded radar scan overlay
   useEffect(() => {

@@ -8,6 +8,8 @@ import { tileTemplate, useSettings, type TileSource } from "@/lib/settings";
 import StationPanel from "@/components/StationPanel";
 import SettingsSheet from "@/components/SettingsSheet";
 import LayerMenu from "@/components/LayerMenu";
+import AemetPanel from "@/components/AemetPanel";
+import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -41,6 +43,8 @@ function Home() {
   const [selected, setSelected] = useState<RadarStation | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showAemet, setShowAemet] = useState(false);
+  const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
 
   const usingLibre = settings.librewxrUrl.trim().length > 0;
 
@@ -63,6 +67,23 @@ function Home() {
     staleTime: 30 * 60_000,
     queryFn: () => fetchStations(settings.meteogateKey || undefined),
   });
+
+  const aemet = useQuery({
+    queryKey: ["aemet-obs", settings.aemetKey],
+    enabled: showAemet && settings.aemetKey.trim().length > 0,
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    queryFn: () => fetchAemetStations(settings.aemetKey.trim()),
+  });
+  const aemetNote = !settings.aemetKey.trim()
+    ? "Add your free AEMET key in settings"
+    : aemet.isError
+      ? (aemet.error as Error).message
+      : aemet.data
+        ? `${aemet.data.length} stations · live, click to inspect`
+        : showAemet
+          ? "Loading…"
+          : "Live temp, wind, rain, pressure";
 
   const visibleStations = useMemo(() => {
     const all = stations.data ?? [];
@@ -91,8 +112,18 @@ function Home() {
               showStations={showStations}
               stations={visibleStations}
               selectedId={selected?.id ?? null}
-              onSelect={setSelected}
+              onSelect={(st) => {
+                setAemetSel(null);
+                setSelected(st);
+              }}
               scan={scan}
+              aemet={showAemet ? (aemet.data ?? []) : []}
+              aemetSelected={aemetSel?.idema ?? null}
+              onSelectAemet={(o) => {
+                setSelected(null);
+                setScan(null);
+                setAemetSel(o);
+              }}
             />
           </Suspense>
         </ClientOnly>
@@ -113,6 +144,13 @@ function Home() {
           stationCount={visibleStations.length}
           librewxrConfigured={usingLibre}
           onOpenSettings={() => setSettingsOpen(true)}
+          showAemet={showAemet}
+          onShowAemetChange={(v) => {
+            setShowAemet(v);
+            if (!v) setAemetSel(null);
+            if (v && !settings.aemetKey.trim()) setSettingsOpen(true);
+          }}
+          aemetNote={aemetNote}
         />
       </div>
 
@@ -132,6 +170,8 @@ function Home() {
           onScan={handleScan}
         />
       )}
+
+      {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
 
       {settingsOpen && (
         <SettingsSheet

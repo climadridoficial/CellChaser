@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicAemetRouteImport } from './routes/api/public/aemet'
 import { Route as ApiPublicOdimRouteImport } from './routes/api/public/odim'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAemetRoute = ApiPublicAemetRouteImport.update({
+  id: '/api/public/aemet',
+  path: '/api/public/aemet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicOdimRoute = ApiPublicOdimRouteImport.update({
@@ -25,27 +31,31 @@ const ApiPublicOdimRoute = ApiPublicOdimRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/odim'
+  fullPaths: '/' | '/api/public/aemet' | '/api/public/odim'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/odim'
-  id: '__root__' | '/' | '/api/public/odim'
+  to: '/' | '/api/public/aemet' | '/api/public/odim'
+  id: '__root__' | '/' | '/api/public/aemet' | '/api/public/odim'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicAemetRoute: typeof ApiPublicAemetRoute
   ApiPublicOdimRoute: typeof ApiPublicOdimRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/aemet': {
+      id: '/api/public/aemet'
+      path: '/api/public/aemet'
+      fullPath: '/api/public/aemet'
+      preLoaderRoute: typeof ApiPublicAemetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/odim': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicAemetRoute: ApiPublicAemetRoute,
   ApiPublicOdimRoute: ApiPublicOdimRoute,
 }
 export const routeTree = rootRouteImport

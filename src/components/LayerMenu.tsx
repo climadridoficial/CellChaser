@@ -11,6 +11,9 @@ interface Props {
   stationCount: number;
   librewxrConfigured: boolean;
   onOpenSettings: () => void;
+  showAemet: boolean;
+  onShowAemetChange: (show: boolean) => void;
+  aemetNote: string;
 }
 
 const SOURCES: { id: TileSource; label: string; note: string }[] = [
@@ -95,6 +98,19 @@ export default function LayerMenu(props: Props) {
               type="checkbox"
               checked={props.showStations}
               onChange={(e) => props.onShowStationsChange(e.target.checked)}
+              className="h-4 w-4 accent-[var(--primary)]"
+            />
+          </label>
+
+          <label className="mt-1 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
+            <span>
+              <span className="block text-xs font-medium text-foreground">AEMET weather stations</span>
+              <span className="hint block">{props.aemetNote}</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={props.showAemet}
+              onChange={(e) => props.onShowAemetChange(e.target.checked)}
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
