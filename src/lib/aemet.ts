@@ -60,8 +60,8 @@ export function latestPerStation(rows: Raw[]): AemetObs[] {
   }));
 }
 
-export async function fetchAemetStations(key: string): Promise<AemetObs[]> {
-  const res = await fetch("/api/public/aemet", { headers: { "x-aemet-key": key } });
+export async function fetchAemetStations(key?: string): Promise<AemetObs[]> {
+  const res = await fetch("/api/public/aemet", key ? { headers: { "x-aemet-key": key } } : {});
   const body = (await res.json().catch(() => null)) as Raw[] | { error?: string } | null;
   if (!res.ok || !Array.isArray(body)) {
     throw new Error((body as { error?: string } | null)?.error || `AEMET request failed (${res.status})`);

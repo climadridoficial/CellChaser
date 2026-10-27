@@ -50,16 +50,16 @@ export default function SettingsSheet({ settings, onChange, onClose }: Props) {
           </section>
 
           <section>
-            <h3 className="section-title">AEMET API key (weather stations)</h3>
+            <h3 className="section-title">AEMET API key (optional)</h3>
             <input
               value={settings.aemetKey}
               onChange={(e) => onChange({ aemetKey: e.target.value })}
-              placeholder="Paste your free AEMET OpenData key"
+              placeholder="Optional — built-in keys are used"
               className="input mt-2"
               autoComplete="off"
             />
             <p className="hint mt-2">
-              Needed for live AEMET station data. Get one free at{" "}
+              Built-in keys already work; add your own to raise limits. Free at{" "}
               <a className="underline" href="https://opendata.aemet.es/centrodedescargas/altaUsuario" target="_blank" rel="noreferrer">opendata.aemet.es</a>. Stored in this browser only.
             </p>
           </section>
