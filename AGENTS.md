@@ -12,3 +12,5 @@
 - Use the public OpenStreetMap standard tiles for the background map; this avoids CARTO's API-key-required placeholder tiles.
 - Normalize ODIM range units by the file's declared convention and render onto a Mercator pixel grid using measured azimuths; this preserves scan geography.
 - Discover ORD multi-product volumes without parameter filtering, filter coverage quantities locally, and key file/decode state by the current selection; this avoids empty provider filters and stale product images.
+- AEMET OpenData is called only server-side via src/lib/aemet-upstream.ts, rotating/retrying across the comma-separated AEMET_API_KEYS secret; AEMET responses are flaky per key and keys must not reach the browser.
+- Radars missing from OPERA appear as AEMET-only stations (src/lib/aemet-radars.ts) and show the AEMET regional image as backup; that image is not georeferenced, so it is shown in the panel, not on the map.
