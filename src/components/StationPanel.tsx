@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
 import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
+import AemetBackup from "@/components/AemetBackup";
+import { aemetCodeFor } from "@/lib/aemet-radars";
 import { legendStops, productInfo } from "@/lib/radar-products";
 
 const ALL_PRODUCTS = ["DBZH", "TH", "VRADH", "VRAD", "ZDR", "RHOHV", "WRADH", "PHIDP", "SQIH"];
@@ -42,6 +44,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
     setScan(null);
     onScan(null);
     setError(null);
+    if (station.offline) {
+      setScans([]);
+      setStatus(null);
+      return;
+    }
     setStatus("Querying available products…");
     fetchStationScans(station.id, apiKey)
       .then((entries) => {
@@ -62,7 +69,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
     return () => {
       cancelled = true;
     };
-  }, [station.id, apiKey, onScan]);
+  }, [station.id, station.offline, apiKey, onScan]);
 
   const availableProducts = useMemo(
     () => [...new Set((scans ?? []).map((s) => s.product))].sort(),
@@ -148,6 +155,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
   }, [files, filesKey, selectionKey, selectedTime, product, level, station.lat, station.lon, onScan]);
 
   const info = scan?.info ?? productInfo(product ?? "DBZH");
+  const backupCode = aemetCodeFor(station);
+  const operaDown =
+    station.offline ||
+    (scans !== null && scans.length === 0) ||
+    (files !== null && files.length === 0 && filesKey === selectionKey) ||
+    (!!error && !scan);
+  const showBackup = !!backupCode && operaDown;
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
   return (
@@ -159,7 +173,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
           aria-expanded={!collapsed}
         >
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-            {countryLabel(station.country)} · OPERA raw station
+            {countryLabel(station.country)} · {station.offline ? "AEMET (sin OPERA)" : "OPERA raw station"}
           </p>
           <h2 className="mt-1 truncate font-display text-lg leading-tight text-foreground">
             {station.name}
@@ -181,6 +195,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
 
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {showBackup && backupCode && <AemetBackup code={backupCode} />}
+        {!station.offline && (<>
         <section>
           <h3 className="section-title">Product</h3>
           {scans === null ? (
@@ -292,6 +308,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
             </div>
           </section>
         )}
+        </>)}
       </div>
       )}
     </aside>
