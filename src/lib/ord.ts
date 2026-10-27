@@ -16,6 +16,10 @@ export interface RadarStation {
   /** e.g. ["DBZH:scan", "TH:scan"] */
   parameters: string[];
   products: string[]; // unique ODIM quantities
+  /** AEMET regional radar code for backup imagery */
+  aemetCode?: string;
+  /** Not transmitting to OPERA — AEMET backup only */
+  offline?: boolean;
 }
 
 export interface ScanEntry {

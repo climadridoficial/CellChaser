@@ -9,6 +9,7 @@ import StationPanel from "@/components/StationPanel";
 import SettingsSheet from "@/components/SettingsSheet";
 import LayerMenu from "@/components/LayerMenu";
 import AemetPanel from "@/components/AemetPanel";
+import { aemetOnlyStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
@@ -70,23 +71,22 @@ function Home() {
 
   const aemet = useQuery({
     queryKey: ["aemet-obs", settings.aemetKey],
-    enabled: showAemet && settings.aemetKey.trim().length > 0,
-    staleTime: 10 * 60_000,
-    refetchInterval: 10 * 60_000,
-    queryFn: () => fetchAemetStations(settings.aemetKey.trim()),
+    enabled: showAemet && loaded,
+    staleTime: 60 * 60_000,
+    refetchInterval: 60 * 60_000,
+    queryFn: () => fetchAemetStations(settings.aemetKey.trim() || undefined),
   });
-  const aemetNote = !settings.aemetKey.trim()
-    ? "Add your free AEMET key in settings"
-    : aemet.isError
+  const aemetNote = aemet.isError
       ? (aemet.error as Error).message
       : aemet.data
-        ? `${aemet.data.length} stations · live, click to inspect`
+        ? `${aemet.data.length} stations · updates hourly`
         : showAemet
           ? "Loading…"
           : "Live temp, wind, rain, pressure";
 
   const visibleStations = useMemo(() => {
-    const all = stations.data ?? [];
+    const opera = stations.data ?? [];
+    const all = stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
     if (settings.country === "all") return all;
     const code = settings.country.replace(/^0+/, "");
     return all.filter((s) => s.country.replace(/^0+/, "") === code);
@@ -148,7 +148,6 @@ function Home() {
           onShowAemetChange={(v) => {
             setShowAemet(v);
             if (!v) setAemetSel(null);
-            if (v && !settings.aemetKey.trim()) setSettingsOpen(true);
           }}
           aemetNote={aemetNote}
         />

@@ -45,7 +45,7 @@ export function latestPerStation(rows: Raw[]): AemetObs[] {
     lat: r.lat,
     lon: r.lon,
     alt: n(r["alt"]),
-    time: r.fint.endsWith("Z") || /[+-]\d{4}$/.test(r.fint) ? r.fint : `${r.fint}Z`,
+    time: r.fint.replace(/\+0000$/, "Z").replace(/^([^Z+]*)$/, "$1Z"),
     ta: n(r["ta"]),
     tamin: n(r["tamin"]),
     tamax: n(r["tamax"]),
@@ -60,8 +60,8 @@ export function latestPerStation(rows: Raw[]): AemetObs[] {
   }));
 }
 
-export async function fetchAemetStations(key: string): Promise<AemetObs[]> {
-  const res = await fetch("/api/public/aemet", { headers: { "x-aemet-key": key } });
+export async function fetchAemetStations(key?: string): Promise<AemetObs[]> {
+  const res = await fetch("/api/public/aemet", key ? { headers: { "x-aemet-key": key } } : {});
   const body = (await res.json().catch(() => null)) as Raw[] | { error?: string } | null;
   if (!res.ok || !Array.isArray(body)) {
     throw new Error((body as { error?: string } | null)?.error || `AEMET request failed (${res.status})`);
