@@ -5,7 +5,7 @@
 const BASE = "https://opendata.aemet.es/opendata/api/";
 
 function keys(override?: string | null): string[] {
-  const list = (process.env.AEMET_API_KEYS ?? "")
+  const list = (process.env["AEMET_API_KEYS"] ?? "")
     .split(",")
     .map((k) => k.trim())
     .filter(Boolean);

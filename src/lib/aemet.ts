@@ -45,7 +45,7 @@ export function latestPerStation(rows: Raw[]): AemetObs[] {
     lat: r.lat,
     lon: r.lon,
     alt: n(r["alt"]),
-    time: r.fint.endsWith("Z") || /[+-]\d{4}$/.test(r.fint) ? r.fint : `${r.fint}Z`,
+    time: r.fint.replace(/\+0000$/, "Z").replace(/^([^Z+]*)$/, "$1Z"),
     ta: n(r["ta"]),
     tamin: n(r["tamin"]),
     tamax: n(r["tamax"]),
