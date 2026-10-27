@@ -70,7 +70,10 @@ export default function RadarMap({
       tileRef.current = null;
     }
     if (tileUrl && !scan) {
-      tileRef.current = L.tileLayer(tileUrl, { opacity: 0.75, maxZoom: 12, zIndex: 300 }).addTo(map);
+      // RainViewer's free tiles stop at zoom 7 and return a "Zoom level not supported"
+      // image beyond that; upscale zoom-7 tiles instead of requesting higher ones.
+      const native = tileUrl.includes("rainviewer.com") ? 7 : 12;
+      tileRef.current = L.tileLayer(tileUrl, { opacity: 0.75, maxZoom: 12, maxNativeZoom: native, zIndex: 300 }).addTo(map);
     }
   }, [tileUrl, scan]);
 
