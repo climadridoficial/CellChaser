@@ -5,6 +5,7 @@ import type { RenderedScan } from "@/lib/odim";
 import type { AemetObs } from "@/lib/aemet";
 import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
 import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
+import type { CompositeLayer } from "@/hooks/use-radar-composite";
 
 interface Props {
   tileUrl: string | null;
@@ -18,6 +19,7 @@ interface Props {
   onSelectAemet: (o: AemetObs) => void;
   aemetImage: AemetMapImage | null;
   onAemetBounds: (bounds: RadarBounds) => void;
+  composite: CompositeLayer[];
 }
 
 export default function RadarMap({
@@ -32,7 +34,9 @@ export default function RadarMap({
   onSelectAemet,
   aemetImage,
   onAemetBounds,
+  composite,
 }: Props) {
+  const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
   const aemetRef = useRef<L.LayerGroup | null>(null);
   const aemetHandler = useRef(onSelectAemet);
   aemetHandler.current = onSelectAemet;
@@ -84,6 +88,35 @@ export default function RadarMap({
   }, [tileUrl, scan, !!aemetImage]);
 
   useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
+
+  // Spain radar composite: one image per radar, swapped in place on refresh.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const current = compositeRef.current;
+    const wanted = new Set(composite.map((l) => l.key));
+    for (const [key, overlay] of current) {
+      if (!wanted.has(key)) {
+        overlay.remove();
+        current.delete(key);
+      }
+    }
+    for (const layer of composite) {
+      if (current.has(layer.key)) continue;
+      const overlay = L.imageOverlay(layer.image, layer.bounds, {
+        opacity: layer.source === "aemet" ? 0.85 : 1,
+        zIndex: 350,
+        className: "radar-overlay",
+        interactive: false,
+      }).addTo(map);
+      current.set(layer.key, overlay);
+    }
+  }, [composite]);
+
+  useEffect(() => () => {
+    compositeRef.current.forEach((o) => o.remove());
+    compositeRef.current.clear();
+  }, []);
 
   // Station markers
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { CompositeMode } from "./composite";
 
 export interface RadarSettings {
   /** Base URL of a self-hosted LibreWXR instance (same tile scheme as RainViewer). */
@@ -9,6 +10,8 @@ export interface RadarSettings {
   aemetKey: string;
   /** Radar station country filter (ISO numeric, from the WIGOS id). */
   country: string;
+  /** Spain radar composite source drawn on the map. */
+  composite: CompositeMode;
 }
 
 export const DEFAULT_SETTINGS: RadarSettings = {
@@ -17,6 +20,7 @@ export const DEFAULT_SETTINGS: RadarSettings = {
   meteogateKey: "",
   aemetKey: "",
   country: "724",
+  composite: "opendata",
 };
 
 const STORAGE_KEY = "radares.settings.v1";

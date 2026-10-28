@@ -186,3 +186,49 @@ export const COUNTRIES: { code: string; label: string }[] = [
 export function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code || c.code === code.padStart(3, "0"))?.label ?? `Country ${code}`;
 }
+
+/**
+ * Newest scan of `product` at the station's lowest elevation, in one request.
+ * Prefers reflectivity-only volumes (long range) over Doppler ones.
+ */
+export async function fetchLatestScan(
+  platform: string,
+  product: string,
+  maxAgeMs: number,
+  apiKey?: string,
+): Promise<{ href: string; time: string; level: number } | null> {
+  const end = new Date();
+  const start = new Date(end.getTime() - maxAgeMs);
+  const iso = (d: Date) => d.toISOString().replace(/\.\d+Z$/, "Z");
+  const data = await getJson<{
+    coverages?: {
+      parameters?: Record<string, unknown>;
+      domain?: { axes?: { z?: { values?: number[] } } };
+      links?: { href: string; type?: string }[];
+    }[];
+  }>(
+    `${COLLECTION}/locations/${encodeURIComponent(platform)}?format=ODIM&datetime=${iso(start)}/${iso(end)}`,
+    apiKey,
+  );
+  let best: { href: string; time: string; level: number; doppler: boolean } | null = null;
+  for (const cov of data.coverages ?? []) {
+    const params = Object.keys(cov.parameters ?? {});
+    if (!params.some((p) => p.split(":")[0] === product)) continue;
+    const level = cov.domain?.axes?.z?.values?.[0];
+    if (typeof level !== "number") continue;
+    const doppler = params.some((p) => p.startsWith("VRAD"));
+    for (const link of cov.links ?? []) {
+      if (link.type !== "application/x-odim") continue;
+      const m = FILE_TIME.exec(link.href);
+      if (!m) continue;
+      const time = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`;
+      const better =
+        !best ||
+        level < best.level ||
+        (level === best.level && best.doppler && !doppler) ||
+        (level === best.level && best.doppler === doppler && time > best.time);
+      if (better) best = { href: link.href, time, level, doppler };
+    }
+  }
+  return best ? { href: best.href, time: best.time, level: best.level } : null;
+}
