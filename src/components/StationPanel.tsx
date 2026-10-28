@@ -7,6 +7,7 @@ import { aemetCodeFor } from "@/lib/aemet-radars";
 import { legendStops, productInfo } from "@/lib/radar-products";
 import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
+import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 const TIME_RANGES = [
@@ -198,7 +199,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
 
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-        {backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
+        {AEMET_ALIGNMENT_ENABLED && backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
         {showBackup && backupCode && <AemetBackup code={backupCode} />}
         {!station.offline && (<>
         <section>

@@ -46,6 +46,8 @@ export async function decodeAndRender(opts: {
   level: number;
   time: string;
   fallbackStation: { lat: number; lon: number };
+  /** Fixed canvas size; defaults to full range-gate detail. */
+  size?: number;
 }): Promise<RenderedScan> {
   const res = await fetch(proxiedFileUrl(opts.href));
   if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
@@ -100,7 +102,7 @@ export async function decodeAndRender(opts: {
 
   const info = productInfo(opts.product);
   // One canvas pixel per half range gate (capped) keeps native bin detail.
-  const size = Math.min(2400, Math.max(1200, nbins * 2));
+  const size = opts.size ?? Math.min(2400, Math.max(1200, nbins * 2));
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
