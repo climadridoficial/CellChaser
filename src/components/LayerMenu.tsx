@@ -66,7 +66,7 @@ export default function LayerMenu(props: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-[calc(100%+0.5rem)] z-[1200] w-[17rem] rounded-xl border border-border bg-card/95 p-3 shadow-[0_24px_60px_-20px_oklch(0_0_0/0.75)] backdrop-blur-xl"
+          className="absolute left-0 top-[calc(100%+0.5rem)] z-[1200] max-h-[calc(100vh-6rem)] w-[17rem] overflow-y-auto rounded-xl border border-border bg-card/95 p-3 shadow-[0_24px_60px_-20px_oklch(0_0_0/0.75)] backdrop-blur-xl"
         >
           <h3 className="section-title">Compuesto radares España</h3>
           <p className="hint mt-1">{props.compositeNote}</p>
