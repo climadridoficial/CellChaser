@@ -14,6 +14,7 @@ import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
 import { RadarSession } from "@/components/RadarSession";
 import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
+import MapLoadBoundary from "@/components/MapLoadBoundary";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -118,6 +119,7 @@ function Home() {
 
       <div className="absolute inset-0">
         <ClientOnly fallback={<div className="h-full w-full bg-secondary" />}>
+          <MapLoadBoundary>
           <Suspense fallback={<div className="h-full w-full bg-secondary" />}>
             <RadarMap
               tileUrl={tileUrl}
@@ -142,6 +144,7 @@ function Home() {
               }}
             />
           </Suspense>
+          </MapLoadBoundary>
         </ClientOnly>
       </div>
 
