@@ -5,6 +5,8 @@ import { decodeAndRender, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { legendStops, productInfo } from "@/lib/radar-products";
+import { Button } from "@/components/ui/button";
+import { Move } from "lucide-react";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 const TIME_RANGES = [
@@ -19,9 +21,10 @@ interface Props {
   apiKey: string;
   onClose: () => void;
   onScan: (scan: RenderedScan | null) => void;
+  onAlignAemet: (code: string) => void;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan }: Props) {
+export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet }: Props) {
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
@@ -195,6 +198,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan }: Props
 
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
         {showBackup && backupCode && <AemetBackup code={backupCode} />}
         {!station.offline && (<>
         <section>

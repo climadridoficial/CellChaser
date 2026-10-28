@@ -3,6 +3,8 @@ import L from "leaflet";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
 import type { AemetObs } from "@/lib/aemet";
+import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
+import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
 
 interface Props {
   tileUrl: string | null;
@@ -14,6 +16,8 @@ interface Props {
   aemet: AemetObs[];
   aemetSelected: string | null;
   onSelectAemet: (o: AemetObs) => void;
+  aemetImage: AemetMapImage | null;
+  onAemetBounds: (bounds: RadarBounds) => void;
 }
 
 export default function RadarMap({
@@ -26,6 +30,8 @@ export default function RadarMap({
   aemet,
   aemetSelected,
   onSelectAemet,
+  aemetImage,
+  onAemetBounds,
 }: Props) {
   const aemetRef = useRef<L.LayerGroup | null>(null);
   const aemetHandler = useRef(onSelectAemet);
@@ -69,13 +75,15 @@ export default function RadarMap({
       tileRef.current.remove();
       tileRef.current = null;
     }
-    if (tileUrl && !scan) {
+    if (tileUrl && !scan && !aemetImage) {
       // RainViewer's free tiles stop at zoom 7 and return a "Zoom level not supported"
       // image beyond that; upscale zoom-7 tiles instead of requesting higher ones.
       const native = tileUrl.includes("rainviewer.com") ? 7 : 12;
       tileRef.current = L.tileLayer(tileUrl, { opacity: 0.75, maxZoom: 12, maxNativeZoom: native, zIndex: 300 }).addTo(map);
     }
-  }, [tileUrl, scan]);
+  }, [tileUrl, scan, !!aemetImage]);
+
+  useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
 
   // Station markers
   useEffect(() => {

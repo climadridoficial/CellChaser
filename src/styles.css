@@ -393,3 +393,31 @@
   background: var(--card); border: 1px solid var(--border); color: var(--muted-foreground);
 }
 .loc-btn-on, .loc-btn-heading { color: oklch(0.7 0.18 250); }
+
+.aemet-alignment-bar {
+  position: absolute;
+  z-index: 1100;
+  bottom: 1.5rem;
+  left: 0.75rem;
+  width: min(23rem, calc(100% - 4rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.aemet-align-image { cursor: move; touch-action: none; }
+.aemet-align-border { stroke: var(--primary); }
+.aemet-corner { background: transparent; border: 0; cursor: nwse-resize; }
+.aemet-corner span {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--primary);
+  border-radius: 4px;
+  background: var(--card);
+}
+.aemet-alignment-bar input { accent-color: var(--primary); }
