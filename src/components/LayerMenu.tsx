@@ -24,8 +24,8 @@ const SOURCES: { id: TileSource; label: string; note: string }[] = [
   },
   {
     id: "librewxr",
-    label: "LibreWXR tiles (self-hosted)",
-    note: "OPERA-fed, full colour schemes and zoom levels.",
+    label: "LibreWXR tiles",
+    note: "OPERA-fed, full colour schemes and zoom levels. No setup needed.",
   },
   { id: "none", label: "No tile layer", note: "Base map only." },
 ];
