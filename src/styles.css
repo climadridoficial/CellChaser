@@ -374,3 +374,22 @@
 @utility panel-collapsed {
   max-height: none;
 }
+
+.user-loc { position: relative; width: 60px; height: 60px; }
+.user-dot {
+  position: absolute; left: 22px; top: 22px; width: 16px; height: 16px; border-radius: 999px;
+  background: oklch(0.65 0.2 250); border: 3px solid oklch(0.98 0 0);
+  box-shadow: 0 0 0 6px oklch(0.65 0.2 250 / 0.25);
+}
+.user-cone {
+  display: none; position: absolute; inset: 0; transform-origin: 50% 50%;
+  background: conic-gradient(from -30deg at 50% 50%, oklch(0.65 0.2 250 / 0.55) 0deg 60deg, transparent 60deg);
+  border-radius: 999px;
+  mask: radial-gradient(circle, black 0 30px, transparent 30px);
+}
+.loc-btn {
+  position: absolute; z-index: 1000; right: 10px; bottom: 96px;
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 4px;
+  background: var(--card); border: 1px solid var(--border); color: var(--muted-foreground);
+}
+.loc-btn-on, .loc-btn-heading { color: oklch(0.7 0.18 250); }
