@@ -7,7 +7,7 @@ import type { RadarStation } from "./ord";
 /** OPERA station code → AEMET regional radar code */
 export const OPERA_TO_AEMET: Record<string, string> = {
   esahr: "ml",
-  esatn: "ls",
+  esatn: "ca", // Gran Canaria (Artenara)
   esclg: "se",
   esgld: "ba",
   eslid: "vd",
