@@ -88,7 +88,8 @@ function Home() {
           : "Live temp, wind, rain, pressure";
 
   const visibleStations = useMemo(() => {
-    const opera = stations.data ?? [];
+    const fixNames: Record<string, string> = { SanSebastian: "San Sebastián" };
+    const opera: RadarStation[] = (stations.data ?? []).map((s) => ({ ...s, name: fixNames[s.name] ?? s.name }));
     const all = stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
     if (settings.country === "all") return all;
     const code = settings.country.replace(/^0+/, "");
