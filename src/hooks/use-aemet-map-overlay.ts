@@ -76,7 +76,13 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
       });
       map.fitBounds(value.bounds, { paddingTopLeft: [35, 95], paddingBottomRight: [35, 130], animate: false });
     }
+    const resize = () => {
+      const current = valueRef.current;
+      if (current?.editing) map.fitBounds(current.bounds, { paddingTopLeft: [35, 85], paddingBottomRight: [35, 210], animate: false });
+    };
+    map.on('resize', resize);
     return () => {
+      map.off('resize', resize);
       endDrag?.();
       element?.removeEventListener('pointerdown', down);
       image.remove();
