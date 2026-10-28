@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { TileSource } from "@/lib/settings";
+import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
 
 interface Props {
   open: boolean;
@@ -13,6 +14,9 @@ interface Props {
   showAemet: boolean;
   onShowAemetChange: (show: boolean) => void;
   aemetNote: string;
+  composite: CompositeMode;
+  onCompositeChange: (mode: CompositeMode) => void;
+  compositeNote: string;
 }
 
 const SOURCES: { id: TileSource; label: string; note: string }[] = [
@@ -42,7 +46,10 @@ export default function LayerMenu(props: Props) {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, onOpenChange]);
 
-  const activeLabel = SOURCES.find((s) => s.id === source)?.label ?? "Layers";
+  const activeLabel =
+    props.composite !== "off"
+      ? (COMPOSITE_MODES.find((m) => m.id === props.composite)?.label ?? "Compuesto")
+      : (SOURCES.find((s) => s.id === source)?.label ?? "Layers");
 
   return (
     <div ref={ref} className="relative">
@@ -61,7 +68,31 @@ export default function LayerMenu(props: Props) {
           role="menu"
           className="absolute left-0 top-[calc(100%+0.5rem)] z-[1200] w-[17rem] rounded-xl border border-border bg-card/95 p-3 shadow-[0_24px_60px_-20px_oklch(0_0_0/0.75)] backdrop-blur-xl"
         >
-          <h3 className="section-title">Tile layer</h3>
+          <h3 className="section-title">Compuesto radares España</h3>
+          <p className="hint mt-1">{props.compositeNote}</p>
+          <div className="mt-2 space-y-1">
+            {COMPOSITE_MODES.map((m) => (
+              <button
+                key={m.id}
+                role="menuitemradio"
+                aria-checked={props.composite === m.id}
+                onClick={() => props.onCompositeChange(m.id)}
+                className={`w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                  props.composite === m.id
+                    ? "border-primary/60 bg-primary/15"
+                    : "border-transparent hover:bg-secondary/70"
+                }`}
+              >
+                <span className="block text-xs font-medium text-foreground">{m.label}</span>
+                <span className="hint block">{m.note}</span>
+              </button>
+            ))}
+          </div>
+
+          <h3 className="section-title mt-4">Tile layer</h3>
+          {props.composite !== "off" && (
+            <p className="hint mt-1">Oculta mientras el compuesto está activo.</p>
+          )}
           <div className="mt-2 space-y-1">
             {SOURCES.map((s) => (
               <button

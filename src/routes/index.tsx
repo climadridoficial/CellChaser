@@ -15,6 +15,7 @@ import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignmen
 import { RadarSession } from "@/components/RadarSession";
 import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
 import MapLoadBoundary from "@/components/MapLoadBoundary";
+import { useRadarComposite } from "@/hooks/use-radar-composite";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -105,7 +106,20 @@ function Home() {
     return all.filter((s) => s.country.replace(/^0+/, "") === code);
   }, [stations.data, settings.country]);
 
-  const tileUrl = tileTemplate(settings, rainviewer.data ?? null, tileSource);
+  // Spanish radars for the composite, independent of the station country filter.
+  const spainRadars = useMemo(() => {
+    const opera = (stations.data ?? []).filter((s) => s.country.replace(/^0+/, "") === "724");
+    return stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
+  }, [stations.data]);
+  const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey);
+  const compositeOn = settings.composite !== "off";
+  const compositeNote = !compositeOn
+    ? "Apagado"
+    : composite.loading && composite.layers.length === 0
+      ? "Cargando radares…"
+      : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? " · actualizando…" : ""}`;
+
+  const tileUrl = compositeOn ? null : tileTemplate(settings, rainviewer.data ?? null, tileSource);
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
   const closePanel = useCallback(() => {
@@ -134,6 +148,7 @@ function Home() {
               scan={scan}
               aemetImage={aemetImage}
               onAemetBounds={handleAemetBounds}
+              composite={scan || aemetImage ? [] : composite.layers}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
@@ -168,6 +183,9 @@ function Home() {
             if (!v) setAemetSel(null);
           }}
           aemetNote={aemetNote}
+          composite={settings.composite}
+          onCompositeChange={(composite) => update({ composite })}
+          compositeNote={compositeNote}
         />
       </div>
 
