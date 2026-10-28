@@ -9,7 +9,6 @@ interface Props {
   showStations: boolean;
   onShowStationsChange: (show: boolean) => void;
   stationCount: number;
-  librewxrConfigured: boolean;
   onOpenSettings: () => void;
   showAemet: boolean;
   onShowAemetChange: (show: boolean) => void;
@@ -64,28 +63,22 @@ export default function LayerMenu(props: Props) {
         >
           <h3 className="section-title">Tile layer</h3>
           <div className="mt-2 space-y-1">
-            {SOURCES.map((s) => {
-              const disabled = s.id === "librewxr" && !props.librewxrConfigured;
-              return (
-                <button
-                  key={s.id}
-                  role="menuitemradio"
-                  aria-checked={source === s.id}
-                  disabled={disabled}
-                  onClick={() => onSourceChange(s.id)}
-                  className={`w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
-                    source === s.id
-                      ? "border-primary/60 bg-primary/15"
-                      : "border-transparent hover:bg-secondary/70"
-                  } ${disabled ? "cursor-not-allowed opacity-45" : ""}`}
-                >
-                  <span className="block text-xs font-medium text-foreground">{s.label}</span>
-                  <span className="hint block">
-                    {disabled ? "Add your LibreWXR base URL in settings first." : s.note}
-                  </span>
-                </button>
-              );
-            })}
+            {SOURCES.map((s) => (
+              <button
+                key={s.id}
+                role="menuitemradio"
+                aria-checked={source === s.id}
+                onClick={() => onSourceChange(s.id)}
+                className={`w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                  source === s.id
+                    ? "border-primary/60 bg-primary/15"
+                    : "border-transparent hover:bg-secondary/70"
+                }`}
+              >
+                <span className="block text-xs font-medium text-foreground">{s.label}</span>
+                <span className="hint block">{s.note}</span>
+              </button>
+            ))}
           </div>
 
           <h3 className="section-title mt-4">Overlays</h3>
