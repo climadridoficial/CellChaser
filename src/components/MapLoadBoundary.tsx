@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
  * Keep the rest of the radar app available instead of hitting the root boundary.
  */
 export default class MapLoadBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
+  override state = { failed: false };
 
   static getDerivedStateFromError() {
     return { failed: true };
   }
 
-  render() {
+  override render() {
     if (this.state.failed) {
       return <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-background px-5 text-center">
         <p className="text-sm text-muted-foreground" role="alert">No se pudo cargar el mapa.</p>
