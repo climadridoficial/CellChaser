@@ -47,15 +47,18 @@ function Home() {
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
 
-  const usingLibre = settings.librewxrUrl.trim().length > 0;
-
   const rainviewer = useQuery({
-    queryKey: ["rainviewer-index"],
-    enabled: tileSource === "rainviewer",
+    queryKey: ["radar-index", tileSource, settings.librewxrUrl],
+    enabled: tileSource !== "none",
     staleTime: 4 * 60_000,
     queryFn: async () => {
-      const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-      if (!res.ok) throw new Error("RainViewer index unavailable");
+      const base =
+        tileSource === "librewxr"
+          ? settings.librewxrUrl.trim().replace(/\/+$/, "")
+          : "https://api.rainviewer.com";
+      if (!base) return null;
+      const res = await fetch(`${base}/public/weather-maps.json`);
+      if (!res.ok) throw new Error("Radar tile index unavailable");
       const data = (await res.json()) as { radar?: { past?: { path: string; time: number }[] } };
       const past = data.radar?.past ?? [];
       return past[past.length - 1]?.path ?? null;
@@ -142,7 +145,6 @@ function Home() {
           showStations={showStations}
           onShowStationsChange={setShowStations}
           stationCount={visibleStations.length}
-          librewxrConfigured={usingLibre}
           onOpenSettings={() => setSettingsOpen(true)}
           showAemet={showAemet}
           onShowAemetChange={(v) => {

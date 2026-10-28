@@ -19,18 +19,17 @@ export default function SettingsSheet({ settings, onChange, onClose }: Props) {
         </header>
         <div className="space-y-6 px-5 py-5">
           <section>
-            <h3 className="section-title">Self-hosted LibreWXR base URL</h3>
+            <h3 className="section-title">LibreWXR base URL</h3>
             <input
               value={settings.librewxrUrl}
               onChange={(e) => onChange({ librewxrUrl: e.target.value })}
-              placeholder="https://radar.my-domain.net"
+              placeholder="https://api.librewxr.net"
               className="input mt-2"
               inputMode="url"
             />
             <p className="hint mt-2">
-              LibreWXR exposes the same tile scheme as RainViewer but is fed by EUMETNET OPERA and
-              other government sources, without the colour-scheme or zoom limits. Leave empty to use
-              the public RainViewer tiles.
+              The public LibreWXR instance (api.librewxr.net) is used by default — no key or setup
+              needed. Only change this if you self-host your own LibreWXR server.
             </p>
           </section>
 
