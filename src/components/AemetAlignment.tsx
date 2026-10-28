@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Move, Save, X, RotateCcw, Pencil, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,8 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
   const [busy, setBusy] = useState(false);
   const [tick, setTick] = useState(() => Math.floor(Date.now() / AEMET_REFRESH_MS));
   const [visible, setVisible] = useState(true);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   useEffect(() => {
     const timer = setInterval(() => setTick(Math.floor(Date.now() / AEMET_REFRESH_MS)), AEMET_REFRESH_MS);
@@ -43,7 +45,6 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
     let live = true;
     setSaved(null);
     setVisible(true);
-    onChange(null);
     if (userId) {
       supabase.from('radar_alignments').select('south,west,north,east').eq('user_id', userId).eq('radar_code', target.code).maybeSingle().then(({ data, error: err }) => {
         if (!live) return;
@@ -59,7 +60,9 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
 
   useEffect(() => {
     if (!images || !ready || !visible) return;
-    onChange({ code: target.code, bounds: saved ?? initialBounds(target.lat, target.lon), image: saved ? images.echoes : images.original, editing: !saved, opacity: 0.5 });
+    const current = valueRef.current;
+    const editing = !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
+    onChange({ code: target.code, bounds: saved ?? current?.bounds ?? initialBounds(target.lat, target.lon), image: editing ? images.original : images.echoes, editing, opacity: current?.opacity ?? 0.5 });
   }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange]);
 
   const signIn = async (provider: 'google' | 'lovable') => {
@@ -77,7 +80,9 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
     const { data, error: err } = await supabase.from('radar_alignments').upsert({ user_id: userId, radar_code: target.code, south,west,north,east, updated_at: new Date().toISOString() }).select('south,west,north,east').single();
     setBusy(false);
     if (err || !data) { setError('No se pudo guardar. La imagen sigue en modo de alineación.'); return; }
-    setSaved([[data.south,data.west],[data.north,data.east]]);
+    const bounds: RadarBounds = [[data.south,data.west],[data.north,data.east]];
+    if (images) onChange({ ...value, bounds, image: images.echoes, editing: false });
+    setSaved(bounds);
   };
 
   return <aside className="aemet-alignment-bar" aria-label="Alineación del radar AEMET">

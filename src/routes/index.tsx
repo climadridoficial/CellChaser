@@ -11,6 +11,10 @@ import LayerMenu from "@/components/LayerMenu";
 import AemetPanel from "@/components/AemetPanel";
 import { aemetOnlyStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
+import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
+import { RadarSession } from "@/components/RadarSession";
+import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
+import MapLoadBoundary from "@/components/MapLoadBoundary";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -33,7 +37,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Home,
+  component: () => <RadarSession><Home /></RadarSession>,
 });
 
 function Home() {
@@ -46,6 +50,11 @@ function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
+  const [alignmentTarget, setAlignmentTarget] = useState<AlignmentTarget | null>(null);
+  const [aemetImage, setAemetImage] = useState<AemetMapImage | null>(null);
+  const handleAemetImage = useCallback((value: AemetMapImage | null) => setAemetImage(value), []);
+  const handleAemetBounds = useCallback((bounds: RadarBounds) => setAemetImage(current => current ? { ...current, bounds } : current), []);
+  const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
     queryKey: ["radar-index", tileSource, settings.librewxrUrl],
@@ -110,6 +119,7 @@ function Home() {
 
       <div className="absolute inset-0">
         <ClientOnly fallback={<div className="h-full w-full bg-secondary" />}>
+          <MapLoadBoundary>
           <Suspense fallback={<div className="h-full w-full bg-secondary" />}>
             <RadarMap
               tileUrl={tileUrl}
@@ -117,19 +127,24 @@ function Home() {
               stations={visibleStations}
               selectedId={selected?.id ?? null}
               onSelect={(st) => {
+                closeAlignment();
                 setAemetSel(null);
                 setSelected(st);
               }}
               scan={scan}
+              aemetImage={aemetImage}
+              onAemetBounds={handleAemetBounds}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
+                closeAlignment();
                 setSelected(null);
                 setScan(null);
                 setAemetSel(o);
               }}
             />
           </Suspense>
+          </MapLoadBoundary>
         </ClientOnly>
       </div>
 
@@ -170,10 +185,18 @@ function Home() {
           apiKey={settings.meteogateKey}
           onClose={closePanel}
           onScan={handleScan}
+          onAlignAemet={(code) => {
+            setAlignmentTarget({ code, name: selected.name, lat: selected.lat, lon: selected.lon });
+            setSelected(null);
+            setScan(null);
+            setAemetSel(null);
+          }}
         />
       )}
 
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
+
+      {alignmentTarget && <AemetAlignment key={alignmentTarget.code} target={alignmentTarget} value={aemetImage} onChange={handleAemetImage} onClose={closeAlignment} />}
 
       {settingsOpen && (
         <SettingsSheet
