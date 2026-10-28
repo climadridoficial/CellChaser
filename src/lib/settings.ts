@@ -28,7 +28,12 @@ export function useSettings() {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as RadarSettings) });
+      if (raw) {
+        const stored = JSON.parse(raw) as RadarSettings;
+        // Older versions stored an empty LibreWXR URL; fall back to the public instance.
+        if (!stored.librewxrUrl?.trim()) stored.librewxrUrl = DEFAULT_SETTINGS.librewxrUrl;
+        setSettings({ ...DEFAULT_SETTINGS, ...stored });
+      }
     } catch {
       /* ignore malformed storage */
     }
