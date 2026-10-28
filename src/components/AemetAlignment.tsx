@@ -61,7 +61,7 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
   useEffect(() => {
     if (!images || !ready || !visible) return;
     const current = valueRef.current;
-    const editing = !saved || (current?.editing && current.code === target.code && current.image === images.original);
+    const editing = !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
     onChange({ code: target.code, bounds: saved ?? current?.bounds ?? initialBounds(target.lat, target.lon), image: editing ? images.original : images.echoes, editing, opacity: current?.opacity ?? 0.5 });
   }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange]);
 
