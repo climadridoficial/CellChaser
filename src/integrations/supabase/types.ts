@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      radar_alignments: {
+        Row: {
+          east: number
+          north: number
+          radar_code: string
+          south: number
+          updated_at: string
+          user_id: string
+          west: number
+        }
+        Insert: {
+          east: number
+          north: number
+          radar_code: string
+          south: number
+          updated_at?: string
+          user_id: string
+          west: number
+        }
+        Update: {
+          east?: number
+          north?: number
+          radar_code?: string
+          south?: number
+          updated_at?: string
+          user_id?: string
+          west?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
