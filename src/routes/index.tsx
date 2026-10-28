@@ -47,8 +47,6 @@ function Home() {
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
 
-  const usingLibre = settings.librewxrUrl.trim().length > 0;
-
   const rainviewer = useQuery({
     queryKey: ["radar-index", tileSource, settings.librewxrUrl],
     enabled: tileSource !== "none",
@@ -147,7 +145,6 @@ function Home() {
           showStations={showStations}
           onShowStationsChange={setShowStations}
           stationCount={visibleStations.length}
-          librewxrConfigured={usingLibre}
           onOpenSettings={() => setSettingsOpen(true)}
           showAemet={showAemet}
           onShowAemetChange={(v) => {
