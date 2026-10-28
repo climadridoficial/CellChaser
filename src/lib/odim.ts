@@ -99,7 +99,8 @@ export async function decodeAndRender(opts: {
   const rangeM = rstart + nbins * rscale;
 
   const info = productInfo(opts.product);
-  const size = 720;
+  // One canvas pixel per half range gate (capped) keeps native bin detail.
+  const size = Math.min(2400, Math.max(1200, nbins * 2));
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;

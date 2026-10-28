@@ -6,7 +6,7 @@ import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { legendStops, productInfo } from "@/lib/radar-products";
 
-const ALL_PRODUCTS = ["DBZH", "TH", "VRADH", "VRAD", "ZDR", "RHOHV", "WRADH", "PHIDP", "SQIH"];
+const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 const TIME_RANGES = [
   { hours: 1, label: "1 h" },
   { hours: 3, label: "3 h" },
