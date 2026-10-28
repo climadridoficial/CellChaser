@@ -22,8 +22,8 @@ export const OPERA_TO_AEMET: Record<string, string> = {
 const AEMET_ONLY: { code: string; name: string; lat: number; lon: number }[] = [
   { code: "co", name: "A Coruña (Cerceda)", lat: 43.17, lon: -8.53 },
   { code: "mu", name: "Murcia (Sierra de la Puerta)", lat: 38.26, lon: -1.19 },
-  { code: "pm", name: "Palma de Mallorca", lat: 39.37, lon: 2.79 },
-  { code: "sa", name: "Santander", lat: 43.36, lon: -3.86 },
+  { code: "pm", name: "Illes Balears (Palma)", lat: 39.37, lon: 2.79 },
+  { code: "sa", name: "Asturias", lat: 43.42, lon: -6.0 },
   { code: "va", name: "Valencia", lat: 39.18, lon: -0.25 },
 ];
 
