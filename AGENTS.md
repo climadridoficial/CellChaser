@@ -17,3 +17,4 @@
 - AEMET alignment and echo display share the same validated image crop and Leaflet bounds; this preserves manual registration across image refreshes without inventing geographic precision.
 - Store radar alignments per authenticated user and radar code in Cloud with owner-scoped RLS; no anonymous writes or browser-only durable calibration storage.
 - AEMET echo masking preserves original echo colours and only conservatively removes thin shared-colour linework; never use generative image editing for measured weather data.
+- Keep lazy map loading inside its own error boundary with explicit reload recovery; stale preview module failures must not blank the entire radar app.
