@@ -12,7 +12,8 @@ export interface RadarSettings {
 }
 
 export const DEFAULT_SETTINGS: RadarSettings = {
-  librewxrUrl: "",
+  // Public hosted LibreWXR instance — works out of the box, no key needed.
+  librewxrUrl: "https://api.librewxr.net",
   meteogateKey: "",
   aemetKey: "",
   country: "724",
@@ -58,11 +59,11 @@ export function tileTemplate(
   source: TileSource = "rainviewer",
 ): string | null {
   if (source === "none") return null;
+  if (!timestampPath) return null;
   const base = settings.librewxrUrl.trim().replace(/\/+$/, "");
   if (source === "librewxr") {
     if (!base) return null;
-    return `${base}/v2/radar/latest/256/{z}/{x}/{y}/2/1_1.png`;
+    return `${base}${timestampPath}/256/{z}/{x}/{y}/2/1_1.png`;
   }
-  if (!timestampPath) return null;
   return `https://tilecache.rainviewer.com${timestampPath}/256/{z}/{x}/{y}/2/1_1.png`;
 }
