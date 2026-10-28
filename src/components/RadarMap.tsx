@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
@@ -149,5 +149,102 @@ export default function RadarMap({
     if (station) map.flyTo([station.lat, station.lon], Math.max(map.getZoom(), 7), { duration: 0.7 });
   }, [selectedId, stations]);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  // User location: "on" (dot), "heading" (dot + direction cone), "off"
+  const [locMode, setLocMode] = useState<"on" | "heading" | "off">("on");
+  const userRef = useRef<L.Marker | null>(null);
+  const headingRef = useRef<number | null>(null);
+  const centeredRef = useRef(false);
+
+  const applyHeading = () => {
+    const el = userRef.current?.getElement()?.querySelector<HTMLElement>(".user-cone");
+    if (!el) return;
+    const h = headingRef.current;
+    el.style.display = locMode === "heading" && h !== null ? "block" : "none";
+    if (h !== null) el.style.transform = `rotate(${h}deg)`;
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || locMode === "off" || !("geolocation" in navigator)) {
+      userRef.current?.remove();
+      userRef.current = null;
+      centeredRef.current = false;
+      return;
+    }
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const ll: L.LatLngExpression = [pos.coords.latitude, pos.coords.longitude];
+        if (!userRef.current) {
+          userRef.current = L.marker(ll, {
+            icon: L.divIcon({
+              className: "",
+              html: `<div class="user-loc"><span class="user-cone"></span><span class="user-dot"></span></div>`,
+              iconSize: [60, 60],
+              iconAnchor: [30, 30],
+            }),
+            interactive: false,
+            zIndexOffset: 1000,
+          }).addTo(map);
+        } else userRef.current.setLatLng(ll);
+        if (!centeredRef.current) {
+          centeredRef.current = true;
+          map.setView(ll, Math.max(map.getZoom(), 8));
+        }
+        applyHeading();
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 10_000 },
+    );
+    return () => navigator.geolocation.clearWatch(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locMode]);
+
+  useEffect(() => {
+    applyHeading();
+    if (locMode !== "heading") return;
+    const onOrient = (e: DeviceOrientationEvent & { webkitCompassHeading?: number }) => {
+      let h: number | null = null;
+      if (typeof e.webkitCompassHeading === "number") h = e.webkitCompassHeading;
+      else if (e.alpha !== null) h = (360 - e.alpha) % 360;
+      if (h === null) return;
+      headingRef.current = h;
+      applyHeading();
+    };
+    const evt = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+    window.addEventListener(evt, onOrient as EventListener);
+    return () => window.removeEventListener(evt, onOrient as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locMode]);
+
+  const cycleLoc = async () => {
+    const next = locMode === "on" ? "heading" : locMode === "heading" ? "off" : "on";
+    if (next === "heading") {
+      const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
+      if (DOE?.requestPermission) {
+        try {
+          await DOE.requestPermission();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    if (next === "on" && userRef.current) mapRef.current?.panTo(userRef.current.getLatLng());
+    setLocMode(next);
+  };
+
+  const label =
+    locMode === "on" ? "Ubicación activada (pulsa para modo brújula)" : locMode === "heading" ? "Modo brújula (pulsa para desactivar)" : "Ubicación desactivada (pulsa para activar)";
+
+  return (
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="h-full w-full" />
+      <button type="button" onClick={cycleLoc} aria-label={label} title={label} className={`loc-btn loc-btn-${locMode}`}>
+        {locMode === "heading" ? (
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2 19 21 12 17 5 21z" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4" fill={locMode === "on" ? "currentColor" : "none"} /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+        )}
+      </button>
+    </div>
+  );
 }
