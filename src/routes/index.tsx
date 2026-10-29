@@ -61,6 +61,7 @@ function Home() {
   const handleAemetImage = useCallback((value: AemetMapImage | null) => setAemetImage(value), []);
   const handleAemetBounds = useCallback((bounds: RadarBounds) => setAemetImage(current => current ? { ...current, bounds } : current), []);
   const [at, setAt] = useState<number | null>(null);
+  const [showStorms, setShowStorms] = useState(false);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
@@ -171,6 +172,8 @@ function Home() {
               aemetImage={aemetImage}
               onAemetBounds={handleAemetBounds}
               composite={mapComposite}
+              showStorms={showStorms}
+              apiKey={settings.meteogateKey}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
@@ -208,6 +211,8 @@ function Home() {
           composite={settings.composite}
           onCompositeChange={(composite) => update({ composite })}
           compositeNote={compositeNote}
+          showStorms={showStorms}
+          onShowStormsChange={setShowStorms}
         />
         <LanguageMenu />
       </div>
