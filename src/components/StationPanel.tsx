@@ -30,6 +30,8 @@ interface Props {
   onAlignAemet: (code: string) => void;
   /** Map time slider position (null = live). */
   at: number | null;
+  /** Reports time-slider preloading of this station's scans. */
+  onPreload?: (progress: PreloadProgress) => void;
 }
 
 /** Scan shown for the slider time: newest at or before it, else the oldest listed. */
@@ -39,7 +41,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
   return pickFrame(list, (f) => Date.parse(f.time), at)?.href ?? null;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at }: Props) {
+export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at, onPreload }: Props) {
   const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
@@ -60,6 +62,25 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [collapsed, setCollapsed] = useState(false);
   const atRef = useRef(at);
   atRef.current = at;
+  // Decoded scans by file + product + elevation, so slider steps are instant.
+  const cacheRef = useRef(new Map<string, Promise<RenderedScan>>());
+  useEffect(() => {
+    cacheRef.current.clear();
+  }, [station.id]);
+  const decodeCached = useCallback(
+    (file: ScanFile, product: string, level: number) => {
+      const key = `${file.href}|${product}|${level}`;
+      let hit = cacheRef.current.get(key);
+      if (!hit) {
+        hit = decodeAndRender({ href: file.href, product, level, time: file.time, fallbackStation: { lat: station.lat, lon: station.lon } });
+        hit.catch(() => cacheRef.current.delete(key));
+        cacheRef.current.set(key, hit);
+        while (cacheRef.current.size > 120) cacheRef.current.delete(cacheRef.current.keys().next().value!);
+      }
+      return hit;
+    },
+    [station.lat, station.lon],
+  );
 
   // Follow the map time slider: widen the time range if needed, then pick the scan.
   useEffect(() => {
@@ -170,17 +191,10 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     const file = files.find((f) => f.href === selectedTime);
     if (!file) return;
     let cancelled = false;
-    setScan(null);
-    onScan(null);
+    // Keep the current image on screen until the next one is decoded.
     setStatus("Decoding ODIM/HDF5 scan…");
     setError(null);
-    decodeAndRender({
-      href: file.href,
-      product,
-      level,
-      time: file.time,
-      fallbackStation: { lat: station.lat, lon: station.lon },
-    })
+    decodeCached(file, product, level)
       .then((rendered) => {
         if (cancelled) return;
         if (!radarFrameVisible(rendered.time, atRef.current, OPERA_MAX_AGE_MS, Date.now())) return;
@@ -198,7 +212,30 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     return () => {
       cancelled = true;
     };
-  }, [files, filesKey, selectionKey, selectedTime, product, level, station.lat, station.lon, onScan]);
+  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan]);
+
+  // History mode: decode every scan in the slider window once.
+  const historyMode = at !== null;
+  useEffect(() => {
+    const report = onPreload ?? (() => {});
+    if (!historyMode || !files || filesKey !== selectionKey || !product || level === null) {
+      report(NO_PRELOAD);
+      return;
+    }
+    const since = Date.now() - (HISTORY_HOURS + 0.5) * 3600_000;
+    const todo = files.filter((f) => Date.parse(f.time) >= since);
+    let cancelled = false;
+    let done = 0;
+    report({ done, total: todo.length });
+    void runPool(todo.map((f) => () => decodeCached(f, product, level)), 2, () => {
+      done++;
+      report({ done, total: todo.length });
+    }, () => cancelled);
+    return () => {
+      cancelled = true;
+      report(NO_PRELOAD);
+    };
+  }, [historyMode, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
 
   const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
   useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);
