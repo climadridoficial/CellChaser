@@ -28,13 +28,13 @@ const RadarMap = lazy(() => import("@/components/RadarMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RadarES — European weather radar, layer by layer" },
+      { title: "CellChaser — European weather radar, layer by layer" },
       {
         name: "description",
         content:
-          "RadarES combines RainViewer tiles, a self-hosted LibreWXR instance and raw EUMETNET OPERA station scans (DBZH, TH, VRADH) on one interactive map.",
+          "CellChaser combines RainViewer tiles, a self-hosted LibreWXR instance and raw EUMETNET OPERA station scans (DBZH, TH, VRADH) on one interactive map.",
       },
-      { property: "og:title", content: "RadarES — European weather radar, layer by layer" },
+      { property: "og:title", content: "CellChaser — European weather radar, layer by layer" },
       {
         property: "og:description",
         content:
@@ -157,7 +157,7 @@ function Home() {
 
   return (
     <main className="relative h-screen w-full overflow-hidden bg-background">
-      <h1 className="sr-only">RadarES — European weather radar layers</h1>
+      <h1 className="sr-only">CellChaser — European weather radar layers</h1>
 
       <div className="absolute inset-0">
         <ClientOnly fallback={<div className="h-full w-full bg-secondary" />}>
@@ -197,7 +197,7 @@ function Home() {
 
       <div className="toolbar">
         <span className="brand">
-          Radar<span className="text-primary">ES</span>
+          Cell<span className="text-primary">Chaser</span>
         </span>
         <div className="h-5 w-px bg-border/80" aria-hidden />
         <LayerMenu

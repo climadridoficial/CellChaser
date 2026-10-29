@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "RadarES — European weather radar" },
+      { title: "CellChaser — European weather radar" },
       {
         name: "description",
         content:
           "Combine RainViewer tiles, self-hosted LibreWXR and raw EUMETNET OPERA radar station data on one map.",
       },
-      { name: "author", content: "RadarES" },
-      { property: "og:title", content: "RadarES — European weather radar" },
+      { name: "author", content: "CellChaser" },
+      { property: "og:title", content: "CellChaser — European weather radar" },
       {
         property: "og:description",
         content:
