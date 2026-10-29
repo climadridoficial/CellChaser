@@ -216,9 +216,6 @@ export default function RadarMap({
     overlay.once("error", retire);
     overlay.addTo(map);
     overlayRef.current = overlay;
-    return () => {
-      if (overlayRef.current !== overlay) return;
-    };
   }, [scan]);
 
   // Fly to the selected station
