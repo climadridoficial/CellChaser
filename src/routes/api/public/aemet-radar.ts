@@ -10,7 +10,7 @@ import { aemetGifTime } from "@/lib/aemet-timestamp";
 
 const ARCHIVE_FALLBACK_MS = 60 * 60_000;
 
-function gifResponse(bytes: Uint8Array, observed: string | null, source: "live" | "archive") {
+function gifResponse(bytes: Uint8Array<ArrayBuffer>, observed: string | null, source: "live" | "archive") {
   const headers: Record<string, string> = {
     "Content-Type": "image/gif",
     "Cache-Control": source === "live" ? "public, max-age=300" : "no-store",
