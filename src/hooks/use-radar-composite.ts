@@ -21,7 +21,7 @@ export interface CompositeLayer {
   observedAt: string;
 }
 
-const REFRESH_MS = 10 * 60_000;
+const REFRESH_MS = 60_000;
 // Lighter than the station panel's full-detail render: 10 radars at once.
 const COMPOSITE_SIZE = 1000;
 

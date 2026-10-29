@@ -22,6 +22,7 @@ export const MESSAGES = {
   stormVeryStrong: r("Muy fuerte", "Muito forte", "Molt forta", "Moi forte", "Oso indartsua", "Very strong"),
   stormExtreme: r("Extrema", "Extrema", "Extrema", "Extrema", "Muturrekoa", "Extreme"),
   stormWaiting: r("Se necesitan dos escaneos para estimar movimiento", "São necessárias duas varreduras para estimar movimento", "Calen dos escaneigs per estimar moviment", "Precísanse dous escaneos para estimar movemento", "Bi eskaneatze behar dira mugimendua kalkulatzeko", "Two scans needed to estimate movement"),
+  stormNone: r("Sin células detectadas", "Sem células detetadas", "Sense cèl·lules detectades", "Sen células detectadas", "Ez da zelularik hauteman", "No cells detected"),
   stormUnsupported: r("Sin reflectividad disponible; selecciona DBZH o un compuesto", "Sem refletividade disponível; selecione DBZH ou uma composição", "Sense reflectivitat disponible; selecciona DBZH o un compost", "Sen reflectividade dispoñible; selecciona DBZH ou un composto", "Islagarritasunik ez; hautatu DBZH edo konposatua", "No reflectivity available; select DBZH or a composite"),
   stormPartial: r("Faltan escaneos; seguimiento incompleto", "Faltam varreduras; seguimento incompleto", "Falten escaneigs; seguiment incomplet", "Faltan escaneos; seguimento incompleto", "Eskaneatzeak falta dira; jarraipen osatugabea", "Missing scans; incomplete tracking"),
   language: r("Idioma", "Idioma", "Idioma", "Idioma", "Hizkuntza", "Language"),

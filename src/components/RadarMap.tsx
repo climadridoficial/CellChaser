@@ -297,7 +297,7 @@ export default function RadarMap({
           <span><i className="storm-veryStrong" />{t("stormVeryStrong")} 50–59</span>
           <span><i className="storm-extreme" />{t("stormExtreme")} ≥60 dBZ</span>
         </div>
-        <p>{storms.loading ? t("updating") : !storms.supported ? t("stormUnsupported") : storms.incomplete ? t("stormPartial") : !storms.tracks.some(s => s.forecast) ? t("stormWaiting") : `${storms.tracks.length} · ${t("stormTracks")}`}</p>
+        <p>{storms.loading ? t("updating") : !storms.supported ? t("stormUnsupported") : storms.incomplete ? t("stormPartial") : !storms.tracks.length ? t("stormNone") : !storms.tracks.some(s => s.forecast) ? t("stormWaiting") : `${storms.tracks.length} · ${t("stormTracks")}`}</p>
         <p className="text-muted-foreground">{t("stormDisclaimer")}</p>
       </div>}
       <button type="button" onClick={cycleLoc} aria-label={label} title={label} className={`loc-btn loc-btn-${locMode}`}>
