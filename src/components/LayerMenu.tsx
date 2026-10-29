@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/i18n";
 import { useEffect, useRef } from "react";
 import type { TileSource } from "@/lib/settings";
 import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
@@ -34,6 +35,7 @@ const SOURCES: { id: TileSource; label: string; note: string }[] = [
 ];
 
 export default function LayerMenu(props: Props) {
+  const { t } = useI18n();
   const { open, onOpenChange, source, onSourceChange } = props;
   const ref = useRef<HTMLDivElement>(null);
 
@@ -46,20 +48,22 @@ export default function LayerMenu(props: Props) {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, onOpenChange]);
 
+  const modes = modes.map((m) => ({ ...m, label: t(m.id === "opendata" ? "modeOpendata" : m.id === "opera-fallback" ? "modeFallback" : m.id === "opera" ? "modeOpera" : "off"), note: t(m.id === "opendata" ? "noteOpendata" : m.id === "opera-fallback" ? "noteFallback" : m.id === "opera" ? "noteOpera" : "noteOff") }));
+  const sources = sources.map((s) => ({ ...s, label: t(s.id === "rainviewer" ? "rainviewer" : s.id === "librewxr" ? "librewxr" : "noTiles"), note: t(s.id === "rainviewer" ? "rainviewerNote" : s.id === "librewxr" ? "librewxrNote" : "baseOnly") }));
   const activeLabel =
     props.composite !== "off"
-      ? (COMPOSITE_MODES.find((m) => m.id === props.composite)?.label ?? "Compuesto")
-      : (SOURCES.find((s) => s.id === source)?.label ?? "Layers");
+      ? (modes.find((m) => m.id === props.composite)?.label ?? "Compuesto")
+      : (sources.find((s) => s.id === source)?.label ?? "Layers");
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         onClick={() => onOpenChange(!open)}
-        className={open ? "chip chip-active" : "chip"}
+        className={`${open ? "chip chip-active" : "chip"} min-w-0 max-w-full`}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        Layers · {activeLabel}
+        <span className="truncate">{t("layers")} · {activeLabel}</span>
         <span className="ml-1.5 text-[0.6rem]">{open ? "▲" : "▼"}</span>
       </button>
 
@@ -68,10 +72,10 @@ export default function LayerMenu(props: Props) {
           role="menu"
           className="absolute left-0 top-[calc(100%+0.5rem)] z-[1200] max-h-[calc(100vh-6rem)] w-[17rem] overflow-y-auto rounded-xl border border-border bg-card/95 p-3 shadow-[0_24px_60px_-20px_oklch(0_0_0/0.75)] backdrop-blur-xl"
         >
-          <h3 className="section-title">Compuesto radares España</h3>
+          <h3 className="section-title">{t("composite")}</h3>
           <p className="hint mt-1">{props.compositeNote}</p>
           <div className="mt-2 space-y-1">
-            {COMPOSITE_MODES.map((m) => (
+            {modes.map((m) => (
               <button
                 key={m.id}
                 role="menuitemradio"
@@ -89,12 +93,12 @@ export default function LayerMenu(props: Props) {
             ))}
           </div>
 
-          <h3 className="section-title mt-4">Tile layer</h3>
+          <h3 className="section-title mt-4">{t("tileLayer")}</h3>
           {props.composite !== "off" && (
-            <p className="hint mt-1">Oculta mientras el compuesto está activo.</p>
+            <p className="hint mt-1">{t("tileHidden")}</p>
           )}
           <div className="mt-2 space-y-1">
-            {SOURCES.map((s) => (
+            {sources.map((s) => (
               <button
                 key={s.id}
                 role="menuitemradio"
@@ -112,11 +116,11 @@ export default function LayerMenu(props: Props) {
             ))}
           </div>
 
-          <h3 className="section-title mt-4">Overlays</h3>
+          <h3 className="section-title mt-4">{t("overlays")}</h3>
           <label className="mt-2 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>
-              <span className="block text-xs font-medium text-foreground">OPERA raw stations</span>
-              <span className="hint block">{props.stationCount} stations · click to inspect</span>
+              <span className="block text-xs font-medium text-foreground">{t("operaStations")}</span>
+              <span className="hint block">{t("stationsInspect", { n: props.stationCount })}</span>
             </span>
             <input
               type="checkbox"
@@ -128,7 +132,7 @@ export default function LayerMenu(props: Props) {
 
           <label className="mt-1 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>
-              <span className="block text-xs font-medium text-foreground">AEMET weather stations</span>
+              <span className="block text-xs font-medium text-foreground">{t("aemetStations")}</span>
               <span className="hint block">{props.aemetNote}</span>
             </span>
             <input
@@ -146,7 +150,7 @@ export default function LayerMenu(props: Props) {
             }}
             className="chip mt-3 w-full justify-center"
           >
-            Settings
+            {t("settings")}
           </button>
         </div>
       )}

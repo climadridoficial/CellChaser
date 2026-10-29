@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { RadarStation } from "@/lib/ord";
@@ -36,6 +37,7 @@ export default function RadarMap({
   onAemetBounds,
   composite,
 }: Props) {
+  const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
   const aemetRef = useRef<L.LayerGroup | null>(null);
   const aemetHandler = useRef(onSelectAemet);
@@ -274,7 +276,7 @@ export default function RadarMap({
   };
 
   const label =
-    locMode === "on" ? "Ubicación activada (pulsa para modo brújula)" : locMode === "heading" ? "Modo brújula (pulsa para desactivar)" : "Ubicación desactivada (pulsa para activar)";
+    locMode === "on" ? t("locationOn") : locMode === "heading" ? t("locationHeading") : t("locationOff");
 
   return (
     <div className="relative h-full w-full">

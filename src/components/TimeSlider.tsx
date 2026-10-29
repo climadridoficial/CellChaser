@@ -1,6 +1,7 @@
+import { useI18n } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
-import { formatAgo, slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
+import { slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
 
 interface Props {
   at: number | null;
@@ -13,6 +14,7 @@ const PLAY_MS = 700;
 const COMMIT_MS = 250;
 
 export default function TimeSlider({ at, onChange, loading, note }: Props) {
+  const { t, locale } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   const [draft, setDraft] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -49,16 +51,16 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
   const shown = slotAt(index, now);
   const label =
     shown === null
-      ? "Ahora"
-      : `${new Date(shown).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · ${formatAgo(now - shown)}`;
+      ? t("now")
+      : `${new Date(shown).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} · ${t("ago", { t: `${Math.floor((now - shown) / 3600_000) ? `${Math.floor((now - shown) / 3600_000)} h ` : ""}${Math.floor((now - shown) / 60_000) % 60} min` })}`;
 
   return (
-    <div className="time-slider" role="group" aria-label="Línea de tiempo del radar">
+    <div className="time-slider" role="group" aria-label={t("timeline")}>
       <button
         type="button"
         className="time-slider-btn"
         onClick={() => setPlaying((p) => !p)}
-        aria-label={playing ? "Pausar animación" : "Reproducir las últimas horas"}
+        aria-label={playing ? t("pause") : t("play")}
       >
         {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
       </button>
@@ -66,11 +68,11 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
         <div className="flex items-baseline justify-between gap-2 text-[0.7rem]">
           <span className="font-medium text-foreground">
             {label}
-            {loading && <span className="text-muted-foreground"> · cargando…</span>}
+            {loading && <span className="text-muted-foreground"> · {t("loading")}</span>}
           </span>
           {shown !== null && (
             <button type="button" className="text-primary" onClick={() => { setPlaying(false); onChange(null); }}>
-              En directo
+              {t("live")}
             </button>
           )}
         </div>
@@ -82,13 +84,13 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
           value={index}
           onChange={(e) => onInput(Number(e.target.value))}
           className="time-slider-range"
-          aria-label={`Hora del radar: ${label}`}
+          aria-label={`${t("radarTime")}: ${label}`}
           aria-valuetext={label}
         />
         <div className="flex justify-between text-[0.6rem] text-muted-foreground">
           <span>-{(STEPS * STEP_MS) / 3600_000} h</span>
-          {note ? <span className="truncate px-2">{note}</span> : <span>cada {STEP_MS / 60_000} min</span>}
-          <span>ahora</span>
+          {note ? <span className="truncate px-2">{note}</span> : <span>{t("every", { n: STEP_MS / 60_000 })}</span>}
+          <span>{t("now")}</span>
         </div>
       </div>
     </div>

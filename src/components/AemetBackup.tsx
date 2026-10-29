@@ -1,7 +1,7 @@
+import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS } from "@/lib/composite";
-import { formatAgo } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
 
@@ -17,6 +17,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 export default function AemetBackup({ code, at }: { code: string; at: number | null }) {
+  const { t, locale } = useI18n();
   const now = useRadarNow();
   const frames = useAemetFrames(at !== null);
   const frame = at !== null ? aemetFrameFor(frames.data, code, at) : null;
@@ -45,35 +46,34 @@ export default function AemetBackup({ code, at }: { code: string; at: number | n
   return (
     <section className="space-y-2">
       <p className="alert">
-        ⚠️ Usando datos de respaldo de AEMET: este radar no está transmitiendo a OPERA
-        (posiblemente en renovación). Reflectividad (dBZ), actualizada cada 10 min.
+        {t("backupWarning")}
       </p>
       {stale && (
         <p className="alert">
-          No hay datos actuales de AEMET para este radar. Las imágenes anteriores solo están disponibles en el historial.
+          {t("noCurrent")}
         </p>
       )}
       {at !== null && frames.data && !frame ? (
-        <p className="hint">No hay imagen de AEMET guardada para esa hora.</p>
+        <p className="hint">{t("noSaved")}</p>
       ) : image.isError ? (
-        <p className="hint">No se pudo cargar la imagen de AEMET. Se reintentará en 10 min.</p>
+        <p className="hint">{t("aemetError")}</p>
       ) : image.data && visible ? (
         <>
           <img
             src={image.data.src}
-            alt="Imagen de reflectividad del radar AEMET"
+            alt={t("aemetImage")}
             className="w-full rounded-md border border-border"
             style={{ imageRendering: "pixelated" }}
           />
           {observed !== null && !stale && (
             <p className="hint">
-              Imagen de las {new Date(observed).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} (
-              {formatAgo(now - observed)}).
+              {t("imageAt", { time: new Date(observed).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }) })} (
+              {t("ago", { t: `${Math.round((now - observed) / 60_000)} min` })}).
             </p>
           )}
         </>
       ) : (
-        <p className="hint">Sin imagen actual de AEMET.</p>
+        <p className="hint">{t("noCurrent")}</p>
       )}
     </section>
   );
