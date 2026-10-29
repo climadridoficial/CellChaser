@@ -44,6 +44,7 @@ export function proxiedFileUrl(href: string): string {
 
 // Each volume holds every product and elevation: download it once and reuse
 // it for the composite, the station panel and product/elevation switches.
+const geometryCache = new Map<string, Int32Array>();
 const fileCache = new Map<string, Promise<ArrayBuffer>>();
 function downloadScan(href: string): Promise<ArrayBuffer> {
   let hit = fileCache.get(href);
@@ -159,18 +160,36 @@ export async function decodeAndRender(opts: {
   const effectiveEarth = earth * 4 / 3;
   const tilt = best.elangle * radians;
 
+  // Pixel → data-cell geometry is identical for every scan of one radar and
+  // tilt, so it is computed once and reused for the whole time window.
+  const geoKey = [size, lat, lon, rangeM, rstart, rscale, nbins, nrays, best.elangle, rays.length, rays[0], rays[900], rays[1800], rays[2700]].join("|");
+  let cells = geometryCache.get(geoKey);
+  if (!cells) {
+    cells = new Int32Array(size * size).fill(-1);
+    for (let y = 0; y < size; y++) {
+      const pixelLat = latitudeFromY(topY - (y + 0.5) / size * (topY - bottomY));
+      for (let x = 0; x < size; x++) {
+        const pixelLon = west + (x + 0.5) / size * (east - west);
+        const { distance, bearing } = polarAt(pixelLat, pixelLon, lat, lon);
+        const arc = distance / effectiveEarth;
+        const range = effectiveEarth * Math.sin(arc) / Math.cos(tilt + arc);
+        if (range > rangeM || range < rstart) continue;
+        const ray = rays[Math.floor(bearing * 10)];
+        if (ray === undefined || ray < 0) continue;
+        const bin = Math.min(nbins - 1, Math.floor((range - rstart) / rscale));
+        cells[y * size + x] = ray * nbins + bin;
+      }
+    }
+    geometryCache.set(geoKey, cells);
+    while (geometryCache.size > 12) geometryCache.delete(geometryCache.keys().next().value!);
+  }
+  const colours = new Map<number, readonly [number, number, number, number]>();
+
   for (let y = 0; y < size; y++) {
-    const pixelLat = latitudeFromY(topY - (y + 0.5) / size * (topY - bottomY));
     for (let x = 0; x < size; x++) {
-      const pixelLon = west + (x + 0.5) / size * (east - west);
-      const { distance, bearing } = polarAt(pixelLat, pixelLon, lat, lon);
-      const arc = distance / effectiveEarth;
-      const range = effectiveEarth * Math.sin(arc) / Math.cos(tilt + arc);
-      if (range > rangeM || range < rstart) continue;
-      const ray = rays[Math.floor(bearing * 10)];
-      if (ray === undefined || ray < 0) continue;
-      const bin = Math.min(nbins - 1, Math.floor((range - rstart) / rscale));
-      const raw = values[ray * nbins + bin];
+      const cell = cells[y * size + x]!;
+      if (cell < 0) continue;
+      const raw = values[cell];
       if (raw === undefined) continue;
       if (raw === nodata || raw === undetect) continue;
       // Velocity: raw 0 is the conventional "no echo" code even if undetect isn't declared.
@@ -183,7 +202,12 @@ export async function decodeAndRender(opts: {
       }
       if (value < vMin) vMin = value;
       if (value > vMax) vMax = value;
-      const [r, g, b, a] = colorFor(info, value);
+      let colour = colours.get(raw);
+      if (!colour) {
+        colour = colorFor(info, value) as readonly [number, number, number, number];
+        colours.set(raw, colour);
+      }
+      const [r, g, b, a] = colour;
       if (a === 0) continue;
       const idx = (y * size + x) * 4;
       px[idx] = r;
