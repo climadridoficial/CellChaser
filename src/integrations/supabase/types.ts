@@ -68,6 +68,48 @@ export type Database = {
         }
         Relationships: []
       }
+      storm_cell_frames: {
+        Row: {
+          cells: Json
+          observed_at: string
+          radar_id: string
+          source: string
+        }
+        Insert: {
+          cells?: Json
+          observed_at: string
+          radar_id: string
+          source: string
+        }
+        Update: {
+          cells?: Json
+          observed_at?: string
+          radar_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      storm_track_frames: {
+        Row: {
+          observed_at: string
+          radar_id: string
+          source: string
+          tracks: Json
+        }
+        Insert: {
+          observed_at: string
+          radar_id: string
+          source: string
+          tracks?: Json
+        }
+        Update: {
+          observed_at?: string
+          radar_id?: string
+          source?: string
+          tracks?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -22,6 +22,13 @@
       "when": 1793259720897,
       "tag": "0002_aemet_radar_frames_image",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793297967574,
+      "tag": "0003_shared_storm_frames",
+      "breakpoints": true
     }
   ]
 }
