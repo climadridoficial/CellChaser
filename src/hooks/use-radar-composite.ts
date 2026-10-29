@@ -199,6 +199,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const qc = useQueryClient();
   const historyMode = at !== null;
   const tasks = useMemo(() => {
+    console.debug("preload-check", historyMode, mode);
     if (!historyMode || mode === "off") return [];
     if (history.some((q, i) => q.isPending && !radars[i]?.offline && (wantOpera || !aemetCodes[i]))) return [];
     const base = Date.now();
@@ -222,6 +223,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         }
       });
     }
+    console.debug("preload-plan", seen.size, frames.data?.length);
     return [...seen.entries()];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyMode, mode, radars, frames.data, history.map((q) => q.dataUpdatedAt).join(","), history.map((q) => q.isPending).join(",")]);
