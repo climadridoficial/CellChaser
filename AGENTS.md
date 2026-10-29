@@ -18,5 +18,5 @@
 - The Spain radar composite chooses a source per radar via compositeSource() in src/lib/composite.ts and hides tile layers while active; OPERA composite scans render at a reduced canvas size because ten decodes run at once.
 - AEMET alignment and echo display share the same validated image crop and Leaflet bounds; this preserves manual registration across image refreshes without inventing geographic precision.
 - Store radar alignments per authenticated user and radar code in Cloud with owner-scoped RLS; no anonymous writes or browser-only durable calibration storage.
-- AEMET echo masking preserves original echo colours and only conservatively removes thin shared-colour linework; never use generative image editing for measured weather data.
+- AEMET outline removal uses fixed per-radar outline maps in public/aemet-masks (captured from near-rain-free frames), falling back to the thin-line heuristic if the layout no longer matches; outline pixels over rain take the dominant neighbouring echo colour only, never generative image editing.
 - Keep lazy map loading inside its own error boundary with explicit reload recovery; stale preview module failures must not blank the entire radar app.
