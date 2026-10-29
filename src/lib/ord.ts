@@ -157,6 +157,9 @@ export async function fetchScanFiles(
   return [...new Map(files.map((f) => [f.href, f])).values()];
 }
 
+/** Spain + Portugal: the default coverage area. */
+export const IBERIA = ["724", "620"];
+
 export const COUNTRIES: { code: string; label: string }[] = [
   { code: "724", label: "Spain (AEMET)" },
   { code: "620", label: "Portugal" },

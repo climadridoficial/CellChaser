@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: RadarSettings = {
   librewxrUrl: "https://api.librewxr.net",
   meteogateKey: "",
   aemetKey: "",
-  country: "724",
+  country: "iberia",
   composite: "opendata",
 };
 
@@ -36,6 +36,9 @@ export function useSettings() {
         const stored = JSON.parse(raw) as RadarSettings;
         // Older versions stored an empty LibreWXR URL; fall back to the public instance.
         if (!stored.librewxrUrl?.trim()) stored.librewxrUrl = DEFAULT_SETTINGS.librewxrUrl;
+        // Spain-only was the old default; widen it to Spain + Portugal.
+        if (stored.country === "724" && !window.localStorage.getItem("radares.iberia")) stored.country = "iberia";
+        window.localStorage.setItem("radares.iberia", "1");
         setSettings({ ...DEFAULT_SETTINGS, ...stored });
       }
     } catch {

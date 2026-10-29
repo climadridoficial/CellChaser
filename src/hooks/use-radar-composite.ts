@@ -37,7 +37,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const history = useQueries({
     queries: radars.map((s) => ({
       queryKey: ["opera-history", s.id, apiKey],
-      enabled: !s.offline && wantOpera,
+      enabled: !s.offline && (wantOpera || !aemetCodeFor(s)),
       staleTime: REFRESH_MS,
       refetchInterval: REFRESH_MS,
       retry: 1,

@@ -1,4 +1,4 @@
-import { fetchStations, fetchScanHistory, pickScan } from "./ord";
+import { IBERIA, fetchStations, fetchScanHistory, pickScan } from "./ord";
 import { detectCells, confirmedStormTracks, type Cell, type CellFrame } from "./storm-tracking";
 import { operaStormGrid } from "./storm-grid";
 import { aemetStormGrid } from "./storm-aemet-grid";
@@ -29,7 +29,7 @@ export async function processAemetStormFrame(client: Client, code: string, time:
 
 /** Scheduled ingest, not a per-viewer computation. Concurrency stays below six. */
 export async function refreshOperaStorms(client: Client) {
-  const stations = (await fetchStations()).filter(s=>s.country==="724");
+  const stations = (await fetchStations()).filter(s=>IBERIA.includes(s.country.replace(/^0+/,"")));
   const results: {radarId:string;ok:boolean}[] = [];
   for (let i=0;i<stations.length;i+=2) {
     await Promise.all(stations.slice(i,i+2).map(async station=>{
