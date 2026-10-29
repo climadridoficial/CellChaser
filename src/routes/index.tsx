@@ -134,7 +134,9 @@ function Home() {
     at === null ? (frames[frames.length - 1] ?? null) : pickFrame(frames, (f) => f.time * 1000, at);
   const tileUrl = compositeOn ? null : tileTemplate(settings, tileFrame?.path ?? null, tileSource);
   const sliderNote =
-    !compositeOn && tileSource !== "none" && at !== null && frames.length > 0 && !tileFrame && !scan
+    compositeOn && at !== null && !composite.loading && composite.layers.length === 0
+      ? "Sin imágenes guardadas para esa hora"
+      : !compositeOn && tileSource !== "none" && at !== null && frames.length > 0 && !tileFrame && !scan
       ? `${tileSource === "librewxr" ? "LibreWXR" : "RainViewer"} solo guarda ~2 h`
       : null;
 
