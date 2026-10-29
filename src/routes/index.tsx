@@ -64,6 +64,7 @@ function Home() {
     queryKey: ["radar-index", tileSource, settings.librewxrUrl],
     enabled: tileSource !== "none",
     staleTime: 4 * 60_000,
+    refetchInterval: 5 * 60_000,
     queryFn: async () => {
       const base =
         tileSource === "librewxr"

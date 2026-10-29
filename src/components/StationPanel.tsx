@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
 import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
@@ -8,6 +8,7 @@ import { legendStops, productInfo } from "@/lib/radar-products";
 import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
 import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
+import { pickFrame } from "@/lib/timeline";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 const TIME_RANGES = [
@@ -23,9 +24,18 @@ interface Props {
   onClose: () => void;
   onScan: (scan: RenderedScan | null) => void;
   onAlignAemet: (code: string) => void;
+  /** Map time slider position (null = live). */
+  at: number | null;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet }: Props) {
+/** Scan shown for the slider time: newest at or before it, else the oldest listed. */
+function fileFor(list: ScanFile[], at: number | null): string | null {
+  if (!list.length) return null;
+  if (at === null) return list[0]!.href;
+  return (pickFrame(list, (f) => Date.parse(f.time), at, Infinity) ?? list[list.length - 1]!).href;
+}
+
+export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at }: Props) {
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
@@ -37,6 +47,17 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const atRef = useRef(at);
+  atRef.current = at;
+
+  // Follow the map time slider: widen the time range if needed, then pick the scan.
+  useEffect(() => {
+    if (at !== null) {
+      const needed = (Date.now() - at) / 3600_000;
+      const range = TIME_RANGES.find((r) => r.hours >= needed)?.hours ?? 24;
+      setHours((h) => (h >= needed ? h : range));
+    }
+  }, [at]);
 
   // Availability for this station
   useEffect(() => {
@@ -108,7 +129,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
         if (cancelled) return;
         setFiles(list);
         setFilesKey(selectionKey);
-        setSelectedTime(list[0]?.href ?? null);
+        setSelectedTime(fileFor(list, atRef.current));
         setStatus(list.length ? null : "No scans published in this time range.");
       })
       .catch((e: Error) => {
@@ -122,6 +143,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       cancelled = true;
     };
   }, [entry, station.id, hours, apiKey, selectionKey, onScan]);
+
+  useEffect(() => {
+    if (files && filesKey === selectionKey) setSelectedTime(fileFor(files, at));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [at]);
 
   // Decode + render the selected scan
   useEffect(() => {
@@ -200,7 +226,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {AEMET_ALIGNMENT_ENABLED && backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
-        {showBackup && backupCode && <AemetBackup code={backupCode} />}
+        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} />}
         {!station.offline && (<>
         <section>
           <h3 className="section-title">Product</h3>
