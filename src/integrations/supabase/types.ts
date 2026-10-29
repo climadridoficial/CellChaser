@@ -18,18 +18,21 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          image_b64: string | null
           observed_at: string
           path: string
         }
         Insert: {
           code: string
           created_at?: string
+          image_b64?: string | null
           observed_at: string
           path: string
         }
         Update: {
           code?: string
           created_at?: string
+          image_b64?: string | null
           observed_at?: string
           path?: string
         }
