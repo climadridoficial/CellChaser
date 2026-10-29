@@ -146,33 +146,40 @@ function loadOutline(code: string): Promise<Uint8Array | null> {
   return pending;
 }
 
-export async function loadAemetImages(code: string, tick: number): Promise<{ original: string; echoes: string }> {
+/** Latest image; `observedAt` is the time printed on it (null if unreadable). */
+export async function loadAemetImages(code: string, tick: number): Promise<{ original: string; echoes: string; observedAt: string | null }> {
   const response = await fetch(`/api/public/aemet-radar?r=${encodeURIComponent(code)}&t=${tick}`);
   if (!response.ok) throw new Error('No se pudo cargar la imagen de AEMET.');
+  const observedAt = response.headers.get('x-observed-at');
   const blobUrl = URL.createObjectURL(await response.blob());
   try {
-    const img = new Image();
-    img.src = blobUrl;
-    await img.decode();
-    if (img.naturalWidth !== 480 || img.naturalHeight !== 530) throw new Error('El formato de la imagen de AEMET ha cambiado; no se aplicará una alineación incorrecta.');
-    const canvas = document.createElement('canvas');
-    canvas.width = 480;
-    canvas.height = 460;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('No se pudo procesar la imagen.');
-    // Same crop in alignment and echo mode: no header, footer or colour legend.
-    ctx.drawImage(img, 0, 20, 480, 460, 0, 0, 480, 460);
-    const original = canvas.toDataURL('image/png');
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const outline = await loadOutline(code);
-    // A shifted AEMET layout would put the outline map on background pixels.
-    const usable = outline && outlineMismatch(pixels.data, outline) < 0.2;
-    pixels.data.set(usable
-      ? removeOutlines(pixels.data, canvas.width, canvas.height, outline)
-      : maskEchoPixels(pixels.data, canvas.width, canvas.height));
-    ctx.putImageData(pixels, 0, 0);
-    return { original, echoes: canvas.toDataURL('image/png') };
+    return { ...(await processAemetImage(code, blobUrl)), observedAt };
   } finally {
     URL.revokeObjectURL(blobUrl);
   }
+}
+
+/** Crops the raw AEMET GIF at `src` and strips everything but the echoes. */
+export async function processAemetImage(code: string, src: string): Promise<{ original: string; echoes: string }> {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  if (img.naturalWidth !== 480 || img.naturalHeight !== 530) throw new Error('El formato de la imagen de AEMET ha cambiado; no se aplicará una alineación incorrecta.');
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 460;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No se pudo procesar la imagen.');
+  // Same crop in alignment and echo mode: no header, footer or colour legend.
+  ctx.drawImage(img, 0, 20, 480, 460, 0, 0, 480, 460);
+  const original = canvas.toDataURL('image/png');
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const outline = await loadOutline(code);
+  // A shifted AEMET layout would put the outline map on background pixels.
+  const usable = outline && outlineMismatch(pixels.data, outline) < 0.2;
+  pixels.data.set(usable
+    ? removeOutlines(pixels.data, canvas.width, canvas.height, outline)
+    : maskEchoPixels(pixels.data, canvas.width, canvas.height));
+  ctx.putImageData(pixels, 0, 0);
+  return { original, echoes: canvas.toDataURL('image/png') };
 }

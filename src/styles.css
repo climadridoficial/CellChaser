@@ -421,3 +421,47 @@
   background: var(--card);
 }
 .aemet-alignment-bar input { accent-color: var(--primary); }
+
+/* Map time slider: under the toolbar on phones, bottom centre on desktop. */
+.time-slider {
+  position: absolute;
+  z-index: 1050;
+  top: 4.4rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background-color: color-mix(in oklab, var(--card) 90%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 40px -22px oklch(0 0 0 / 0.8);
+}
+@media (min-width: 768px) {
+  .time-slider {
+    top: auto;
+    bottom: 1.75rem;
+    left: 24.5rem;
+    right: 4rem;
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+}
+.time-slider-btn {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--primary) 65%, transparent);
+  background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+  color: var(--primary);
+}
+.time-slider-range {
+  width: 100%;
+  accent-color: var(--primary);
+  margin-block: 0.15rem;
+}

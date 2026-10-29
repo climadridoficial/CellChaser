@@ -14,3 +14,8 @@
 # Spain radar composite
 - [x] OpenData images on the map by default.
 - [x] Modes: only OpenData, OPERA else OpenData, only OPERA, off.
+## Time slider
+- [x] 6 h history slider, 10-min steps, play/pause, "En directo"
+- [x] OPERA composite + station panel follow the slider
+- [x] AEMET archive (every 5 min) + footer timestamp reading
+- [x] Footer digits 4, 5, 8 solved from publishing lag until real glyphs are captured

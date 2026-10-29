@@ -187,18 +187,22 @@ export function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code || c.code === code.padStart(3, "0"))?.label ?? `Country ${code}`;
 }
 
-/**
- * Newest scan of `product` at the station's lowest elevation, in one request.
- * Prefers reflectivity-only volumes (long range) over Doppler ones.
- */
-export async function fetchLatestScan(
+export interface ScanCandidate {
+  href: string;
+  time: string; // ISO
+  level: number;
+  doppler: boolean;
+}
+
+/** Every ODIM file publishing `product` in the last `hours` (one request). */
+export async function fetchScanHistory(
   platform: string,
   product: string,
-  maxAgeMs: number,
+  hours: number,
   apiKey?: string,
-): Promise<{ href: string; time: string; level: number } | null> {
+): Promise<ScanCandidate[]> {
   const end = new Date();
-  const start = new Date(end.getTime() - maxAgeMs);
+  const start = new Date(end.getTime() - hours * 3600_000);
   const iso = (d: Date) => d.toISOString().replace(/\.\d+Z$/, "Z");
   const data = await getJson<{
     coverages?: {
@@ -210,7 +214,7 @@ export async function fetchLatestScan(
     `${COLLECTION}/locations/${encodeURIComponent(platform)}?format=ODIM&datetime=${iso(start)}/${iso(end)}`,
     apiKey,
   );
-  let best: { href: string; time: string; level: number; doppler: boolean } | null = null;
+  const out = new Map<string, ScanCandidate>();
   for (const cov of data.coverages ?? []) {
     const params = Object.keys(cov.parameters ?? {});
     if (!params.some((p) => p.split(":")[0] === product)) continue;
@@ -222,13 +226,39 @@ export async function fetchLatestScan(
       const m = FILE_TIME.exec(link.href);
       if (!m) continue;
       const time = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`;
-      const better =
-        !best ||
-        level < best.level ||
-        (level === best.level && best.doppler && !doppler) ||
-        (level === best.level && best.doppler === doppler && time > best.time);
-      if (better) best = { href: link.href, time, level, doppler };
+      out.set(link.href, { href: link.href, time, level, doppler });
     }
   }
+  return [...out.values()];
+}
+
+/**
+ * Best scan observed in (at − windowMs, at + 1 min]: lowest elevation first,
+ * reflectivity-only (long range) volumes over Doppler ones, then newest.
+ */
+export function pickScan(candidates: ScanCandidate[], at: number, windowMs: number): ScanCandidate | null {
+  let best: ScanCandidate | null = null;
+  for (const c of candidates) {
+    const t = Date.parse(c.time);
+    if (t > at + 60_000 || t <= at - windowMs) continue;
+    const better =
+      !best ||
+      c.level < best.level ||
+      (c.level === best.level && best.doppler && !c.doppler) ||
+      (c.level === best.level && best.doppler === c.doppler && c.time > best.time);
+    if (better) best = c;
+  }
+  return best;
+}
+
+/** Newest scan of `product` at the station's lowest elevation, in one request. */
+export async function fetchLatestScan(
+  platform: string,
+  product: string,
+  maxAgeMs: number,
+  apiKey?: string,
+): Promise<{ href: string; time: string; level: number } | null> {
+  const all = await fetchScanHistory(platform, product, maxAgeMs / 3600_000, apiKey);
+  const best = pickScan(all, Date.now(), maxAgeMs);
   return best ? { href: best.href, time: best.time, level: best.level } : null;
 }

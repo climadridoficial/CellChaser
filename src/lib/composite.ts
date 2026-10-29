@@ -24,3 +24,6 @@ export function compositeSource(mode: CompositeMode, hasAemet: boolean, opera: O
 
 /** Newest scans older than this are treated as "not transmitting". */
 export const OPERA_MAX_AGE_MS = 40 * 60_000;
+
+/** Live AEMET images older than this are hidden (a broken radar's last image lingers for days). */
+export const AEMET_LIVE_MAX_AGE_MS = 60 * 60_000;

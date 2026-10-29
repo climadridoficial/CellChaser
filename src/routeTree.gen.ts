@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAemetRouteImport } from './routes/api/public/aemet'
 import { Route as ApiPublicAemetRadarRouteImport } from './routes/api/public/aemet-radar'
 import { Route as ApiPublicOdimRouteImport } from './routes/api/public/odim'
+import { Route as ApiPublicJobsAemetArchiveRouteImport } from './routes/api/public/jobs/aemet-archive'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,26 @@ const ApiPublicOdimRoute = ApiPublicOdimRouteImport.update({
   path: '/api/public/odim',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsAemetArchiveRoute =
+  ApiPublicJobsAemetArchiveRouteImport.update({
+    id: '/api/public/jobs/aemet-archive',
+    path: '/api/public/jobs/aemet-archive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
+  '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
+  '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,19 +62,30 @@ export interface FileRoutesById {
   '/api/public/aemet': typeof ApiPublicAemetRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
+  '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/api/public/aemet' | '/api/public/aemet-radar' | '/api/public/odim'
+    | '/'
+    | '/api/public/aemet'
+    | '/api/public/aemet-radar'
+    | '/api/public/odim'
+    | '/api/public/jobs/aemet-archive'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/aemet' | '/api/public/aemet-radar' | '/api/public/odim'
+  to:
+    | '/'
+    | '/api/public/aemet'
+    | '/api/public/aemet-radar'
+    | '/api/public/odim'
+    | '/api/public/jobs/aemet-archive'
   id:
     | '__root__'
     | '/'
     | '/api/public/aemet'
     | '/api/public/aemet-radar'
     | '/api/public/odim'
+    | '/api/public/jobs/aemet-archive'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -73,6 +93,7 @@ export interface RootRouteChildren {
   ApiPublicAemetRoute: typeof ApiPublicAemetRoute
   ApiPublicAemetRadarRoute: typeof ApiPublicAemetRadarRoute
   ApiPublicOdimRoute: typeof ApiPublicOdimRoute
+  ApiPublicJobsAemetArchiveRoute: typeof ApiPublicJobsAemetArchiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -105,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOdimRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/aemet-archive': {
+      id: '/api/public/jobs/aemet-archive'
+      path: '/api/public/jobs/aemet-archive'
+      fullPath: '/api/public/jobs/aemet-archive'
+      preLoaderRoute: typeof ApiPublicJobsAemetArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -113,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAemetRoute: ApiPublicAemetRoute,
   ApiPublicAemetRadarRoute: ApiPublicAemetRadarRoute,
   ApiPublicOdimRoute: ApiPublicOdimRoute,
+  ApiPublicJobsAemetArchiveRoute: ApiPublicJobsAemetArchiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
