@@ -18,7 +18,6 @@ const PLAY_MS = 500;
 export default function TimeSlider({ at, onChange, loading, preload, note }: Props) {
   const { t, locale } = useI18n();
   const [now, setNow] = useState(() => Date.now());
-  const [draft, setDraft] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const preloading = !!preload && preload.total > 0 && preload.done < preload.total;
 
