@@ -48,15 +48,15 @@ export default function LayerMenu(props: Props) {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, onOpenChange]);
 
-  const modes = modes.map((m) => ({ ...m, label: t(m.id === "opendata" ? "modeOpendata" : m.id === "opera-fallback" ? "modeFallback" : m.id === "opera" ? "modeOpera" : "off"), note: t(m.id === "opendata" ? "noteOpendata" : m.id === "opera-fallback" ? "noteFallback" : m.id === "opera" ? "noteOpera" : "noteOff") }));
-  const sources = sources.map((s) => ({ ...s, label: t(s.id === "rainviewer" ? "rainviewer" : s.id === "librewxr" ? "librewxr" : "noTiles"), note: t(s.id === "rainviewer" ? "rainviewerNote" : s.id === "librewxr" ? "librewxrNote" : "baseOnly") }));
+  const modes = COMPOSITE_MODES.map((m) => ({ ...m, label: t(m.id === "opendata" ? "modeOpendata" : m.id === "opera-fallback" ? "modeFallback" : m.id === "opera" ? "modeOpera" : "off"), note: t(m.id === "opendata" ? "noteOpendata" : m.id === "opera-fallback" ? "noteFallback" : m.id === "opera" ? "noteOpera" : "noteOff") }));
+  const sources = SOURCES.map((s) => ({ ...s, label: t(s.id === "rainviewer" ? "rainviewer" : s.id === "librewxr" ? "librewxr" : "noTiles"), note: t(s.id === "rainviewer" ? "rainviewerNote" : s.id === "librewxr" ? "librewxrNote" : "baseOnly") }));
   const activeLabel =
     props.composite !== "off"
       ? (modes.find((m) => m.id === props.composite)?.label ?? "Compuesto")
       : (sources.find((s) => s.id === source)?.label ?? "Layers");
 
   return (
-    <div ref={ref} className="relative min-w-0">
+    <div ref={ref} className="relative min-w-0 flex-1">
       <button
         onClick={() => onOpenChange(!open)}
         className={`${open ? "chip chip-active" : "chip"} min-w-0 max-w-full`}

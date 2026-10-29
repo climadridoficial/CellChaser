@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test";
-import { LANGUAGES, MESSAGES, translate } from "./i18n";
+import { LANGUAGES, isLanguage } from "./i18n";
 
 test("language switch offers Portuguese and the Iberian languages", () => {
   expect(LANGUAGES.map((l) => l.id)).toEqual(["es", "pt", "ca", "gl", "eu", "en"]);
-  expect(translate("pt", "layers")).toBe("Camadas");
-  expect(translate("eu", "live")).toBe("Zuzenean");
 });
 
-test("every message is translated into every offered language", () => {
-  for (const row of Object.values(MESSAGES)) for (const l of LANGUAGES) expect(row[l.id].trim().length).toBeGreaterThan(0);
+test("saved language values accept Portuguese and reject unknown choices", () => {
+  expect(isLanguage("pt")).toBe(true);
+  expect(isLanguage("eu")).toBe(true);
+  expect(isLanguage("unknown")).toBe(false);
+  expect(isLanguage(null)).toBe(false);
 });

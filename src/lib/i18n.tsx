@@ -118,13 +118,15 @@ const LanguageContext = createContext<{ lang: Lang; locale: string; setLang: (la
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("es");
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (LANGUAGES.some((l) => l.id === saved)) setLangState(saved as Lang);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (isLanguage(saved)) setLangState(saved);
+    } catch { /* Storage may be disabled; switching still works. */ }
   }, []);
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const setLang = useCallback((next: Lang) => {
     setLangState(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    try { localStorage.setItem(STORAGE_KEY, next); } catch { /* Use this session's choice. */ }
   }, []);
   const t = useCallback((key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars), [lang]);
   const locale = LANGUAGES.find((l) => l.id === lang)?.locale ?? "es-ES";

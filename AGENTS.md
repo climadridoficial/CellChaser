@@ -22,4 +22,5 @@
 - Keep lazy map loading inside its own error boundary with explicit reload recovery; stale preview module failures must not blank the entire radar app.
 - One shared time-slider position (null = live, 10-minute slots, src/lib/timeline.ts) drives tiles, the Spain composite and the station panel; every source publishes on that cadence, so frames are matched only within their own slot.
 - Apply the shared radar-freshness predicate and periodic expiry checks to composite and station displays; live endpoints never substitute archived frames, preventing cached outage data from appearing live.
+- Keep interface translations in the typed i18n catalog and render through LanguageProvider/useI18n; persist language only after hydration so switching does not disturb radar state or server rendering.
 - AEMET regional history comes from our own archive (aemet_radar_frames, filled every 5 min by the scheduled /api/public/jobs/aemet-archive route) because OpenData serves only the latest image; frames are labelled with the time read from the GIF footer (src/lib/aemet-timestamp.ts), never the fetch time, since AEMET lags and keeps serving stale images.
