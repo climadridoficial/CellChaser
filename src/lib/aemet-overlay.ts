@@ -79,19 +79,17 @@ export function removeOutlines(data: Uint8ClampedArray, width: number, height: n
       }
       // Non-yellow echo on an outline pixel is measured data drawn over the line.
       if (rgb !== YELLOW && ECHO_COLOURS.has(rgb)) { output[i * 4 + 3] = 255; continue; }
-      const counts = new Map<number, number>();
-      let echoes = 0;
+      const neighbours: number[] = [];
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         const nx = x + dx, ny = y + dy;
         if ((dx === 0 && dy === 0) || nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
         const j = ny * width + nx;
         if (outline[j] || !ECHO_COLOURS.has(colour(j))) continue;
-        echoes++;
-        counts.set(j, 1 + (counts.get(j) ?? 0));
+        neighbours.push(j);
       }
-      if (echoes < 4) { output[i * 4 + 3] = 0; continue; }
+      if (neighbours.length < 4) { output[i * 4 + 3] = 0; continue; }
       const tally = new Map<string, { n: number; j: number }>();
-      for (const j of counts.keys()) {
+      for (const j of neighbours) {
         const c = colour(j);
         const t = tally.get(c);
         tally.set(c, { n: (t?.n ?? 0) + 1, j });

@@ -19,3 +19,26 @@ test('rejects reversed and nonfinite saved image bounds', () => {
   expect(validBounds([[40,-3],[37,1]])).toBe(false);
   expect(validBounds([[37,NaN],[40,1]])).toBe(false);
 });
+test('removes every yellow outline pixel on clear sky', async () => {
+  const { removeOutlines } = await import('./aemet-overlay');
+  // 3x1: black, yellow outline, black
+  const px = new Uint8ClampedArray([0,0,0,255, 255,255,0,255, 0,0,0,255]);
+  const out = removeOutlines(px, 3, 1, new Uint8Array([0,1,0]));
+  expect([out[3], out[7], out[11]]).toEqual([0, 0, 0]);
+});
+
+test('keeps yellow 48 dBZ echoes that are not on the outline map', async () => {
+  const { removeOutlines } = await import('./aemet-overlay');
+  const px = new Uint8ClampedArray([255,255,0,255]);
+  expect(removeOutlines(px, 1, 1, new Uint8Array([0]))[3]).toBe(255);
+});
+
+test('an outline crossing rain is filled with the surrounding echo colour', async () => {
+  const { removeOutlines } = await import('./aemet-overlay');
+  // 3x3 blue rain with a yellow outline pixel in the middle
+  const blue = [0,0,252,255];
+  const px = new Uint8ClampedArray([...blue,...blue,...blue, ...blue,255,255,0,255,...blue, ...blue,...blue,...blue]);
+  const outline = new Uint8Array([0,0,0, 0,1,0, 0,0,0]);
+  const out = removeOutlines(px, 3, 3, outline);
+  expect([...out.slice(16, 20)]).toEqual(blue);
+});
