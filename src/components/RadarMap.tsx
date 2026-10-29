@@ -10,7 +10,6 @@ import type { CompositeLayer } from "@/hooks/use-radar-composite";
 import type { CompositeMode } from "@/lib/composite";
 import { useStormTracks } from "@/hooks/use-storm-tracks";
 import StormTracks from "./StormTracks";
-import StormDemo from "./StormDemo";
 
 interface Props {
   tileUrl: string | null;
@@ -56,8 +55,7 @@ export default function RadarMap({
   aemetHandler.current = onSelectAemet;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const [demoActive, setDemoActive] = useState(false);
-  const storms = useStormTracks(showStorms && !demoActive && !aemetImage?.editing, selectedId, stormStations, at, compositeMode);
+  const storms = useStormTracks(showStorms && !aemetImage?.editing, selectedId, stormStations, at, compositeMode);
   const tileRef = useRef<L.TileLayer | null>(null);
   const stationsRef = useRef<L.LayerGroup | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
@@ -296,8 +294,7 @@ export default function RadarMap({
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
       <StormTracks map={mapRef.current} tracks={storms.tracks} />
-      <StormDemo map={mapRef.current} onActiveChange={setDemoActive} />
-      {showStorms && !demoActive && <div className="storm-legend" role="status">
+      {showStorms && <div className="storm-legend" role="status">
         <div className="font-medium">{t("stormForecast")}</div>
         <div className="storm-legend-scale">
           <span><i className="storm-light" />{t("stormLight")} &lt;40</span>

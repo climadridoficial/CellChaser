@@ -14,10 +14,6 @@ type Row = Record<Lang, string>;
 const r = (es: string, pt: string, ca: string, gl: string, eu: string, en: string): Row => ({ es, pt, ca, gl, eu, en });
 
 export const MESSAGES = {
-  stormDemo: r("Demo de tormenta", "Demo de tempestade", "Demo de tempesta", "Demo de treboada", "Ekaitz-demoa", "Storm demo"),
-  stormSimulated: r("DEMO · tormenta simulada", "DEMO · tempestade simulada", "DEMO · tempesta simulada", "DEMO · treboada simulada", "DEMO · simulatutako ekaitza", "DEMO · simulated storm"),
-  stormDemoRestart: r("Reiniciar demo", "Reiniciar demo", "Reinicia demo", "Reiniciar demo", "Berrabiarazi demoa", "Restart demo"),
-  stormDemoScan: r("Escaneo simulado", "Varredura simulada", "Escaneig simulat", "Escaneo simulado", "Simulatutako eskaneatzea", "Simulated scan"),
   stormTracks: r("Movimiento de células", "Movimento das células", "Moviment de cèl·lules", "Movemento das células", "Zelulen mugimendua", "Cell movement"),
   stormForecast: r("Previsión experimental · 30 min", "Previsão experimental · 30 min", "Previsió experimental · 30 min", "Previsión experimental · 30 min", "Iragarpen esperimentala · 30 min", "Experimental forecast · 30 min"),
   stormDisclaimer: r("Estimación por reflectividad; no es un aviso oficial. AEMET: posición e intensidad aproximadas.", "Estimativa por refletividade; não é um aviso oficial. AEMET: posição e intensidade aproximadas.", "Estimació per reflectivitat; no és un avís oficial. AEMET: posició i intensitat aproximades.", "Estimación por reflectividade; non é un aviso oficial. AEMET: posición e intensidade aproximadas.", "Islagarritasunaren araberako estimazioa; ez da abisu ofiziala. AEMET: gutxi gorabeherako kokapena eta intentsitatea.", "Reflectivity estimate, not an official warning. AEMET position and intensity are approximate."),
