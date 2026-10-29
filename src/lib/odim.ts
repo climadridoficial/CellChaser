@@ -162,7 +162,9 @@ export async function decodeAndRender(opts: {
 
   // Pixel → data-cell geometry is identical for every scan of one radar and
   // tilt, so it is computed once and reused for the whole time window.
-  const geoKey = [size, lat, lon, rangeM, rstart, rscale, nbins, nrays, best.elangle, rays.length, rays[0], rays[900], rays[1800], rays[2700]].join("|");
+  let rayHash = 0;
+  for (let i = 0; i < rays.length; i++) rayHash = (Math.imul(rayHash, 31) + rays[i]! + 1) | 0;
+  const geoKey = [size, lat, lon, rangeM, rstart, rscale, nbins, nrays, best.elangle, rayHash].join("|");
   let cells = geometryCache.get(geoKey);
   if (!cells) {
     cells = new Int32Array(size * size).fill(-1);
