@@ -21,6 +21,7 @@ import MapLoadBoundary from "@/components/MapLoadBoundary";
 import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
 import { pickFrame } from "@/lib/timeline";
+import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -121,6 +122,7 @@ function Home() {
     const opera = (stations.data ?? []).filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
     return [...opera, ...aemetOnlyStations(opera)];
   }, [stations.data]);
+  const [stationPreload, setStationPreload] = useState<PreloadProgress>(NO_PRELOAD);
   const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
   const compositeOn = settings.composite !== "off";
   const compositeNote = !compositeOn
@@ -237,6 +239,7 @@ function Home() {
           onClose={closePanel}
           onScan={handleScan}
           at={at}
+          onPreload={setStationPreload}
           onAlignAemet={(code) => {
             setAlignmentTarget({ code, name: selected.name, lat: selected.lat, lon: selected.lon });
             setSelected(null);
@@ -247,7 +250,13 @@ function Home() {
       )}
 
       {!alignmentTarget && (
-        <TimeSlider at={at} onChange={setAt} loading={composite.loading || rainviewer.isFetching} note={sliderNote} />
+        <TimeSlider
+          at={at}
+          onChange={setAt}
+          loading={composite.loading || rainviewer.isFetching}
+          preload={sumProgress(compositeOn ? composite.preload : NO_PRELOAD, selected ? stationPreload : NO_PRELOAD)}
+          note={sliderNote}
+        />
       )}
 
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}

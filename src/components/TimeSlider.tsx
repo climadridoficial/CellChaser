@@ -1,52 +1,49 @@
 import { useI18n } from "@/lib/i18n";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import type { PreloadProgress } from "@/lib/preload";
 import { slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
 
 interface Props {
   at: number | null;
   onChange: (at: number | null) => void;
   loading: boolean;
+  /** Frames of the slider window already loaded; playback waits for all. */
+  preload?: PreloadProgress;
   note?: string | null;
 }
 
-const PLAY_MS = 700;
-const COMMIT_MS = 250;
+const PLAY_MS = 500;
 
-export default function TimeSlider({ at, onChange, loading, note }: Props) {
+export default function TimeSlider({ at, onChange, loading, preload, note }: Props) {
   const { t, locale } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   const [draft, setDraft] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
-  const commitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const preloading = !!preload && preload.total > 0 && preload.done < preload.total;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
 
-  const index = draft ?? slotIndex(at, now);
+  const index = slotIndex(at, now);
 
-  // Dragging only loads the position the finger stops on.
+  // Frames are preloaded, so every step is shown immediately while dragging.
   const onInput = (next: number) => {
     setPlaying(false);
-    setDraft(next);
-    if (commitRef.current) clearTimeout(commitRef.current);
-    commitRef.current = setTimeout(() => {
-      setDraft(null);
-      onChange(slotAt(next, Date.now()));
-    }, COMMIT_MS);
+    onChange(slotAt(next, Date.now()));
   };
 
-  // Playback advances only once the current frame has loaded.
+  // Playback starts once the whole window is loaded, then runs smoothly.
   useEffect(() => {
-    if (!playing || loading) return;
+    if (!playing || loading || preloading) return;
     const id = setTimeout(() => {
       const next = index >= STEPS ? 0 : index + 1;
       onChange(slotAt(next, Date.now()));
     }, index >= STEPS ? PLAY_MS * 2 : PLAY_MS);
     return () => clearTimeout(id);
-  }, [playing, loading, index, onChange]);
+  }, [playing, loading, preloading, index, onChange]);
 
   const shown = slotAt(index, now);
   const label =
@@ -68,7 +65,11 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
         <div className="flex items-baseline justify-between gap-2 text-[0.7rem]">
           <span className="font-medium text-foreground">
             {label}
-            {loading && <span className="text-muted-foreground"> · {t("loading")}</span>}
+            {preloading ? (
+              <span className="text-muted-foreground"> · {t("preloading", { n: preload!.done, total: preload!.total })}</span>
+            ) : (
+              loading && <span className="text-muted-foreground"> · {t("loading")}</span>
+            )}
           </span>
           {shown !== null && (
             <button type="button" className="text-primary" onClick={() => { setPlaying(false); onChange(null); }}>
@@ -76,6 +77,11 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
             </button>
           )}
         </div>
+        {preloading && (
+          <div className="h-0.5 w-full overflow-hidden rounded bg-muted">
+            <div className="h-full bg-primary transition-[width]" style={{ width: `${(100 * preload!.done) / preload!.total}%` }} />
+          </div>
+        )}
         <input
           type="range"
           min={0}
