@@ -489,3 +489,13 @@
 .storm-legend-scale span { display: inline-flex; align-items: center; gap: 0.25rem; }
 .storm-legend-scale i { width: 7px; height: 7px; background: var(--storm-color); }
 @media (min-width: 768px) { .storm-legend { top: 4.75rem; left: auto; right: 0.75rem; } }
+
+.storm-demo-controls {
+  position: absolute; z-index: 1060; bottom: 1.75rem; left: 0.75rem;
+  width: min(18rem, calc(100% - 4rem)); display: flex; flex-direction: column; gap: 0.4rem;
+  padding: 0.5rem; background: var(--card); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.storm-demo-echo { fill: var(--storm-color); stroke: var(--storm-color); }
+.storm-demo-value { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; }
+.storm-demo-value i { width: 8px; height: 8px; background: var(--storm-color); }
