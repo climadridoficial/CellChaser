@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { keepPreviousData, useQueries } from "@tanstack/react-query";
 import type { RadarStation } from "@/lib/ord";
 import { fetchScanHistory, pickScan } from "@/lib/ord";
 import { decodeAndRender } from "@/lib/odim";
@@ -57,7 +57,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         staleTime: Infinity,
         gcTime: 30 * 60_000,
         retry: 1,
-        placeholderData: <T,>(prev: T | undefined) => prev,
+        placeholderData: keepPreviousData,
         queryFn: async () => {
           const scan = await decodeAndRender({
             href: pick!.href,
@@ -107,7 +107,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         refetchInterval: live ? AEMET_REFRESH_MS : (false as const),
         gcTime: 30 * 60_000,
         retry: 2,
-        placeholderData: <T,>(prev: T | undefined) => prev,
+        placeholderData: keepPreviousData,
         queryFn: async (): Promise<{ echoes: string; observedAt: string | null }> => {
           if (live) {
             const images = await loadAemetImages(code!, Math.floor(Date.now() / AEMET_REFRESH_MS));
@@ -159,8 +159,8 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
 
   const loading =
     history.some((q) => q.isFetching) ||
-    scans.some((q) => q.isFetching || q.isPlaceholderData) ||
-    aemet.some((q) => q.isFetching || q.isPlaceholderData) ||
+    scans.some((q, i) => q.isFetching || (!!picks[i] && q.isPlaceholderData)) ||
+    aemet.some((q, i) => q.isFetching || (wantAemet[i]! && (at === null || !!aemetFrames[i]) && q.isPlaceholderData)) ||
     frames.isFetching;
   const counts = {
     opera: layers.filter((l) => l.source === "opera").length,
