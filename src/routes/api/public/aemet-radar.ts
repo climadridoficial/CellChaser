@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/aemet-radar")({
             "Content-Type": "image/gif",
             "Cache-Control": "public, max-age=300",
           };
-          const observed = aemetGifTime(bytes);
+          const observed = aemetGifTime(bytes, Date.now());
           if (observed) headers["X-Observed-At"] = observed;
           return new Response(bytes, { headers });
         } catch (e) {

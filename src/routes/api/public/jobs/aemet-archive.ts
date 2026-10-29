@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
             try {
               const res = await aemetFetch(`red/radar/regional/${code}`);
               const bytes = new Uint8Array(await res.arrayBuffer());
-              const observedAt = aemetGifTime(bytes);
+              const observedAt = aemetGifTime(bytes, Date.now());
               if (!observedAt) return { code, status: "unreadable" };
               if (Date.parse(observedAt) < cutoff) return { code, status: "stale", observedAt };
               const { error } = await supabaseAdmin.from("aemet_radar_frames").upsert(

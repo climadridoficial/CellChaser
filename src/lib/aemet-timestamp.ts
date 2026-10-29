@@ -119,10 +119,10 @@ export function decodeGif(bytes: Uint8Array): { width: number; height: number; r
 }
 
 /** Observation time of an AEMET regional GIF, or null. */
-export function aemetGifTime(bytes: Uint8Array): string | null {
+export function aemetGifTime(bytes: Uint8Array, fetchedAt?: number): string | null {
   try {
     const { width, height, rgba } = decodeGif(bytes);
-    return readAemetTimestamp(rgba, width, height);
+    return readAemetTimestamp(rgba, width, height, fetchedAt);
   } catch {
     return null;
   }
