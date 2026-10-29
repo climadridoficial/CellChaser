@@ -16,6 +16,8 @@ import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
+/** History frames are lighter than the live full-detail scan, so 6 h load fast. */
+const HISTORY_SIZE = 1200;
 const TIME_RANGES = [
   { hours: 1, label: "1 h" },
   { hours: 3, label: "3 h" },
@@ -69,11 +71,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     cacheRef.current.clear();
   }, [station.id]);
   const decodeCached = useCallback(
-    (file: ScanFile, product: string, level: number) => {
-      const key = `${file.href}|${product}|${level}`;
+    (file: ScanFile, product: string, level: number, size?: number) => {
+      const key = `${file.href}|${product}|${level}|${size ?? "full"}`;
       let hit = cacheRef.current.get(key);
       if (!hit) {
-        hit = decodeAndRender({ href: file.href, product, level, time: file.time, fallbackStation: { lat: station.lat, lon: station.lon } });
+        hit = decodeAndRender({ href: file.href, product, level, time: file.time, size, fallbackStation: { lat: station.lat, lon: station.lon } });
         hit.catch(() => cacheRef.current.delete(key));
         cacheRef.current.set(key, hit);
         while (cacheRef.current.size > 120) cacheRef.current.delete(cacheRef.current.keys().next().value!);
@@ -191,7 +193,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     // Keep the current image on screen until the next one is decoded.
     setStatus("Decoding ODIM/HDF5 scan…");
     setError(null);
-    decodeCached(file, product, level)
+    decodeCached(file, product, level, atRef.current === null ? undefined : HISTORY_SIZE)
       .then((rendered) => {
         if (cancelled) return;
         if (!radarFrameVisible(rendered.time, atRef.current, OPERA_MAX_AGE_MS, Date.now())) return;
@@ -220,11 +222,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       return;
     }
     const since = Date.now() - (HISTORY_HOURS + 0.5) * 3600_000;
-    const todo = files.filter((f) => Date.parse(f.time) >= since);
+    const todo = files.filter((f) => Date.parse(f.time) >= since).sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
     let cancelled = false;
     let done = 0;
     report({ done, total: todo.length });
-    void runPool(todo.map((f) => () => decodeCached(f, product, level)), 2, () => {
+    void runPool(todo.map((f) => () => decodeCached(f, product, level, HISTORY_SIZE)), 3, () => {
       done++;
       report({ done, total: todo.length });
     }, () => cancelled);

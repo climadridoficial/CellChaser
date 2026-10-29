@@ -25,7 +25,7 @@ export interface CompositeLayer {
 
 const REFRESH_MS = 60_000;
 // Lighter than the station panel's full-detail render: 10 radars at once.
-const COMPOSITE_SIZE = 1000;
+const COMPOSITE_SIZE = 800;
 
 const KEEP_MS = 2 * 3600_000;
 
@@ -203,7 +203,8 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     if (history.some((q, i) => q.isPending && !radars[i]?.offline && (wantOpera || !aemetCodes[i]))) return [];
     const base = Date.now();
     const seen = new Map<string, () => Promise<unknown>>();
-    for (let slot = 0; slot < STEPS; slot++) {
+    // Newest first: the slider starts near "now".
+    for (let slot = STEPS - 1; slot >= 0; slot--) {
       const t = slotAt(slot, base)!;
       radars.forEach((s, i) => {
         const list = history[i]?.data;
@@ -241,7 +242,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       return !cached;
     });
     setPreload({ done, total: tasks.length });
-    void runPool(todo.map(([, run]) => run), 3, () => {
+    void runPool(todo.map(([, run]) => run), 4, () => {
       done++;
       setPreload({ done, total: tasks.length });
     }, () => cancelled);

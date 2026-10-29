@@ -42,6 +42,35 @@ export function proxiedFileUrl(href: string): string {
   return `/api/public/odim?url=${encodeURIComponent(href)}`;
 }
 
+// Each volume holds every product and elevation: download it once and reuse
+// it for the composite, the station panel and product/elevation switches.
+const geometryCache = new Map<string, Int32Array>();
+const fileCache = new Map<string, Promise<ArrayBuffer>>();
+function downloadScan(href: string): Promise<ArrayBuffer> {
+  let hit = fileCache.get(href);
+  if (!hit) {
+    hit = fetch(proxiedFileUrl(href)).then((res) => {
+      if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
+      return res.arrayBuffer();
+    });
+    hit.catch(() => fileCache.delete(href));
+    fileCache.set(href, hit);
+    while (fileCache.size > 24) fileCache.delete(fileCache.keys().next().value!);
+  } else {
+    fileCache.delete(href);
+    fileCache.set(href, hit);
+  }
+  return hit;
+}
+
+/** Blob URLs skip slow PNG→base64 encoding. */
+function canvasUrl(canvas: HTMLCanvasElement): Promise<string> {
+  return new Promise((resolve) => {
+    if (!canvas.toBlob) return resolve(canvas.toDataURL("image/png"));
+    canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : canvas.toDataURL("image/png")), "image/png");
+  });
+}
+
 export async function decodeAndRender(opts: {
   href: string;
   product: string;
@@ -49,11 +78,9 @@ export async function decodeAndRender(opts: {
   time: string;
   fallbackStation: { lat: number; lon: number };
   /** Fixed canvas size; defaults to full range-gate detail. */
-  size?: number;
+  size?: number | undefined;
 }): Promise<RenderedScan> {
-  const res = await fetch(proxiedFileUrl(opts.href));
-  if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
-  const buffer = await res.arrayBuffer();
+  const buffer = await downloadScan(opts.href);
 
   const { File: H5File } = (await import("jsfive")) as unknown as {
     File: new (b: ArrayBuffer, n?: string) => H5Group;
@@ -133,18 +160,38 @@ export async function decodeAndRender(opts: {
   const effectiveEarth = earth * 4 / 3;
   const tilt = best.elangle * radians;
 
+  // Pixel → data-cell geometry is identical for every scan of one radar and
+  // tilt, so it is computed once and reused for the whole time window.
+  let rayHash = 0;
+  for (let i = 0; i < rays.length; i++) rayHash = (Math.imul(rayHash, 31) + rays[i]! + 1) | 0;
+  const geoKey = [size, lat, lon, rangeM, rstart, rscale, nbins, nrays, best.elangle, rayHash].join("|");
+  let cells = geometryCache.get(geoKey);
+  if (!cells) {
+    cells = new Int32Array(size * size).fill(-1);
+    for (let y = 0; y < size; y++) {
+      const pixelLat = latitudeFromY(topY - (y + 0.5) / size * (topY - bottomY));
+      for (let x = 0; x < size; x++) {
+        const pixelLon = west + (x + 0.5) / size * (east - west);
+        const { distance, bearing } = polarAt(pixelLat, pixelLon, lat, lon);
+        const arc = distance / effectiveEarth;
+        const range = effectiveEarth * Math.sin(arc) / Math.cos(tilt + arc);
+        if (range > rangeM || range < rstart) continue;
+        const ray = rays[Math.floor(bearing * 10)];
+        if (ray === undefined || ray < 0) continue;
+        const bin = Math.min(nbins - 1, Math.floor((range - rstart) / rscale));
+        cells[y * size + x] = ray * nbins + bin;
+      }
+    }
+    geometryCache.set(geoKey, cells);
+    while (geometryCache.size > 12) geometryCache.delete(geometryCache.keys().next().value!);
+  }
+  const colours = new Map<number, readonly [number, number, number, number]>();
+
   for (let y = 0; y < size; y++) {
-    const pixelLat = latitudeFromY(topY - (y + 0.5) / size * (topY - bottomY));
     for (let x = 0; x < size; x++) {
-      const pixelLon = west + (x + 0.5) / size * (east - west);
-      const { distance, bearing } = polarAt(pixelLat, pixelLon, lat, lon);
-      const arc = distance / effectiveEarth;
-      const range = effectiveEarth * Math.sin(arc) / Math.cos(tilt + arc);
-      if (range > rangeM || range < rstart) continue;
-      const ray = rays[Math.floor(bearing * 10)];
-      if (ray === undefined || ray < 0) continue;
-      const bin = Math.min(nbins - 1, Math.floor((range - rstart) / rscale));
-      const raw = values[ray * nbins + bin];
+      const cell = cells[y * size + x]!;
+      if (cell < 0) continue;
+      const raw = values[cell];
       if (raw === undefined) continue;
       if (raw === nodata || raw === undetect) continue;
       // Velocity: raw 0 is the conventional "no echo" code even if undetect isn't declared.
@@ -157,7 +204,12 @@ export async function decodeAndRender(opts: {
       }
       if (value < vMin) vMin = value;
       if (value > vMax) vMax = value;
-      const [r, g, b, a] = colorFor(info, value);
+      let colour = colours.get(raw);
+      if (!colour) {
+        colour = colorFor(info, value) as readonly [number, number, number, number];
+        colours.set(raw, colour);
+      }
+      const [r, g, b, a] = colour;
       if (a === 0) continue;
       const idx = (y * size + x) * 4;
       px[idx] = r;
@@ -169,7 +221,7 @@ export async function decodeAndRender(opts: {
   ctx.putImageData(image, 0, 0);
 
   return {
-    dataUrl: canvas.toDataURL("image/png"),
+    dataUrl: await canvasUrl(canvas),
     echoGrid: echoValues ? { values: echoValues, width: gridSize, height: gridSize, bounds: [[south, west], [north, east]] } : undefined,
     bounds: [
       [south, west],
