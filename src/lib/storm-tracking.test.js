@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cellIntensity, detectCells, trackCells } from "./storm-tracking";
+import { cellIntensity, detectCells, trackCells, confirmedStormTracks } from "./storm-tracking";
 import { aemetDbz } from "./storm-images";
 
 const t0 = Date.parse("2026-10-29T17:00:00Z");
@@ -44,11 +44,11 @@ test("unphysical jumps start a new cell without false motion", () => {
 test("detection ignores missing data and isolated clutter and retains cell intensity", () => {
   const values = new Float32Array(100).fill(NaN);
   values[0] = 70;
-  for (const i of [44,45,54,55]) values[i] = 55;
+  for (const i of [43,44,45,53,54,55]) values[i] = 55;
   const cells = detectCells({ values, width: 10, height: 10, bounds: [[39,-4],[41,-2]] });
   expect(cells).toHaveLength(1);
   expect(cells[0].dbz).toBe(55);
-  expect(cells[0].lon).toBeCloseTo(-3, 3);
+  expect(cells[0].lon).toBeCloseTo(-3.1, 3);
   expect(cells[0].lat).toBeGreaterThan(39);
   expect(cells[0].lat).toBeLessThan(41);
 });
@@ -57,4 +57,24 @@ test("AEMET categories use real GIF legend and exclude transparent or unknown pi
   expect(aemetDbz(255,0,0,255)).toBe(66);
   expect(aemetDbz(255,0,0,0)).toBeNaN();
   expect(aemetDbz(255,255,255,255)).toBeNaN();
+});
+
+test("thin linework and scattered dots are not storm cells", () => {
+  const values = new Float32Array(400).fill(NaN);
+  for (let i = 0; i < 20; i++) values[i * 21] = 60;
+  expect(detectCells({ values, width: 20, height: 20, bounds: [[39,-4],[41,-2]] })).toEqual([]);
+});
+test("real tracks suppress single-scan echoes and forecasts wait for three scans", () => {
+  expect(confirmedStormTracks([frame(0,-3,50)], "radar")).toEqual([]);
+  expect(confirmedStormTracks([frame(0,-3,50),frame(10,-2.92,50)], "radar")[0].forecast).toBeNull();
+});
+test("forecast turns south with the latest measured storm motion", () => {
+  const frames = [frame(0,-3,50),frame(10,-2.92,50), { time:t0+20*60_000, cells:[{...cell(-2.92,50),lat:39.92}] }];
+  const track = trackCells(frames,"radar")[0];
+  expect(track.forecast).toHaveLength(4);
+  const farLat = (track.forecast[2][0]+track.forecast[3][0])/2;
+  expect(farLat).toBeLessThan(39.92);
+});
+test("unconfirmed direction reversal does not create a misleading forecast", () => {
+  expect(trackCells([frame(0,-3,50),frame(10,-2.92,50),frame(20,-3,50)],"radar")[0].forecast).toBeNull();
 });

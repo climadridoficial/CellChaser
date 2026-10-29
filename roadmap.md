@@ -1,4 +1,7 @@
 # Radar scan corrections
+- [x] Harden false-echo detection and turning forecasts, with regression tests.
+- [x] Move real tracking to shared server computation, independent of composite visibility; actual 15 AEMET / 10 OPERA ingest and matching desktop/mobile observations verified.
+- [ ] Activate updated automatic shared tracking on the published app — waits for user-requested publishing.
 - [x] Add and verify temporary simulated storm playback, including intensity changes and closing the demo.
 - [ ] Completely remove the temporary demo after the user confirms they have finished reviewing it.
 - [x] Storm-cell scan dots, traces and intensity-updating 30-minute forecast shapes; tests and a controlled browser storm verified.

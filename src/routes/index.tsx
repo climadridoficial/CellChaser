@@ -173,7 +173,9 @@ function Home() {
               onAemetBounds={handleAemetBounds}
               composite={mapComposite}
               showStorms={showStorms}
-              apiKey={settings.meteogateKey}
+              stormStations={spainRadars}
+              at={at}
+              compositeMode={settings.composite}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
