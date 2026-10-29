@@ -16,7 +16,7 @@ export interface RenderedScan {
   station: { lat: number; lon: number };
   min: number;
   max: number;
-  echoGrid?: EchoGrid;
+  echoGrid?: EchoGrid | undefined;
 }
 
 interface H5Group {
