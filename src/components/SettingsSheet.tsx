@@ -71,6 +71,7 @@ export default function SettingsSheet({ settings, onChange, onClose }: Props) {
               className="select mt-2"
             >
               <option value="all">{t("allStations")}</option>
+              <option value="iberia">{translatedCountry(locale, "724", "Spain")} + {translatedCountry(locale, "620", "Portugal")}</option>
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
                   {translatedCountry(locale, c.code, c.label)}

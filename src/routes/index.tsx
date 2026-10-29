@@ -1,3 +1,4 @@
+import { IBERIA } from "@/lib/ord";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
 import LanguageMenu from "@/components/LanguageMenu";
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
@@ -109,13 +110,14 @@ function Home() {
     const opera: RadarStation[] = (stations.data ?? []).map((s) => ({ ...s, name: fixNames[s.name] ?? s.name }));
     const all = stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
     if (settings.country === "all") return all;
+    if (settings.country === "iberia") return all.filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
     const code = settings.country.replace(/^0+/, "");
     return all.filter((s) => s.country.replace(/^0+/, "") === code);
   }, [stations.data, settings.country]);
 
-  // Spanish radars for the composite, independent of the station country filter.
+  // Iberian radars (Spain + Portugal) for the composite, independent of the station country filter.
   const spainRadars = useMemo(() => {
-    const opera = (stations.data ?? []).filter((s) => s.country.replace(/^0+/, "") === "724");
+    const opera = (stations.data ?? []).filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
     return stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
   }, [stations.data]);
   const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
