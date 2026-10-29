@@ -16,6 +16,8 @@ import { RadarSession } from "@/components/RadarSession";
 import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
 import MapLoadBoundary from "@/components/MapLoadBoundary";
 import { useRadarComposite } from "@/hooks/use-radar-composite";
+import TimeSlider from "@/components/TimeSlider";
+import { pickFrame } from "@/lib/timeline";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -55,6 +57,7 @@ function Home() {
   const [aemetImage, setAemetImage] = useState<AemetMapImage | null>(null);
   const handleAemetImage = useCallback((value: AemetMapImage | null) => setAemetImage(value), []);
   const handleAemetBounds = useCallback((bounds: RadarBounds) => setAemetImage(current => current ? { ...current, bounds } : current), []);
+  const [at, setAt] = useState<number | null>(null);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
@@ -70,8 +73,7 @@ function Home() {
       const res = await fetch(`${base}/public/weather-maps.json`);
       if (!res.ok) throw new Error("Radar tile index unavailable");
       const data = (await res.json()) as { radar?: { past?: { path: string; time: number }[] } };
-      const past = data.radar?.past ?? [];
-      return past[past.length - 1]?.path ?? null;
+      return data.radar?.past ?? [];
     },
   });
 
@@ -111,7 +113,7 @@ function Home() {
     const opera = (stations.data ?? []).filter((s) => s.country.replace(/^0+/, "") === "724");
     return stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
   }, [stations.data]);
-  const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey);
+  const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
   const compositeOn = settings.composite !== "off";
   const compositeNote = !compositeOn
     ? "Apagado"
@@ -126,7 +128,14 @@ function Home() {
     return composite.layers.filter((l) => l.radarId === selected.id);
   }, [scan, aemetImage, selected, composite.layers]);
 
-  const tileUrl = compositeOn ? null : tileTemplate(settings, rainviewer.data ?? null, tileSource);
+  const frames = rainviewer.data ?? [];
+  const tileFrame =
+    at === null ? (frames[frames.length - 1] ?? null) : pickFrame(frames, (f) => f.time * 1000, at);
+  const tileUrl = compositeOn ? null : tileTemplate(settings, tileFrame?.path ?? null, tileSource);
+  const sliderNote =
+    !compositeOn && tileSource !== "none" && at !== null && frames.length > 0 && !tileFrame && !scan
+      ? `${tileSource === "librewxr" ? "LibreWXR" : "RainViewer"} solo guarda ~2 h`
+      : null;
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
   const closePanel = useCallback(() => {
@@ -210,6 +219,7 @@ function Home() {
           apiKey={settings.meteogateKey}
           onClose={closePanel}
           onScan={handleScan}
+          at={at}
           onAlignAemet={(code) => {
             setAlignmentTarget({ code, name: selected.name, lat: selected.lat, lon: selected.lon });
             setSelected(null);
@@ -217,6 +227,10 @@ function Home() {
             setAemetSel(null);
           }}
         />
+      )}
+
+      {!alignmentTarget && (
+        <TimeSlider at={at} onChange={setAt} loading={composite.loading || rainviewer.isFetching} note={sliderNote} />
       )}
 
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
