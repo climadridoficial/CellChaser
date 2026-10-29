@@ -78,7 +78,7 @@ export async function decodeAndRender(opts: {
   time: string;
   fallbackStation: { lat: number; lon: number };
   /** Fixed canvas size; defaults to full range-gate detail. */
-  size?: number;
+  size?: number | undefined;
 }): Promise<RenderedScan> {
   const buffer = await downloadScan(opts.href);
 
