@@ -7,6 +7,7 @@ import type { AemetObs } from "@/lib/aemet";
 import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
 import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
 import type { CompositeLayer } from "@/hooks/use-radar-composite";
+import type { CompositeMode } from "@/lib/composite";
 import { useStormTracks } from "@/hooks/use-storm-tracks";
 import StormTracks from "./StormTracks";
 import StormDemo from "./StormDemo";
@@ -25,7 +26,9 @@ interface Props {
   onAemetBounds: (bounds: RadarBounds) => void;
   composite: CompositeLayer[];
   showStorms: boolean;
-  apiKey: string;
+  stormStations: RadarStation[];
+  at: number | null;
+  compositeMode: CompositeMode;
 }
 
 export default function RadarMap({
@@ -42,7 +45,9 @@ export default function RadarMap({
   onAemetBounds,
   composite,
   showStorms,
-  apiKey,
+  stormStations,
+  at,
+  compositeMode,
 }: Props) {
   const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
@@ -52,7 +57,7 @@ export default function RadarMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const [demoActive, setDemoActive] = useState(false);
-  const storms = useStormTracks(showStorms && !demoActive && !aemetImage?.editing, composite, scan, selectedId, stations, apiKey);
+  const storms = useStormTracks(showStorms && !demoActive && !aemetImage?.editing, selectedId, stormStations, at, compositeMode);
   const tileRef = useRef<L.TileLayer | null>(null);
   const stationsRef = useRef<L.LayerGroup | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);

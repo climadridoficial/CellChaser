@@ -22,9 +22,12 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
         if (authFailure) return authFailure;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { processAemetStormFrame, refreshOperaStorms } = await import("@/lib/storm-pipeline.server");
         const cutoff = Date.now() - RETENTION_MS;
-        const results = await Promise.all(
-          [...AEMET_RADAR_CODES].map(async (code) => {
+        const results: {code:string;status:string;observedAt?:string}[] = [];
+        const codes = [...AEMET_RADAR_CODES];
+        for (let i=0;i<codes.length;i+=2) results.push(...await Promise.all(
+          codes.slice(i,i+2).map(async (code) => {
             try {
               const res = await aemetFetch(`red/radar/regional/${code}`);
               const bytes = new Uint8Array(await res.arrayBuffer());
@@ -35,14 +38,31 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
                 { code, observed_at: observedAt, path: `${code}/${observedAt}`, image_b64: toBase64(bytes) },
                 { onConflict: "code,observed_at", ignoreDuplicates: true },
               );
+              if (error) throw error;
+              // Reuse archived observations for initial confirmation, then only
+              // decode new frames. All devices read the resulting shared tracks.
+              const opera = Object.entries((await import("@/lib/aemet-radars")).OPERA_TO_AEMET).find(([,c])=>c===code)?.[0];
+              const radarId = opera ? `0-724-0-${opera}` : `aemet-${code}`;
+              const cached = await supabaseAdmin.from("storm_cell_frames").select("observed_at").eq("radar_id",radarId).eq("source","aemet").eq("algorithm_version",2).gte("observed_at",new Date(Date.parse(observedAt)-3600_000).toISOString());
+              const known = new Set((cached.data??[]).map(f=>Date.parse(f.observed_at)));
+              const history = await supabaseAdmin.from("aemet_radar_frames").select("observed_at,image_b64").eq("code",code).gte("observed_at",new Date(Date.parse(observedAt)-3600_000).toISOString()).lte("observed_at",observedAt).order("observed_at");
+              for (const frame of history.data??[]) {
+                if (known.has(Date.parse(frame.observed_at)) || !frame.image_b64) continue;
+                await processAemetStormFrame(supabaseAdmin,code,frame.observed_at,Uint8Array.from(atob(frame.image_b64),c=>c.charCodeAt(0)));
+              }
+              // Update availability even when this observation was cached.
+              await supabaseAdmin.from("storm_source_state").upsert({radar_id:radarId,source:"aemet",available:true,checked_at:new Date().toISOString()});
               return { code, status: error ? `error: ${error.message}` : "ok", observedAt };
             } catch (e) {
               return { code, status: `error: ${(e as Error).message}` };
             }
           }),
-        );
+        ));
+        const opera = await refreshOperaStorms(supabaseAdmin);
         await supabaseAdmin.from("aemet_radar_frames").delete().lt("observed_at", new Date(cutoff).toISOString());
-        return Response.json({ results });
+        await supabaseAdmin.from("storm_cell_frames").delete().lt("observed_at",new Date(cutoff).toISOString());
+        await supabaseAdmin.from("storm_track_frames").delete().lt("observed_at",new Date(cutoff).toISOString());
+        return Response.json({ results, opera });
       },
     },
   },
