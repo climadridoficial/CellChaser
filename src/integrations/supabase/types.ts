@@ -70,18 +70,21 @@ export type Database = {
       }
       storm_cell_frames: {
         Row: {
+          algorithm_version: number
           cells: Json
           observed_at: string
           radar_id: string
           source: string
         }
         Insert: {
+          algorithm_version?: number
           cells?: Json
           observed_at: string
           radar_id: string
           source: string
         }
         Update: {
+          algorithm_version?: number
           cells?: Json
           observed_at?: string
           radar_id?: string
@@ -89,20 +92,44 @@ export type Database = {
         }
         Relationships: []
       }
+      storm_source_state: {
+        Row: {
+          available: boolean
+          checked_at: string
+          radar_id: string
+          source: string
+        }
+        Insert: {
+          available?: boolean
+          checked_at?: string
+          radar_id: string
+          source: string
+        }
+        Update: {
+          available?: boolean
+          checked_at?: string
+          radar_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       storm_track_frames: {
         Row: {
+          algorithm_version: number
           observed_at: string
           radar_id: string
           source: string
           tracks: Json
         }
         Insert: {
+          algorithm_version?: number
           observed_at: string
           radar_id: string
           source: string
           tracks?: Json
         }
         Update: {
+          algorithm_version?: number
           observed_at?: string
           radar_id?: string
           source?: string
