@@ -3,7 +3,7 @@
 - [x] Move real tracking to shared server computation, independent of composite visibility; actual 15 AEMET / 10 OPERA ingest and matching desktop/mobile observations verified.
 - [ ] Activate updated automatic shared tracking on the published app — waits for user-requested publishing.
 - [x] Add and verify temporary simulated storm playback, including intensity changes and closing the demo.
-- [ ] Completely remove the temporary demo after the user confirms they have finished reviewing it.
+- [x] Completely remove the temporary demo after the user confirms they have finished reviewing it.
 - [x] Storm-cell scan dots, traces and intensity-updating 30-minute forecast shapes; tests and a controlled browser storm verified.
 - [x] Add remembered language selection and translate visible radar controls into English, Spanish, Portuguese, Catalan, Galician and Basque; all six switches and Portuguese persistence verified in the browser.
 - [x] Hide outdated/down-source scans in live mode across AEMET/OPERA views; preserve history (14 tests passed; simulated old AEMET images verified live → history → live).
