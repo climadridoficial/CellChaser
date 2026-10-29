@@ -40,30 +40,66 @@ export function footerCell(rgba: ArrayLike<number>, width: number, k: number): s
 }
 
 /** ISO UTC time printed on the image, or null if the footer can't be read. */
-export function readAemetTimestamp(rgba: ArrayLike<number>, width: number, height: number): string | null {
-  if (width !== 480 || height !== 530) return null;
-  const read = (cells: number[]) => {
-    let out = "";
-    for (const k of cells) {
-      const d = DIGITS[cellKey(rgba, width, k)];
-      if (d === undefined) return null;
-      out += d;
-    }
-    return out;
-  };
-  const dd = read([18, 19]);
-  const yy = read([25, 26]);
-  const doy = read([27, 28, 29]);
-  const hms = read([31, 32, 33, 34, 35, 36]);
-  if (!dd || !yy || !doy || !hms) return null;
-  const h = Number(hms.slice(0, 2));
-  const m = Number(hms.slice(2, 4));
-  const s = Number(hms.slice(4, 6));
-  if (h > 23 || m > 59 || s > 59 || Number(doy) < 1 || Number(doy) > 366) return null;
-  const date = new Date(Date.UTC(2000 + Number(yy), 0, Number(doy), h, m, s));
+const CELLS = [18, 19, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36];
+// AEMET publishes each image roughly 8–15 minutes after its observation time.
+const MIN_LAG_MS = 4 * 60_000;
+const MAX_LAG_MS = 75 * 60_000;
+const TYPICAL_LAG_MS = 10 * 60_000;
+
+function parseDigits(d: number[]): number | null {
+  const n = (from: number, to: number) => Number(d.slice(from, to).join(""));
+  const [dd, yy, doy, h, m, s] = [n(0, 2), n(2, 4), n(4, 7), n(7, 9), n(9, 11), n(11, 13)];
+  if (h > 23 || m > 59 || s > 59 || doy < 1 || doy > 366) return null;
+  const date = new Date(Date.UTC(2000 + yy, 0, doy, h, m, s));
   // Day-of-month and day-of-year are printed separately: they must agree.
-  if (date.getUTCDate() !== Number(dd)) return null;
-  return date.toISOString().replace(".000Z", "Z");
+  return date.getUTCDate() === dd ? date.getTime() : null;
+}
+
+/**
+ * ISO UTC time printed on the image, or null if the footer can't be read.
+ * Digits without a captured glyph are solved from the remaining digits, the
+ * day-of-month/day-of-year cross-check and `fetchedAt` (AEMET's publishing lag).
+ */
+export function readAemetTimestamp(
+  rgba: ArrayLike<number>,
+  width: number,
+  height: number,
+  fetchedAt?: number,
+): string | null {
+  if (width !== 480 || height !== 530) return null;
+  const keys = CELLS.map((k) => cellKey(rgba, width, k));
+  const unknown = [...new Set(keys.filter((k) => DIGITS[k] === undefined))];
+  if (unknown.some((k) => !k.includes("#"))) return null;
+  const known = new Set(Object.values(DIGITS));
+  const spare = [...Array(10).keys()].filter((d) => !known.has(d));
+  if (unknown.length > spare.length) return null;
+
+  let best: number | null = null;
+  let candidates = 0;
+  const assign = (i: number, used: Map<string, number>) => {
+    if (i === unknown.length) {
+      const t = parseDigits(keys.map((k) => DIGITS[k] ?? used.get(k)!));
+      if (t === null) return;
+      if (unknown.length && fetchedAt !== undefined) {
+        const lag = fetchedAt - t;
+        if (lag < MIN_LAG_MS || lag > MAX_LAG_MS) return;
+      }
+      candidates++;
+      const score = (x: number) => Math.abs((fetchedAt ?? x) - x - TYPICAL_LAG_MS);
+      if (best === null || score(t) < score(best)) best = t;
+      return;
+    }
+    for (const d of spare) {
+      if ([...used.values()].includes(d)) continue;
+      used.set(unknown[i]!, d);
+      assign(i + 1, used);
+      used.delete(unknown[i]!);
+    }
+  };
+  if (unknown.length && fetchedAt === undefined) return null;
+  assign(0, new Map());
+  if (best === null || (!unknown.length && candidates !== 1)) return null;
+  return new Date(best).toISOString().replace(".000Z", "Z");
 }
 
 type Reader = new (buf: Uint8Array) => {
