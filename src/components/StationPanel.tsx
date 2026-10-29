@@ -1,4 +1,4 @@
-import { useI18n } from "@/lib/i18n";
+import { useI18n, translatedProduct, translatedCountry } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
 import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
@@ -40,7 +40,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
 }
 
 export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at }: Props) {
-  const { t, locale } = useI18n();
+  const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           aria-expanded={!collapsed}
         >
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-            {countryLabel(station.country)} · {station.offline ? t("noOpera") : t("operaStations")}
+            {translatedCountry(locale, station.country, countryLabel(station.country))} · {station.offline ? t("noOpera") : t("operaStations")}
           </p>
           <h2 className="mt-1 truncate font-display text-lg leading-tight text-foreground">
             {station.name}
@@ -266,7 +266,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
             >
               {availableProducts.map((p) => (
                 <option key={p} value={p}>
-                  {productInfo(p).label} ({p})
+                  {translatedProduct(lang, p)}
                 </option>
               ))}
             </select>
@@ -334,7 +334,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
 
         {scan && visibleScan && (
           <section>
-            <h3 className="section-title">{info.label}</h3>
+            <h3 className="section-title">{translatedProduct(lang, info.key)}</h3>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <dt>{t("scanTime")}</dt>
               <dd className="text-foreground">{scan.time.slice(11, 16)} UTC</dd>

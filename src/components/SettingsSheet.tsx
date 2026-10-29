@@ -1,4 +1,4 @@
-import { useI18n } from "@/lib/i18n";
+import { useI18n, translatedCountry } from "@/lib/i18n";
 import { COUNTRIES } from "@/lib/ord";
 import type { RadarSettings } from "@/lib/settings";
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function SettingsSheet({ settings, onChange, onClose }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="fixed inset-0 z-[1200] flex items-start justify-center bg-background/70 px-4 py-10 backdrop-blur-sm">
       <div className="panel max-h-full w-full max-w-lg overflow-y-auto rounded-xl">
@@ -73,7 +73,7 @@ export default function SettingsSheet({ settings, onChange, onClose }: Props) {
               <option value="all">{t("allStations")}</option>
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.label}
+                  {translatedCountry(locale, c.code, c.label)}
                 </option>
               ))}
             </select>

@@ -103,6 +103,22 @@ export const MESSAGES = {
   locationOff: r("Ubicación desactivada (activar)", "Localização desativada (ativar)", "Ubicació desactivada (activa)", "Localización desactivada (activar)", "Kokapena desaktibatuta (aktibatu)", "Location off (switch on)"),
   loadStations: r("Cargando estaciones europeas…", "A carregar estações europeias…", "Carregant estacions europees…", "Cargando estacións europeas…", "Europako estazioak kargatzen…", "Loading European stations…"),
   loadFailed: r("No se pudieron cargar los datos.", "Não foi possível carregar os dados.", "No s’han pogut carregar les dades.", "Non se puideron cargar os datos.", "Ezin izan dira datuak kargatu.", "Could not load data."),
+  reflectivity: r("Reflectividad", "Refletividade", "Reflectivitat", "Reflectividade", "Islagarritasuna", "Reflectivity"),
+  rawReflectivity: r("Reflectividad bruta", "Refletividade bruta", "Reflectivitat bruta", "Reflectividade bruta", "Islagarritasun gordina", "Raw reflectivity"),
+  velocity: r("Velocidad radial", "Velocidade radial", "Velocitat radial", "Velocidade radial", "Abiadura erradiala", "Radial velocity"),
+  spectrum: r("Ancho espectral", "Largura espectral", "Amplada espectral", "Anchura espectral", "Espektro-zabalera", "Spectrum width"),
+  diffReflectivity: r("Reflectividad diferencial", "Refletividade diferencial", "Reflectivitat diferencial", "Reflectividade diferencial", "Islagarritasun diferentziala", "Differential reflectivity"),
+  correlation: r("Coeficiente de correlación", "Coeficiente de correlação", "Coeficient de correlació", "Coeficiente de correlación", "Korrelazio-koefizientea", "Correlation coefficient"),
+  phase: r("Fase diferencial", "Fase diferencial", "Fase diferencial", "Fase diferencial", "Fase diferentziala", "Differential phase"),
+  specificPhase: r("Fase diferencial específica", "Fase diferencial específica", "Fase diferencial específica", "Fase diferencial específica", "Fase diferentzial espezifikoa", "Specific differential phase"),
+  quality: r("Calidad de señal", "Qualidade do sinal", "Qualitat del senyal", "Calidade do sinal", "Seinalearen kalitatea", "Signal quality"),
+  clutter: r("Corrección de ecos no meteorológicos", "Correção de ecos não meteorológicos", "Correcció d’ecos no meteorològics", "Corrección de ecos non meteorolóxicos", "Oihartzun ez-meteorologikoen zuzenketa", "Clutter correction"),
+  depolarization: r("Relación de despolarización", "Razão de despolarização", "Relació de despolarització", "Relación de despolarización", "Despolarizazio-erlazioa", "Depolarization ratio"),
+  echoHeight: r("Altura del eco", "Altura do eco", "Alçada de l’eco", "Altura do eco", "Oihartzunaren altuera", "Echo height"),
+  signalNoise: r("Relación señal-ruido", "Relação sinal-ruído", "Relació senyal-soroll", "Relación sinal-ruído", "Seinale-zarata erlazioa", "Signal-to-noise"),
+  rainRate: r("Intensidad de lluvia", "Intensidade da chuva", "Intensitat de pluja", "Intensidade da choiva", "Euri-intentsitatea", "Rain rate"),
+  accumulated: r("Lluvia acumulada", "Chuva acumulada", "Pluja acumulada", "Choiva acumulada", "Euri metatua", "Accumulated rain"),
+  tileHistory: r("{name} solo guarda ~2 h", "{name} só guarda ~2 h", "{name} només desa ~2 h", "{name} só garda ~2 h", "{name}: ~2 orduko historia soilik", "{name} stores only ~2 h"),
 } satisfies Record<string, Row>;
 export type MessageKey = keyof typeof MESSAGES;
 
@@ -136,3 +152,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function isLanguage(value: unknown): value is Lang { return LANGUAGES.some((l) => l.id === value); }
 
 export const useI18n = () => useContext(LanguageContext);
+const PRODUCT_MESSAGES: Record<string, MessageKey> = { DBZH: "reflectivity", DBZV: "reflectivity", TH: "rawReflectivity", TV: "rawReflectivity", VRAD: "velocity", VRADH: "velocity", VRADV: "velocity", WRAD: "spectrum", WRADH: "spectrum", WRADV: "spectrum", ZDR: "diffReflectivity", UZDR: "diffReflectivity", RHOHV: "correlation", URHOHV: "correlation", PHIDP: "phase", UPHIDP: "phase", KDP: "specificPhase", SQIH: "quality", SQIV: "quality", CCORH: "clutter", CCORV: "clutter", LDR: "depolarization", HGHT: "echoHeight", SNRH: "signalNoise", RATE: "rainRate", ACRR: "accumulated" };
+export function translatedProduct(lang: Lang, code: string) { const key = PRODUCT_MESSAGES[code]; return key ? `${code} — ${translate(lang, key)}` : code; }
+const REGIONS: Record<string, string> = { "724": "ES", "620": "PT", "250": "FR", "276": "DE", "380": "IT", "528": "NL", "056": "BE", "756": "CH", "040": "AT", "208": "DK", "246": "FI", "578": "NO", "752": "SE", "191": "HR", "203": "CZ", "233": "EE", "352": "IS", "372": "IE", "440": "LT", "470": "MT", "616": "PL", "705": "SI", "642": "RO" };
+export function translatedCountry(locale: string, code: string, fallback: string) { const region = REGIONS[code.padStart(3, "0")]; return region ? new Intl.DisplayNames([locale], { type: "region" }).of(region) ?? fallback : fallback; }

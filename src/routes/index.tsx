@@ -140,7 +140,7 @@ function Home() {
     compositeOn && at !== null && !composite.loading && composite.layers.length === 0
       ? t("noSaved")
       : !compositeOn && tileSource !== "none" && at !== null && frames.length > 0 && !tileFrame && !scan
-      ? `${tileSource === "librewxr" ? "LibreWXR" : "RainViewer"} solo guarda ~2 h`
+      ? t("tileHistory", { name: tileSource === "librewxr" ? "LibreWXR" : "RainViewer" })
       : null;
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
