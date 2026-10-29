@@ -10,6 +10,8 @@ import { compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState 
 
 export interface CompositeLayer {
   key: string;
+  /** RadarStation.id this image belongs to. */
+  radarId: string;
   source: "opera" | "aemet";
   image: string;
   bounds: RadarBounds;
@@ -77,11 +79,11 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const source = compositeSource(mode, !!aemetCodes[i], operaStates[i]!);
       if (source === "opera") {
         const d = opera[i]?.data;
-        if (d) out.push({ key: `opera-${s.id}-${d.time}`, source, image: d.image, bounds: d.bounds });
+        if (d) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds });
       } else if (source === "aemet") {
         const img = aemet[i]?.data;
         const code = aemetCodes[i]!;
-        if (img) out.push({ key: `aemet-${code}-${img.length}-${aemet[i]!.dataUpdatedAt}`, source, image: img, bounds: AEMET_CALIBRATION[code]! });
+        if (img) out.push({ key: `aemet-${code}-${img.length}-${aemet[i]!.dataUpdatedAt}`, radarId: s.id, source, image: img, bounds: AEMET_CALIBRATION[code]! });
       }
     });
     return out;

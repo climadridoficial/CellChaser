@@ -119,6 +119,13 @@ function Home() {
       ? "Cargando radares…"
       : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? " · actualizando…" : ""}`;
 
+  // With a radar open, only that radar's composite image stays on the map.
+  const mapComposite = useMemo(() => {
+    if (scan || aemetImage) return [];
+    if (!selected) return composite.layers;
+    return composite.layers.filter((l) => l.radarId === selected.id);
+  }, [scan, aemetImage, selected, composite.layers]);
+
   const tileUrl = compositeOn ? null : tileTemplate(settings, rainviewer.data ?? null, tileSource);
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
@@ -148,7 +155,7 @@ function Home() {
               scan={scan}
               aemetImage={aemetImage}
               onAemetBounds={handleAemetBounds}
-              composite={scan || aemetImage ? [] : composite.layers}
+              composite={mapComposite}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
