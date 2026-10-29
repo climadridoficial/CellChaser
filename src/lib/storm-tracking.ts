@@ -14,7 +14,7 @@ export function cellIntensity(dbz: number): Intensity {
   return dbz >= 60 ? "extreme" : dbz >= 50 ? "veryStrong" : dbz >= 40 ? "strong" : "light";
 }
 
-/** Eight-connected >=25 dBZ regions; reject isolated pixels and tiny clutter. */
+/** Spatially coherent >=25 dBZ regions; reject speckle and thin linework. */
 export function detectCells(grid: EchoGrid): Cell[] {
   const { values, width, height, bounds: [[south, west], [north, east]] } = grid;
   const visited = new Uint8Array(width * height);
@@ -36,7 +36,14 @@ export function detectCells(grid: EchoGrid): Cell[] {
         visited[j] = 1; queue.push(j);
       }
     }
-    if (dbzs.length < 3 || dbzs.length * pixelArea < 6) continue;
+    if (dbzs.length < 6 || dbzs.length * pixelArea < 6) continue;
+    const members = new Set(queue);
+    // At least one solid 2x2 >=30 dBZ core, not a chain of diagonal dots.
+    const core = queue.some(i => {
+      const x = i % width, y = Math.floor(i / width);
+      return x + 1 < width && y + 1 < height && [i, i + 1, i + width, i + width + 1].every(j => members.has(j) && Number(values[j]) >= 30);
+    });
+    if (!core) continue;
     dbzs.sort((a, b) => a - b);
     cells.push({ lat: latitudeFromY(top - sy / weight / height * (top - bottom)), lon: west + sx / weight / width * (east - west), dbz: dbzs[Math.floor((dbzs.length - 1) * 0.9)] ?? 25, radiusKm: Math.sqrt(dbzs.length * pixelArea / Math.PI) });
   }
@@ -81,12 +88,25 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
   }
   return active.map(track => {
     const last = track.points.at(-1), recent = track.points.slice(-4), first = recent[0];
-    if (!last || !first || recent.length < 2 || last.time <= first.time) return track;
-    const [dx, dy] = displacement(first, last), hours = (last.time - first.time) / 3600_000;
-    const vx = dx / hours, vy = dy / hours, speed = Math.hypot(vx, vy);
+    if (!last || !first || recent.length < 3 || last.time <= first.time) return track;
+    const before = recent.at(-2), older = recent.at(-3);
+    if (!before || !older) return track;
+    const [dx, dy] = displacement(before, last), hours = (last.time - before.time) / 3600_000;
+    const [ox, oy] = displacement(older, before), oldHours = (before.time - older.time) / 3600_000;
+    if (hours <= 0 || oldHours <= 0) return track;
+    const latestSpeed = Math.hypot(dx, dy) / hours, oldSpeed = Math.hypot(ox, oy) / oldHours;
+    // A single reversal/jump is not enough evidence for a new forecast.
+    if (latestSpeed > 130 || oldSpeed > 130 || latestSpeed < 2 || oldSpeed < 2 || (dx * ox + dy * oy) < -0.25 * Math.hypot(dx, dy) * Math.hypot(ox, oy)) return track;
+    // Emphasise the newest segment so the quadrilateral turns with the cell.
+    const vx = 0.8 * dx / hours + 0.2 * ox / oldHours, vy = 0.8 * dy / hours + 0.2 * oy / oldHours, speed = Math.hypot(vx, vy);
     if (speed < 2 || speed > 130) return track;
     const px = -vy / speed, py = vx / speed, width = Math.max(2, last.radiusKm), farWidth = width + 5 + speed * 0.05;
     const forecast = [offset(last, px * width, py * width), offset(last, -px * width, -py * width), offset(last, vx * 0.5 - px * farWidth, vy * 0.5 - py * farWidth), offset(last, vx * 0.5 + px * farWidth, vy * 0.5 + py * farWidth)];
     return { ...track, forecast, speedKmh: Math.round(speed) };
   });
+}
+
+/** A one-scan dot is unconfirmed; retain only repeated detections in real data. */
+export function confirmedStormTracks(frames: CellFrame[], radarId: string): StormTrack[] {
+  return trackCells(frames, radarId).filter(track => track.points.length >= 2);
 }
