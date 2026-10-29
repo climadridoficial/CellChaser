@@ -44,7 +44,7 @@ export default function AemetBackup({ code, at }: { code: string; at: number | n
       {stale && (
         <p className="alert">
           AEMET tampoco publica imágenes nuevas de este radar: la última es de{" "}
-          {new Date(observed!).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{" "}
+          {new Date(observed!).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{" "}
           ({formatAgo(Date.now() - observed!)}).
         </p>
       )}
@@ -62,7 +62,7 @@ export default function AemetBackup({ code, at }: { code: string; at: number | n
           />
           {observed !== null && !stale && (
             <p className="hint">
-              Imagen de las {new Date(observed).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} (
+              Imagen de las {new Date(observed).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} (
               {formatAgo(Date.now() - observed)}).
             </p>
           )}

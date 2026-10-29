@@ -50,7 +50,7 @@ export default function TimeSlider({ at, onChange, loading, note }: Props) {
   const label =
     shown === null
       ? "Ahora"
-      : `${new Date(shown).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${formatAgo(now - shown)}`;
+      : `${new Date(shown).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · ${formatAgo(now - shown)}`;
 
   return (
     <div className="time-slider" role="group" aria-label="Línea de tiempo del radar">
