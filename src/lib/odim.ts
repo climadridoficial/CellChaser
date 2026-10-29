@@ -3,6 +3,7 @@
 
 import { colorFor, productInfo, type ProductInfo } from "./radar-products";
 import { rangeStartMetres, mercatorY, latitudeFromY, polarAt, rayLookup } from "./radar-geometry";
+import type { EchoGrid } from "./storm-tracking";
 
 export interface RenderedScan {
   dataUrl: string;
@@ -15,6 +16,7 @@ export interface RenderedScan {
   station: { lat: number; lon: number };
   min: number;
   max: number;
+  echoGrid?: EchoGrid;
 }
 
 interface H5Group {
@@ -111,6 +113,8 @@ export async function decodeAndRender(opts: {
   const image = ctx.createImageData(size, size);
   const px = image.data;
   const values = best.data.value;
+  const gridSize = Math.min(size, 240);
+  const echoValues = info.scale === "reflectivity" ? new Float32Array(gridSize * gridSize).fill(NaN) : null;
 
   let vMin = Infinity;
   let vMax = -Infinity;
@@ -147,6 +151,10 @@ export async function decodeAndRender(opts: {
       if (info.scale === "velocity" && raw === 0) continue;
       const value = raw * gain + offset;
       if (!Number.isFinite(value)) continue;
+      if (echoValues) {
+        const gi = Math.floor(y / size * gridSize) * gridSize + Math.floor(x / size * gridSize);
+        if (!Number.isFinite(echoValues[gi]) || value > Number(echoValues[gi])) echoValues[gi] = value;
+      }
       if (value < vMin) vMin = value;
       if (value > vMax) vMax = value;
       const [r, g, b, a] = colorFor(info, value);
@@ -162,6 +170,7 @@ export async function decodeAndRender(opts: {
 
   return {
     dataUrl: canvas.toDataURL("image/png"),
+    echoGrid: echoValues ? { values: echoValues, width: gridSize, height: gridSize, bounds: [[south, west], [north, east]] } : undefined,
     bounds: [
       [south, west],
       [north, east],
