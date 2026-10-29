@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
 import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
 import { pickFrame } from "@/lib/timeline";
+import { radarFrameVisible } from "@/lib/radar-freshness";
+import { OPERA_MAX_AGE_MS } from "@/lib/composite";
+import { useRadarNow } from "@/hooks/use-radar-now";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 const TIME_RANGES = [
@@ -31,11 +34,17 @@ interface Props {
 /** Scan shown for the slider time: newest at or before it, else the oldest listed. */
 function fileFor(list: ScanFile[], at: number | null): string | null {
   if (!list.length) return null;
-  if (at === null) return list[0]!.href;
-  return (pickFrame(list, (f) => Date.parse(f.time), at, Infinity) ?? list[list.length - 1]!).href;
+  if (at === null) return list.find((f) => radarFrameVisible(f.time, null, OPERA_MAX_AGE_MS, Date.now()))?.href ?? null;
+  return pickFrame(list, (f) => Date.parse(f.time), at)?.href ?? null;
 }
 
 export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at }: Props) {
+  const now = useRadarNow();
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setRefresh((v) => v + 1), 10 * 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
@@ -142,16 +151,20 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     return () => {
       cancelled = true;
     };
-  }, [entry, station.id, hours, apiKey, selectionKey, onScan]);
+  }, [entry, station.id, hours, apiKey, selectionKey, onScan, refresh]);
 
   useEffect(() => {
     if (files && filesKey === selectionKey) setSelectedTime(fileFor(files, at));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at]);
+  }, [at, now]);
 
   // Decode + render the selected scan
   useEffect(() => {
-    if (filesKey !== selectionKey || !files || !selectedTime || !product || level === null) return;
+    if (filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
+      setScan(null);
+      onScan(null);
+      return;
+    }
     const file = files.find((f) => f.href === selectedTime);
     if (!file) return;
     let cancelled = false;
@@ -168,6 +181,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     })
       .then((rendered) => {
         if (cancelled) return;
+        if (!radarFrameVisible(rendered.time, atRef.current, OPERA_MAX_AGE_MS, Date.now())) return;
         setScan(rendered);
         onScan(rendered);
         setStatus(null);
@@ -184,10 +198,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     };
   }, [files, filesKey, selectionKey, selectedTime, product, level, station.lat, station.lon, onScan]);
 
+  const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
+  useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);
+  const noCurrentScan = at === null && filesKey === selectionKey && !!files?.length && !fileFor(files, null);
   const info = scan?.info ?? productInfo(product ?? "DBZH");
   const backupCode = aemetCodeFor(station);
   const operaDown =
-    station.offline ||
+    station.offline || noCurrentScan ||
     (scans !== null && scans.length === 0) ||
     (files !== null && files.length === 0 && filesKey === selectionKey) ||
     (!!error && !scan);
@@ -297,7 +314,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
             value={selectedTime ?? ""}
             onChange={(e) => setSelectedTime(e.target.value)}
             className="select mt-2"
-            disabled={!files || files.length === 0}
+            disabled={at === null || !files || files.length === 0}
           >
             {(files ?? []).map((f, i) => (
               <option key={f.href} value={f.href}>
@@ -308,11 +325,12 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           </select>
         </section>
 
+        {noCurrentScan && <p className="hint">Sin datos actuales de OPERA. Las imágenes anteriores solo están disponibles en el historial.</p>}
         {status && <p className="hint">{status}</p>}
         {error && <p className="alert">{error}</p>}
 
 
-        {scan && (
+        {scan && visibleScan && (
           <section>
             <h3 className="section-title">{info.label}</h3>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">

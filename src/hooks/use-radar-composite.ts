@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { keepPreviousData, useQueries } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import type { RadarStation } from "@/lib/ord";
 import { fetchScanHistory, pickScan } from "@/lib/ord";
 import { decodeAndRender } from "@/lib/odim";
@@ -9,6 +8,8 @@ import { AEMET_CALIBRATION } from "@/lib/aemet-calibration";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState } from "@/lib/composite";
 import { HISTORY_HOURS, STEP_MS } from "@/lib/timeline";
+import { radarFrameVisible } from "@/lib/radar-freshness";
+import { useRadarNow } from "@/hooks/use-radar-now";
 
 export interface CompositeLayer {
   key: string;
@@ -25,9 +26,10 @@ const COMPOSITE_SIZE = 1000;
 
 /**
  * Spanish radars (OPERA + AEMET-only) drawn together on the map, at time `at`
- * (null = live). Previous frames stay visible while the next one loads.
+ * (null = live). Only a matching, fresh frame can remain visible.
  */
 export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], apiKey: string, at: number | null) {
+  const now = useRadarNow();
   const wantOpera = mode === "opera" || mode === "opera-fallback";
 
   // One request per radar lists every scan in the slider window.
@@ -45,7 +47,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const picks = radars.map((_, i) => {
     const list = history[i]?.data;
     if (!list) return undefined;
-    return at === null ? pickScan(list, Date.now(), OPERA_MAX_AGE_MS) : pickScan(list, at, STEP_MS);
+    return at === null ? pickScan(list, now, OPERA_MAX_AGE_MS) : pickScan(list, at, STEP_MS);
   });
 
   const scans = useQueries({
@@ -57,17 +59,17 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         staleTime: Infinity,
         gcTime: 30 * 60_000,
         retry: 1,
-        placeholderData: keepPreviousData,
         queryFn: async () => {
+          if (!pick) throw new Error("No OPERA scan");
           const scan = await decodeAndRender({
-            href: pick!.href,
+            href: pick.href,
             product: "DBZH",
-            level: pick!.level,
-            time: pick!.time,
+            level: pick.level,
+            time: pick.time,
             fallbackStation: { lat: s.lat, lon: s.lon },
             size: COMPOSITE_SIZE,
           });
-          return { image: scan.dataUrl, bounds: scan.bounds as RadarBounds, time: pick!.time };
+          return { image: scan.dataUrl, bounds: scan.bounds as RadarBounds, time: pick.time };
         },
       };
     }),
@@ -79,8 +81,8 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     if (!h || h.isPending) return h?.isError ? "missing" : "loading";
     if (h.isError || picks[i] === null) return "missing";
     const q = scans[i];
-    if (q?.data) return "ok";
     if (q?.isError) return "missing";
+    if (q?.data && radarFrameVisible(q.data.time, at, OPERA_MAX_AGE_MS, now)) return "ok";
     return "loading";
   });
 
@@ -88,11 +90,11 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     const code = aemetCodeFor(s);
     return code && AEMET_CALIBRATION[code] ? code : null;
   });
-  const wantAemet = radars.map((_, i) => compositeSource(mode, !!aemetCodes[i], operaStates[i]!) === "aemet");
+  const wantAemet = radars.map((_, i) => compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null) === "aemet");
 
   const frames = useAemetFrames(at !== null && wantAemet.some(Boolean));
   const aemetFrames = radars.map((_, i) =>
-    at !== null && aemetCodes[i] ? aemetFrameFor(frames.data, aemetCodes[i]!, at) : null,
+    at !== null && aemetCodes[i] ? aemetFrameFor(frames.data, aemetCodes[i] ?? "", at) : null,
   );
 
   const aemet = useQueries({
@@ -102,65 +104,58 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const live = at === null;
       return {
         queryKey: live ? ["composite-aemet", code] : ["composite-aemet-frame", code, frame?.observedAt ?? null],
-        enabled: wantAemet[i]! && (live || !!frame),
+        enabled: !!wantAemet[i] && (live || !!frame),
         staleTime: live ? AEMET_REFRESH_MS : Infinity,
         refetchInterval: live ? AEMET_REFRESH_MS : (false as const),
         gcTime: 30 * 60_000,
         retry: 2,
-        placeholderData: keepPreviousData,
         queryFn: async (): Promise<{ echoes: string; observedAt: string | null }> => {
+          if (!code) throw new Error("No AEMET radar");
           if (live) {
-            const images = await loadAemetImages(code!, Math.floor(Date.now() / AEMET_REFRESH_MS));
+            const images = await loadAemetImages(code, Math.floor(Date.now() / AEMET_REFRESH_MS));
             return { echoes: images.echoes, observedAt: images.observedAt };
           }
-          const images = await processAemetImage(code!, await fetchAemetFrameUrl(frame!));
-          return { echoes: images.echoes, observedAt: frame!.observedAt };
+          if (!frame) throw new Error("No archived frame");
+          const images = await processAemetImage(code, await fetchAemetFrameUrl(frame));
+          return { echoes: images.echoes, observedAt: frame.observedAt };
         },
       };
     }),
   });
 
-  const layers = useMemo(() => {
+  const layers = (() => {
     const out: CompositeLayer[] = [];
     radars.forEach((s, i) => {
-      const source = compositeSource(mode, !!aemetCodes[i], operaStates[i]!);
+      const source = compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null);
       if (source === "opera") {
         const d = scans[i]?.data;
-        if (d && picks[i]) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds });
+        if (d && picks[i] && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now, scans[i]?.isError || history[i]?.isError)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds });
       } else if (source === "aemet") {
         const d = aemet[i]?.data;
-        const code = aemetCodes[i]!;
-        if (!d) return;
+        const code = aemetCodes[i];
+        if (!d || !code) return;
+        const bounds = AEMET_CALIBRATION[code];
+        if (!bounds) return;
         // Live: AEMET keeps serving the last image of a broken radar for days.
-        if (at === null && d.observedAt && Date.now() - Date.parse(d.observedAt) > AEMET_LIVE_MAX_AGE_MS) return;
+        if (!radarFrameVisible(d.observedAt, at, AEMET_LIVE_MAX_AGE_MS, now, aemet[i]?.isError)) return;
         // History: nothing archived for this moment.
         if (at !== null && !aemetFrames[i]) return;
         out.push({
-          key: `aemet-${code}-${d.observedAt ?? aemet[i]!.dataUpdatedAt}-${d.echoes.length}`,
+          key: `aemet-${code}-${d.observedAt ?? aemet[i]?.dataUpdatedAt}-${d.echoes.length}`,
           radarId: s.id,
           source,
           image: d.echoes,
-          bounds: AEMET_CALIBRATION[code]!,
+          bounds,
         });
       }
     });
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    mode,
-    at,
-    radars,
-    scans.map((q) => q.dataUpdatedAt + String(q.isPlaceholderData)).join(),
-    aemet.map((q) => q.dataUpdatedAt + String(q.isPlaceholderData)).join(),
-    operaStates.join(),
-    picks.map((p) => p?.href ?? String(p)).join(),
-    aemetFrames.map((f) => f?.observedAt ?? "").join(),
-  ]);
+  })();
 
   const loading =
     history.some((q) => q.isFetching) ||
     scans.some((q, i) => q.isFetching || (!!picks[i] && q.isPlaceholderData)) ||
-    aemet.some((q, i) => q.isFetching || (wantAemet[i]! && (at === null || !!aemetFrames[i]) && q.isPlaceholderData)) ||
+    aemet.some((q, i) => q.isFetching || (wantAemet[i] && (at === null || !!aemetFrames[i]) && q.isPlaceholderData)) ||
     frames.isFetching;
   const counts = {
     opera: layers.filter((l) => l.source === "opera").length,
