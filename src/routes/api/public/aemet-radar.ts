@@ -5,6 +5,42 @@ import { aemetGifTime } from "@/lib/aemet-timestamp";
 
 // Latest AEMET regional reflectivity image (GIF) for one radar. The time
 // printed on the image goes out as X-Observed-At so stale frames can be hidden.
+// AEMET OpenData fails intermittently (rate-limited keys), so a failed fetch
+// falls back to the newest archived frame instead of an error.
+
+const ARCHIVE_FALLBACK_MS = 60 * 60_000;
+
+function gifResponse(bytes: Uint8Array, observed: string | null, source: "live" | "archive") {
+  const headers: Record<string, string> = {
+    "Content-Type": "image/gif",
+    "Cache-Control": source === "live" ? "public, max-age=300" : "no-store",
+    "X-Source": source,
+  };
+  if (observed) headers["X-Observed-At"] = observed;
+  return new Response(bytes, { headers });
+}
+
+async function archivedFrame(code: string): Promise<Response | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const since = new Date(Date.now() - ARCHIVE_FALLBACK_MS).toISOString();
+    const { data } = await supabaseAdmin
+      .from("aemet_radar_frames")
+      .select("observed_at, image_b64")
+      .eq("code", code)
+      .gte("observed_at", since)
+      .not("image_b64", "is", null)
+      .order("observed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data?.image_b64) return null;
+    const bytes = Uint8Array.from(atob(data.image_b64), (c) => c.charCodeAt(0));
+    return gifResponse(bytes, new Date(data.observed_at).toISOString().replace(".000Z", "Z"), "archive");
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute("/api/public/aemet-radar")({
   server: {
     handlers: {
@@ -14,15 +50,14 @@ export const Route = createFileRoute("/api/public/aemet-radar")({
         try {
           const data = await aemetFetch(`red/radar/regional/${code}`);
           const bytes = new Uint8Array(await data.arrayBuffer());
-          const headers: Record<string, string> = {
-            "Content-Type": "image/gif",
-            "Cache-Control": "public, max-age=300",
-          };
-          const observed = aemetGifTime(bytes, Date.now());
-          if (observed) headers["X-Observed-At"] = observed;
-          return new Response(bytes, { headers });
+          return gifResponse(bytes, aemetGifTime(bytes, Date.now()), "live");
         } catch (e) {
-          return new Response((e as Error).message, { status: 502 });
+          const fallback = await archivedFrame(code);
+          if (fallback) return fallback;
+          return new Response(`AEMET no disponible: ${(e as Error).message}`, {
+            status: 503,
+            headers: { "Retry-After": "120", "Cache-Control": "no-store" },
+          });
         }
       },
     },
