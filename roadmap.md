@@ -18,4 +18,4 @@
 - [x] 6 h history slider, 10-min steps, play/pause, "En directo"
 - [x] OPERA composite + station panel follow the slider
 - [x] AEMET archive (every 5 min) + footer timestamp reading
-- [ ] Learn footer digits 4, 5, 8 from real images (needed for times containing them)
+- [x] Footer digits 4, 5, 8 solved from publishing lag until real glyphs are captured
