@@ -1,3 +1,5 @@
+import { LanguageProvider, useI18n } from "@/lib/i18n";
+import LanguageMenu from "@/components/LanguageMenu";
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
@@ -40,10 +42,11 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <RadarSession><Home /></RadarSession>,
+  component: () => <LanguageProvider><RadarSession><Home /></RadarSession></LanguageProvider>,
 });
 
 function Home() {
+  const { t } = useI18n();
   const { settings, update, loaded } = useSettings();
   const [tileSource, setTileSource] = useState<TileSource>("rainviewer");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,12 +96,12 @@ function Home() {
     queryFn: () => fetchAemetStations(settings.aemetKey.trim() || undefined),
   });
   const aemetNote = aemet.isError
-      ? (aemet.error as Error).message
+      ? t("loadFailed")
       : aemet.data
-        ? `${aemet.data.length} stations · updates hourly`
+        ? t("aemetCount", { n: aemet.data.length })
         : showAemet
-          ? "Loading…"
-          : "Live temp, wind, rain, pressure";
+          ? t("loading")
+          : t("aemetDefault");
 
   const visibleStations = useMemo(() => {
     const fixNames: Record<string, string> = { SanSebastian: "San Sebastián" };
@@ -117,10 +120,10 @@ function Home() {
   const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
   const compositeOn = settings.composite !== "off";
   const compositeNote = !compositeOn
-    ? "Apagado"
+    ? t("off")
     : composite.loading && composite.layers.length === 0
-      ? "Cargando radares…"
-      : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? " · actualizando…" : ""}`;
+      ? t("loadingRadars")
+      : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? ` · ${t("updating")}` : ""}`;
 
   // With a radar open, only that radar's composite image stays on the map.
   const mapComposite = useMemo(() => {
@@ -135,9 +138,9 @@ function Home() {
   const tileUrl = compositeOn ? null : tileTemplate(settings, tileFrame?.path ?? null, tileSource);
   const sliderNote =
     compositeOn && at !== null && !composite.loading && composite.layers.length === 0
-      ? "Sin imágenes guardadas para esa hora"
+      ? t("noSaved")
       : !compositeOn && tileSource !== "none" && at !== null && frames.length > 0 && !tileFrame && !scan
-      ? `${tileSource === "librewxr" ? "LibreWXR" : "RainViewer"} solo guarda ~2 h`
+      ? t("tileHistory", { name: tileSource === "librewxr" ? "LibreWXR" : "RainViewer" })
       : null;
 
   const handleScan = useCallback((next: RenderedScan | null) => setScan(next), []);
@@ -206,13 +209,14 @@ function Home() {
           onCompositeChange={(composite) => update({ composite })}
           compositeNote={compositeNote}
         />
+        <LanguageMenu />
       </div>
 
       {(stations.isLoading || stations.isError) && (
         <div className="statusbar">
           {stations.isError
-            ? (stations.error as Error).message
-            : "Loading European radar stations…"}
+            ? t("loadFailed")
+            : t("loadStations")}
         </div>
       )}
 

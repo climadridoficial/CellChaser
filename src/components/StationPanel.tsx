@@ -1,3 +1,4 @@
+import { useI18n, translatedProduct, translatedCountry } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
 import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
@@ -39,6 +40,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
 }
 
 export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at }: Props) {
+  const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
@@ -220,22 +222,22 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           aria-expanded={!collapsed}
         >
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-            {countryLabel(station.country)} · {station.offline ? "AEMET (sin OPERA)" : "OPERA raw station"}
+            {translatedCountry(locale, station.country, countryLabel(station.country))} · {station.offline ? t("noOpera") : t("operaStations")}
           </p>
           <h2 className="mt-1 truncate font-display text-lg leading-tight text-foreground">
             {station.name}
           </h2>
           <p className="truncate text-xs text-muted-foreground">
             {product ?? "—"}
-            {level !== null ? ` · ${level}°` : ""} · tap to {collapsed ? "expand" : "collapse"}
+            {level !== null ? ` · ${level}°` : ""} · {collapsed ? t("expand") : t("collapse")}
           </p>
         </button>
         <div className="flex shrink-0 flex-col gap-1.5">
           <button onClick={() => setCollapsed((v) => !v)} className="chip justify-center">
             {collapsed ? "▲" : "▼"}
           </button>
-          <button onClick={onClose} className="chip justify-center" aria-label="Close station panel">
-            Close
+          <button onClick={onClose} className="chip justify-center" aria-label={t("close")}>
+            {t("close")}
           </button>
         </div>
       </header>
@@ -246,11 +248,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
         {showBackup && backupCode && <AemetBackup code={backupCode} at={at} />}
         {!station.offline && (<>
         <section>
-          <h3 className="section-title">Product</h3>
+          <h3 className="section-title">{t("product")}</h3>
           {scans === null ? (
-            <p className="hint mt-2">Loading availability…</p>
+            <p className="hint mt-2">{t("loading")}</p>
           ) : availableProducts.length === 0 ? (
-            <p className="hint mt-2">No products published for this radar.</p>
+            <p className="hint mt-2">{t("noProducts")}</p>
           ) : (
             <select
               value={product ?? ""}
@@ -264,19 +266,19 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
             >
               {availableProducts.map((p) => (
                 <option key={p} value={p}>
-                  {productInfo(p).label} ({p})
+                  {translatedProduct(lang, p)}
                 </option>
               ))}
             </select>
           )}
           {missing.length > 0 && availableProducts.length > 0 && (
-            <p className="hint mt-2">Not published for this radar: {missing.join(", ")}.</p>
+            <p className="hint mt-2">{t("notPublished", { p: missing.join(", ") })}</p>
           )}
         </section>
 
         <div className="grid grid-cols-2 gap-3">
           <section>
-            <h3 className="section-title">Elevation</h3>
+            <h3 className="section-title">{t("elevation")}</h3>
             <select
               value={level ?? ""}
               onChange={(e) => setLevel(Number(e.target.value))}
@@ -293,7 +295,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           </section>
 
           <section>
-            <h3 className="section-title">Time range</h3>
+            <h3 className="section-title">{t("timeRange")}</h3>
             <select
               value={hours}
               onChange={(e) => setHours(Number(e.target.value))}
@@ -301,7 +303,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
             >
               {TIME_RANGES.map((r) => (
                 <option key={r.hours} value={r.hours}>
-                  Last {r.label}
+                  {t("lastHours", { h: r.label })}
                 </option>
               ))}
             </select>
@@ -309,7 +311,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
         </div>
 
         <section>
-          <h3 className="section-title">Scan time</h3>
+          <h3 className="section-title">{t("scanTime")}</h3>
           <select
             value={selectedTime ?? ""}
             onChange={(e) => setSelectedTime(e.target.value)}
@@ -318,29 +320,29 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           >
             {(files ?? []).map((f, i) => (
               <option key={f.href} value={f.href}>
-                {new Date(f.time).toUTCString().slice(5, 22)} UTC{i === 0 ? " · latest" : ""}
+                {new Date(f.time).toLocaleString(locale, { timeZone: "UTC", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} UTC{i === 0 ? ` · ${t("latest")}` : ""}
               </option>
             ))}
             {(!files || files.length === 0) && <option value="">—</option>}
           </select>
         </section>
 
-        {noCurrentScan && <p className="hint">Sin datos actuales de OPERA. Las imágenes anteriores solo están disponibles en el historial.</p>}
-        {status && <p className="hint">{status}</p>}
-        {error && <p className="alert">{error}</p>}
+        {noCurrentScan && <p className="hint">{t("noCurrent")}</p>}
+        {status && <p className="hint">{status === "Querying available products…" ? t("queryProducts") : status === "Looking up scans…" ? t("queryScans") : status === "Decoding ODIM/HDF5 scan…" ? t("decode") : status === "No scans published in this time range." ? t("noScans") : status}</p>}
+        {error && <p className="alert">{t("loadFailed")}</p>}
 
 
         {scan && visibleScan && (
           <section>
-            <h3 className="section-title">{info.label}</h3>
+            <h3 className="section-title">{translatedProduct(lang, info.key)}</h3>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <dt>Scan time</dt>
+              <dt>{t("scanTime")}</dt>
               <dd className="text-foreground">{scan.time.slice(11, 16)} UTC</dd>
-              <dt>Elevation</dt>
+              <dt>{t("elevation")}</dt>
               <dd className="text-foreground">{scan.elangle}°</dd>
-              <dt>Range</dt>
+              <dt>{t("range")}</dt>
               <dd className="text-foreground">{scan.rangeKm} km</dd>
-              <dt>Observed</dt>
+              <dt>{t("observed")}</dt>
               <dd className="text-foreground">
                 {scan.min} … {scan.max} {info.unit}
               </dd>
