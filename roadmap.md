@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.
 - [x] Harden false-echo detection and turning forecasts, with regression tests.
 - [x] Move real tracking to shared server computation, independent of composite visibility; actual 15 AEMET / 10 OPERA ingest and matching desktop/mobile observations verified.
 - [ ] Activate updated automatic shared tracking on the published app — waits for user-requested publishing.

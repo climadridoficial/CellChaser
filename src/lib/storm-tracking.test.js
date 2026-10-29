@@ -78,3 +78,17 @@ test("forecast turns south with the latest measured storm motion", () => {
 test("unconfirmed direction reversal does not create a misleading forecast", () => {
   expect(trackCells([frame(0,-3,50),frame(10,-2.92,50),frame(20,-3,50)],"radar")[0].forecast).toBeNull();
 });
+test("forecast cones have exactly four convex corners and widen in every direction", () => {
+  for (const [dx, dy] of [[0.08,0],[-0.08,0],[0,0.08],[0,-0.08],[0.06,0.06],[-0.06,-0.06]]) {
+    const frames = [0,1,2].map(i => ({time:t0+i*10*60_000,cells:[{...cell(-3+i*dx,50),lat:40+i*dy}]}));
+    const cone = trackCells(frames,"radar")[0].forecast;
+    expect(cone).toHaveLength(4);
+    const cross = cone.map((p,i) => {
+      const q=cone[(i+1)%4], r=cone[(i+2)%4];
+      return (q[1]-p[1])*(r[0]-q[0])-(q[0]-p[0])*(r[1]-q[1]);
+    });
+    expect(cross.every(v=>v>0)||cross.every(v=>v<0)).toBe(true);
+    const span=(a,b)=>Math.hypot(a[0]-b[0],(a[1]-b[1])*Math.cos(40*Math.PI/180));
+    expect(span(cone[2],cone[3])).toBeGreaterThan(span(cone[0],cone[1]));
+  }
+});
