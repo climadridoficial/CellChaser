@@ -42,7 +42,15 @@ function authHeaders(apiKey?: string): HeadersInit {
 }
 
 async function getJson<T>(url: string, apiKey?: string): Promise<T> {
-  const res = await fetch(url, { headers: { Accept: "application/json", ...authHeaders(apiKey) } });
+  const init = { headers: { Accept: "application/json", ...authHeaders(apiKey) } };
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    // Some networks/browsers can't reach Meteogate directly; retry through our proxy.
+    if (typeof window === "undefined") throw err;
+    res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, init);
+  }
   if (!res.ok) {
     throw new Error(
       res.status === 429

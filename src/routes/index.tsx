@@ -108,7 +108,8 @@ function Home() {
   const visibleStations = useMemo(() => {
     const fixNames: Record<string, string> = { SanSebastian: "San Sebastián" };
     const opera: RadarStation[] = (stations.data ?? []).map((s) => ({ ...s, name: fixNames[s.name] ?? s.name }));
-    const all = stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
+    // AEMET radars stay available even when OPERA can't be reached.
+    const all = [...opera, ...aemetOnlyStations(opera)];
     if (settings.country === "all") return all;
     if (settings.country === "iberia") return all.filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
     const code = settings.country.replace(/^0+/, "");
@@ -118,7 +119,7 @@ function Home() {
   // Iberian radars (Spain + Portugal) for the composite, independent of the station country filter.
   const spainRadars = useMemo(() => {
     const opera = (stations.data ?? []).filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
-    return stations.data ? [...opera, ...aemetOnlyStations(opera)] : [];
+    return [...opera, ...aemetOnlyStations(opera)];
   }, [stations.data]);
   const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
   const compositeOn = settings.composite !== "off";

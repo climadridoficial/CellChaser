@@ -26,13 +26,14 @@ export const Route = createFileRoute("/api/public/odim")({
           return new Response("Host not allowed", { status: 403 });
         }
 
-        const upstream = await fetch(target.toString());
+        const auth = request.headers.get("authorization");
+        const upstream = await fetch(target.toString(), auth ? { headers: { Authorization: auth } } : undefined);
         if (!upstream.ok || !upstream.body) {
           return new Response("Upstream error", { status: upstream.status || 502 });
         }
         return new Response(upstream.body, {
           headers: {
-            "Content-Type": "application/x-odim",
+            "Content-Type": upstream.headers.get("content-type") ?? "application/x-odim",
             "Cache-Control": "public, max-age=300",
           },
         });
