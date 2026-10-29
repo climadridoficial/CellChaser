@@ -8,6 +8,20 @@
       "when": 1793225015386,
       "tag": "0000_aemet_radar_alignments",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793259703097,
+      "tag": "0001_aemet_radar_frames",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793259720897,
+      "tag": "0002_aemet_radar_frames_image",
+      "breakpoints": true
     }
   ]
 }

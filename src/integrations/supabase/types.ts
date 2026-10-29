@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      aemet_radar_frames: {
+        Row: {
+          code: string
+          created_at: string
+          image_b64: string | null
+          observed_at: string
+          path: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          image_b64?: string | null
+          observed_at: string
+          path: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          image_b64?: string | null
+          observed_at?: string
+          path?: string
+        }
+        Relationships: []
+      }
       radar_alignments: {
         Row: {
           east: number
