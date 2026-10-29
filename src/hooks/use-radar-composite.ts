@@ -26,7 +26,7 @@ const COMPOSITE_SIZE = 1000;
 
 /**
  * Spanish radars (OPERA + AEMET-only) drawn together on the map, at time `at`
- * (null = live). Previous frames stay visible while the next one loads.
+ * (null = live). Only a matching, fresh frame can remain visible.
  */
 export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], apiKey: string, at: number | null) {
   const now = useRadarNow();
@@ -104,7 +104,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const live = at === null;
       return {
         queryKey: live ? ["composite-aemet", code] : ["composite-aemet-frame", code, frame?.observedAt ?? null],
-        enabled: wantAemet[i] && (live || !!frame),
+        enabled: !!wantAemet[i] && (live || !!frame),
         staleTime: live ? AEMET_REFRESH_MS : Infinity,
         refetchInterval: live ? AEMET_REFRESH_MS : (false as const),
         gcTime: 30 * 60_000,
@@ -134,6 +134,8 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         const d = aemet[i]?.data;
         const code = aemetCodes[i];
         if (!d || !code) return;
+        const bounds = AEMET_CALIBRATION[code];
+        if (!bounds) return;
         // Live: AEMET keeps serving the last image of a broken radar for days.
         if (!radarFrameVisible(d.observedAt, at, AEMET_LIVE_MAX_AGE_MS, now, aemet[i]?.isError)) return;
         // History: nothing archived for this moment.
@@ -143,7 +145,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
           radarId: s.id,
           source,
           image: d.echoes,
-          bounds: AEMET_CALIBRATION[code],
+          bounds,
         });
       }
     });
