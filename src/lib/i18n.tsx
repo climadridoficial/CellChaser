@@ -57,6 +57,7 @@ export const MESSAGES = {
   done: r("Hecho", "Concluído", "Fet", "Feito", "Eginda", "Done"),
   close: r("Cerrar", "Fechar", "Tanca", "Pechar", "Itxi", "Close"),
   now: r("Ahora", "Agora", "Ara", "Agora", "Orain", "Now"),
+  preloading: r("precargando {n}/{total}", "a pré-carregar {n}/{total}", "precarregant {n}/{total}", "precargando {n}/{total}", "aurrez kargatzen {n}/{total}", "preloading {n}/{total}"),
   live: r("En directo", "Em direto", "En directe", "En directo", "Zuzenean", "Live"),
   every: r("cada {n} min", "a cada {n} min", "cada {n} min", "cada {n} min", "{n} minuturo", "every {n} min"),
   ago: r("hace {t}", "há {t}", "fa {t}", "hai {t}", "duela {t}", "{t} ago"),

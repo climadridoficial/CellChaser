@@ -50,6 +50,7 @@ export default function RadarMap({
 }: Props) {
   const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
+  const wantedRef = useRef<Set<string>>(new Set());
   const aemetRef = useRef<L.LayerGroup | null>(null);
   const aemetHandler = useRef(onSelectAemet);
   aemetHandler.current = onSelectAemet;
@@ -103,15 +104,18 @@ export default function RadarMap({
 
   useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
 
-  // Spain radar composite: one image per radar, swapped in place on refresh.
+  // Spain radar composite: one image per radar. A replaced image stays until
+  // its successor has finished loading, so time steps never flash empty.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const current = compositeRef.current;
     const wanted = new Set(composite.map((l) => l.key));
-    for (const [key, overlay] of current) {
-      if (!wanted.has(key)) {
-        overlay.remove();
+    const incoming = new Set(composite.filter((l) => !current.has(l.key)).map((l) => l.radarId));
+    const radarOf = (key: string) => (current.get(key) as (L.ImageOverlay & { radarId?: string }) | undefined)?.radarId;
+    for (const key of [...current.keys()]) {
+      if (!wanted.has(key) && !incoming.has(radarOf(key) ?? "")) {
+        current.get(key)?.remove();
         current.delete(key);
       }
     }
@@ -122,9 +126,22 @@ export default function RadarMap({
         zIndex: 350,
         className: "radar-overlay",
         interactive: false,
-      }).addTo(map);
+      }) as L.ImageOverlay & { radarId?: string };
+      overlay.radarId = layer.radarId;
+      const retireOld = () => {
+        for (const [key, o] of [...current]) {
+          if (key !== layer.key && (o as typeof overlay).radarId === layer.radarId && !wantedRef.current.has(key)) {
+            o.remove();
+            current.delete(key);
+          }
+        }
+      };
+      overlay.once("load", retireOld);
+      overlay.once("error", retireOld);
+      overlay.addTo(map);
       current.set(layer.key, overlay);
     }
+    wantedRef.current = wanted;
   }, [composite]);
 
   useEffect(() => () => {
@@ -178,22 +195,27 @@ export default function RadarMap({
     }
   }, [aemet, aemetSelected]);
 
-  // Decoded radar scan overlay
+  // Decoded radar scan overlay: the old image stays until the new one has loaded.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (overlayRef.current) {
-      overlayRef.current.remove();
-      overlayRef.current = null;
+    const previous = overlayRef.current;
+    overlayRef.current = null;
+    if (!scan) {
+      previous?.remove();
+      return;
     }
-    if (scan) {
-      overlayRef.current = L.imageOverlay(scan.dataUrl, scan.bounds, {
-        opacity: 1,
-        zIndex: 400,
-        className: "radar-overlay",
-        interactive: false,
-      }).addTo(map);
-    }
+    const overlay = L.imageOverlay(scan.dataUrl, scan.bounds, {
+      opacity: 1,
+      zIndex: 400,
+      className: "radar-overlay",
+      interactive: false,
+    });
+    const retire = () => previous?.remove();
+    overlay.once("load", retire);
+    overlay.once("error", retire);
+    overlay.addTo(map);
+    overlayRef.current = overlay;
   }, [scan]);
 
   // Fly to the selected station
