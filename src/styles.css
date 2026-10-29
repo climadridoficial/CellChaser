@@ -156,6 +156,10 @@
 
 :root {
   --radius: 0.5rem;
+  --storm-light: oklch(0.76 0.19 145);
+  --storm-strong: oklch(0.87 0.18 95);
+  --storm-very-strong: oklch(0.64 0.24 25);
+  --storm-extreme: oklch(0.68 0.27 335);
   --background: oklch(0.16 0.021 250);
   --foreground: oklch(0.95 0.008 240);
   --card: oklch(0.21 0.024 252);
@@ -465,3 +469,23 @@
   accent-color: var(--primary);
   margin-block: 0.15rem;
 }
+
+.storm-light { --storm-color: var(--storm-light); }
+.storm-strong { --storm-color: var(--storm-strong); }
+.storm-veryStrong { --storm-color: var(--storm-very-strong); }
+.storm-extreme { --storm-color: var(--storm-extreme); }
+.storm-area, .storm-trace, .storm-dot { stroke: var(--storm-color); fill: var(--storm-color); }
+.storm-trace { fill: none; }
+.storm-area { stroke-dasharray: 7 4; }
+.storm-legend {
+  position: absolute; z-index: 1040; top: 8.8rem; left: 0.75rem;
+  width: min(20rem, calc(100% - 4rem)); padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: color-mix(in oklab, var(--card) 94%, transparent);
+  color: var(--foreground); font-size: 0.65rem; line-height: 1.45;
+  pointer-events: none;
+}
+.storm-legend-scale { display: flex; flex-wrap: wrap; gap: 0.2rem 0.65rem; margin-block: 0.35rem; }
+.storm-legend-scale span { display: inline-flex; align-items: center; gap: 0.25rem; }
+.storm-legend-scale i { width: 7px; height: 7px; background: var(--storm-color); }
+@media (min-width: 768px) { .storm-legend { top: 4.75rem; left: auto; right: 0.75rem; } }

@@ -18,6 +18,8 @@ interface Props {
   composite: CompositeMode;
   onCompositeChange: (mode: CompositeMode) => void;
   compositeNote: string;
+  showStorms: boolean;
+  onShowStormsChange: (show: boolean) => void;
 }
 
 const SOURCES: { id: TileSource; label: string; note: string }[] = [
@@ -117,6 +119,10 @@ export default function LayerMenu(props: Props) {
           </div>
 
           <h3 className="section-title mt-4">{t("overlays")}</h3>
+          <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 hover:bg-secondary/70">
+            <span className="text-xs font-medium">{t("stormTracks")}</span>
+            <input type="checkbox" checked={props.showStorms} onChange={e => props.onShowStormsChange(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
+          </label>
           <label className="mt-2 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>
               <span className="block text-xs font-medium text-foreground">{t("operaStations")}</span>

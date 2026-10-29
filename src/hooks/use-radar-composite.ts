@@ -18,9 +18,10 @@ export interface CompositeLayer {
   source: "opera" | "aemet";
   image: string;
   bounds: RadarBounds;
+  observedAt: string;
 }
 
-const REFRESH_MS = 10 * 60_000;
+const REFRESH_MS = 60_000;
 // Lighter than the station panel's full-detail render: 10 radars at once.
 const COMPOSITE_SIZE = 1000;
 
@@ -129,7 +130,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const source = compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null);
       if (source === "opera") {
         const d = scans[i]?.data;
-        if (d && picks[i] && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now, scans[i]?.isError || history[i]?.isError)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds });
+        if (d && picks[i] && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now, scans[i]?.isError || history[i]?.isError)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time });
       } else if (source === "aemet") {
         const d = aemet[i]?.data;
         const code = aemetCodes[i];
@@ -146,6 +147,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
           source,
           image: d.echoes,
           bounds,
+          observedAt: d.observedAt ?? "",
         });
       }
     });
