@@ -42,6 +42,34 @@ export function proxiedFileUrl(href: string): string {
   return `/api/public/odim?url=${encodeURIComponent(href)}`;
 }
 
+// Each volume holds every product and elevation: download it once and reuse
+// it for the composite, the station panel and product/elevation switches.
+const fileCache = new Map<string, Promise<ArrayBuffer>>();
+function downloadScan(href: string): Promise<ArrayBuffer> {
+  let hit = fileCache.get(href);
+  if (!hit) {
+    hit = fetch(proxiedFileUrl(href)).then((res) => {
+      if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
+      return res.arrayBuffer();
+    });
+    hit.catch(() => fileCache.delete(href));
+    fileCache.set(href, hit);
+    while (fileCache.size > 24) fileCache.delete(fileCache.keys().next().value!);
+  } else {
+    fileCache.delete(href);
+    fileCache.set(href, hit);
+  }
+  return hit;
+}
+
+/** Blob URLs skip slow PNG→base64 encoding. */
+function canvasUrl(canvas: HTMLCanvasElement): Promise<string> {
+  return new Promise((resolve) => {
+    if (!canvas.toBlob) return resolve(canvas.toDataURL("image/png"));
+    canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : canvas.toDataURL("image/png")), "image/png");
+  });
+}
+
 export async function decodeAndRender(opts: {
   href: string;
   product: string;
@@ -51,9 +79,7 @@ export async function decodeAndRender(opts: {
   /** Fixed canvas size; defaults to full range-gate detail. */
   size?: number;
 }): Promise<RenderedScan> {
-  const res = await fetch(proxiedFileUrl(opts.href));
-  if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
-  const buffer = await res.arrayBuffer();
+  const buffer = await downloadScan(opts.href);
 
   const { File: H5File } = (await import("jsfive")) as unknown as {
     File: new (b: ArrayBuffer, n?: string) => H5Group;
@@ -169,7 +195,7 @@ export async function decodeAndRender(opts: {
   ctx.putImageData(image, 0, 0);
 
   return {
-    dataUrl: canvas.toDataURL("image/png"),
+    dataUrl: await canvasUrl(canvas),
     echoGrid: echoValues ? { values: echoValues, width: gridSize, height: gridSize, bounds: [[south, west], [north, east]] } : undefined,
     bounds: [
       [south, west],
