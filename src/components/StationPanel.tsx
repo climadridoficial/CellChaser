@@ -1,5 +1,6 @@
 import { useI18n, translatedProduct, translatedCountry } from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
 import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
@@ -9,7 +10,7 @@ import { legendStops, productInfo } from "@/lib/radar-products";
 import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
 import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
-import { pickFrame } from "@/lib/timeline";
+import { HISTORY_HOURS, pickFrame } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
@@ -85,7 +86,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   // Follow the map time slider: widen the time range if needed, then pick the scan.
   useEffect(() => {
     if (at !== null) {
-      const needed = (Date.now() - at) / 3600_000;
+      // Whole slider window at once, so moving it never re-queries.
+      const needed = Math.max(HISTORY_HOURS, (Date.now() - at) / 3600_000);
       const range = TIME_RANGES.find((r) => r.hours >= needed)?.hours ?? 24;
       setHours((h) => (h >= needed ? h : range));
     }
@@ -146,11 +148,6 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   useEffect(() => {
     if (!entry) return;
     let cancelled = false;
-    setFiles(null);
-    setFilesKey(null);
-    setSelectedTime(null);
-    setScan(null);
-    onScan(null);
     setError(null);
     setStatus("Looking up scans…");
     fetchScanFiles(
