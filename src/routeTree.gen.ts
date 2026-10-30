@@ -14,6 +14,7 @@ import { Route as ApiPublicAemetRouteImport } from './routes/api/public/aemet'
 import { Route as ApiPublicAemetRadarRouteImport } from './routes/api/public/aemet-radar'
 import { Route as ApiPublicOdimRouteImport } from './routes/api/public/odim'
 import { Route as ApiPublicJobsAemetArchiveRouteImport } from './routes/api/public/jobs/aemet-archive'
+import { Route as ApiPublicJobsOperaStormsRouteImport } from './routes/api/public/jobs/opera-storms'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,6 +42,12 @@ const ApiPublicJobsAemetArchiveRoute =
     path: '/api/public/jobs/aemet-archive',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsOperaStormsRoute =
+  ApiPublicJobsOperaStormsRouteImport.update({
+    id: '/api/public/jobs/opera-storms',
+    path: '/api/public/jobs/opera-storms',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -48,6 +55,7 @@ export interface FileRoutesByFullPath {
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
+  '/api/public/jobs/opera-storms': typeof ApiPublicJobsOperaStormsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
+  '/api/public/jobs/opera-storms': typeof ApiPublicJobsOperaStormsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -63,6 +72,7 @@ export interface FileRoutesById {
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
+  '/api/public/jobs/opera-storms': typeof ApiPublicJobsOperaStormsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
+    | '/api/public/jobs/opera-storms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -79,6 +90,7 @@ export interface FileRouteTypes {
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
+    | '/api/public/jobs/opera-storms'
   id:
     | '__root__'
     | '/'
@@ -86,6 +98,7 @@ export interface FileRouteTypes {
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
+    | '/api/public/jobs/opera-storms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +107,7 @@ export interface RootRouteChildren {
   ApiPublicAemetRadarRoute: typeof ApiPublicAemetRadarRoute
   ApiPublicOdimRoute: typeof ApiPublicOdimRoute
   ApiPublicJobsAemetArchiveRoute: typeof ApiPublicJobsAemetArchiveRoute
+  ApiPublicJobsOperaStormsRoute: typeof ApiPublicJobsOperaStormsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -133,6 +147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsAemetArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/opera-storms': {
+      id: '/api/public/jobs/opera-storms'
+      path: '/api/public/jobs/opera-storms'
+      fullPath: '/api/public/jobs/opera-storms'
+      preLoaderRoute: typeof ApiPublicJobsOperaStormsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -142,6 +163,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAemetRadarRoute: ApiPublicAemetRadarRoute,
   ApiPublicOdimRoute: ApiPublicOdimRoute,
   ApiPublicJobsAemetArchiveRoute: ApiPublicJobsAemetArchiveRoute,
+  ApiPublicJobsOperaStormsRoute: ApiPublicJobsOperaStormsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

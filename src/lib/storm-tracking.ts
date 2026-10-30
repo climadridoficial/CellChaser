@@ -10,6 +10,8 @@ export interface TrackPoint extends Cell { time: number }
 export interface StormTrack { id: string; points: TrackPoint[]; intensity: Intensity; forecast: [number, number][] | null; speedKmh: number }
 
 // Reflectivity classes, not a severe-weather classification or warning.
+/** Smaller echoes (a few pixels) are treated as probable false echoes. */
+export const MIN_RADIUS_KM = 2.5;
 export function cellIntensity(dbz: number): Intensity {
   return dbz >= 60 ? "extreme" : dbz >= 50 ? "veryStrong" : dbz >= 40 ? "strong" : "light";
 }
@@ -36,7 +38,7 @@ export function detectCells(grid: EchoGrid): Cell[] {
         visited[j] = 1; queue.push(j);
       }
     }
-    if (dbzs.length < 6 || dbzs.length * pixelArea < 6) continue;
+    if (dbzs.length < 6 || dbzs.length * pixelArea < Math.PI * MIN_RADIUS_KM ** 2) continue;
     const members = new Set(queue);
     // At least one solid 2x2 >=30 dBZ core, not a chain of diagonal dots.
     const core = queue.some(i => {
@@ -101,7 +103,7 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
     const vx = 0.8 * dx / hours + 0.2 * ox / oldHours, vy = 0.8 * dy / hours + 0.2 * oy / oldHours, speed = Math.hypot(vx, vy);
     if (speed < 2 || speed > 130) return track;
     // A couple of speckle pixels are probably false echoes: no cone for them.
-    if (last.radiusKm < 2.5) return track;
+    if (last.radiusKm < MIN_RADIUS_KM) return track;
     const px = -vy / speed, py = vx / speed, width = Math.max(6, last.radiusKm), farWidth = width + 5 + speed * 0.05;
     const forecast = [offset(last, px * width, py * width), offset(last, -px * width, -py * width), offset(last, vx * 0.5 - px * farWidth, vy * 0.5 - py * farWidth), offset(last, vx * 0.5 + px * farWidth, vy * 0.5 + py * farWidth)];
     return { ...track, forecast, speedKmh: Math.round(speed) };
@@ -110,5 +112,5 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
 
 /** A one-scan dot is unconfirmed; retain only repeated detections in real data. */
 export function confirmedStormTracks(frames: CellFrame[], radarId: string): StormTrack[] {
-  return trackCells(frames, radarId).filter(track => track.points.length >= 2);
+  return trackCells(frames, radarId).filter(track => track.points.length >= 2 && (track.points.at(-1)?.radiusKm ?? 0) >= MIN_RADIUS_KM);
 }
