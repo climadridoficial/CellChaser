@@ -20,7 +20,7 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
     const img = L.DomUtil.create('img', `leaflet-zoom-hide radar-overlay ${editing ? 'aemet-align-image' : 'aemet-echo-image'}`) as HTMLImageElement;
     img.src = value.image;
     img.draggable = false;
-    Object.assign(img.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, transformOrigin: '0 0', zIndex: '450', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none' });
+    Object.assign(img.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, maxWidth: 'none', maxHeight: 'none', transformOrigin: '0 0', zIndex: '450', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none' });
     map.getPanes().overlayPane.appendChild(img);
 
     const border = editing ? L.polygon([], { className: 'aemet-align-border', fill: false, interactive: false, weight: 2, noClip: true, smoothFactor: 0 } as L.PolylineOptions).addTo(map) : null;
