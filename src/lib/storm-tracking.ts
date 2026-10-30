@@ -88,6 +88,8 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
     frame.cells.forEach((cell, i) => { if (!used.has(i)) next.push({ id: `${radarId}-${frame.time}-${serial++}`, points: [{ ...cell, time: frame.time }], intensity: cellIntensity(cell.dbz), forecast: null, speedKmh: 0 }); });
     active = next;
   }
+  // NWS-style 60-minute corridor: 30 minutes looked far too short against real cell motion.
+  const FORECAST_HOURS = 1;
   return active.map(track => {
     // AEMET often re-serves the same image: identical repeated positions are stale frames, not a stopped storm.
     const distinct = track.points.filter((p, i, all) => i === 0 || p.lat !== all[i - 1]!.lat || p.lon !== all[i - 1]!.lon);
@@ -107,7 +109,7 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
     // A couple of speckle pixels are probably false echoes: no cone for them.
     if (last.radiusKm < MIN_RADIUS_KM) return track;
     const px = -vy / speed, py = vx / speed, width = Math.max(6, last.radiusKm), farWidth = width + 5 + speed * 0.05;
-    const forecast = [offset(last, px * width, py * width), offset(last, -px * width, -py * width), offset(last, vx * 0.5 - px * farWidth, vy * 0.5 - py * farWidth), offset(last, vx * 0.5 + px * farWidth, vy * 0.5 + py * farWidth)];
+    const forecast = [offset(last, px * width, py * width), offset(last, -px * width, -py * width), offset(last, vx * FORECAST_HOURS - px * farWidth, vy * FORECAST_HOURS - py * farWidth), offset(last, vx * FORECAST_HOURS + px * farWidth, vy * FORECAST_HOURS + py * farWidth)];
     return { ...track, forecast, speedKmh: Math.round(speed) };
   });
 }

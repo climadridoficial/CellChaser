@@ -19,11 +19,11 @@ test("one dot per scan and colour recalculates when a storm strengthens then wea
   expect(track.forecast).toHaveLength(4);
   expect(track.forecast[2][1]).toBeGreaterThan(-2.76);
 });
-test("forecast is a 30 minute widening corridor using actual scan time deltas", () => {
+test("forecast is a 60 minute widening corridor using actual scan time deltas", () => {
   const track = trackCells([frame(0, -3, 45), frame(5, -2.96, 45), frame(15, -2.88, 45)], "radar")[0];
   expect(track.speedKmh).toBe(41);
   const farLon = (track.forecast[2][1] + track.forecast[3][1]) / 2;
-  expect(farLon).toBeCloseTo(-2.64, 3);
+  expect(farLon).toBeCloseTo(-2.40, 3);
 });
 test("single scans, stationary cells and gaps do not invent a path", () => {
   expect(trackCells([frame(0, -3, 40)], "radar")[0].forecast).toBeNull();

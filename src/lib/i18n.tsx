@@ -15,7 +15,7 @@ const r = (es: string, pt: string, ca: string, gl: string, eu: string, en: strin
 
 export const MESSAGES = {
   stormTracks: r("Movimiento de células", "Movimento das células", "Moviment de cèl·lules", "Movemento das células", "Zelulen mugimendua", "Cell movement"),
-  stormForecast: r("Previsión experimental · 30 min", "Previsão experimental · 30 min", "Previsió experimental · 30 min", "Previsión experimental · 30 min", "Iragarpen esperimentala · 30 min", "Experimental forecast · 30 min"),
+  stormForecast: r("Previsión experimental · 60 min", "Previsão experimental · 60 min", "Previsió experimental · 60 min", "Previsión experimental · 60 min", "Iragarpen esperimentala · 60 min", "Experimental forecast · 60 min"),
   stormDisclaimer: r("Estimación experimental; no es un aviso oficial.", "Estimativa experimental; não é um aviso oficial.", "Estimació experimental; no és un avís oficial.", "Estimación experimental; non é un aviso oficial.", "Estimazio esperimentala; ez da abisu ofiziala.", "Experimental estimate, not an official warning."),
   stormLight: r("Ligera", "Ligeira", "Lleugera", "Lixeira", "Arina", "Light"),
   stormStrong: r("Fuerte", "Forte", "Forta", "Forte", "Indartsua", "Strong"),
