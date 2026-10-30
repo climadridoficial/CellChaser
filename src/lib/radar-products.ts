@@ -69,6 +69,15 @@ const REFLECTIVITY_STOPS: Stop[] = [
   [75, [250, 240, 255]],
 ];
 
+// AEMET OpenData legend: 12..72 dBZ in 6 dBZ categories.
+const AEMET_STEPS: [number, [number, number, number]][] = [
+  [12, [0, 0, 252]], [18, [0, 148, 252]], [24, [0, 252, 252]],
+  [30, [67, 131, 35]], [36, [0, 192, 0]], [42, [0, 255, 0]],
+  [48, [255, 255, 0]], [54, [255, 187, 0]], [60, [255, 127, 0]],
+  [66, [255, 0, 0]], [72, [200, 0, 90]],
+];
+void REFLECTIVITY_STOPS;
+
 // Classic Doppler scale: green = toward radar (negative), red = away (positive).
 const VELOCITY_STOPS: Stop[] = [
   [-35, [150, 255, 150]],
@@ -112,9 +121,11 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
   if (info.scale === "reflectivity") {
-    if (value < -15) return [0, 0, 0, 0];
-    const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
-    return [r, g, b, 255];
+    // Same stepped categories as AEMET OpenData images, so both read alike.
+    if (value < AEMET_STEPS[0]![0]) return [0, 0, 0, 0];
+    let c = AEMET_STEPS[0]![1];
+    for (const [from, rgb] of AEMET_STEPS) if (value >= from) c = rgb;
+    return [c[0], c[1], c[2], 255];
   }
   if (info.scale === "velocity") {
     const [r, g, b] = interp(VELOCITY_STOPS, value);
@@ -127,6 +138,9 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
 
 /** Legend ticks for the currently selected product. */
 export function legendStops(info: ProductInfo): { value: number; css: string }[] {
+  if (info.scale === "reflectivity") {
+    return AEMET_STEPS.map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
+  }
   const steps = 9;
   return Array.from({ length: steps }, (_, i) => {
     const value = info.min + ((info.max - info.min) * i) / (steps - 1);
