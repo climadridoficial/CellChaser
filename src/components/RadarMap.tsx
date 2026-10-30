@@ -4,7 +4,7 @@ import L from "leaflet";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
 import type { AemetObs } from "@/lib/aemet";
-import type { AemetMapImage, Corners, RadarBounds } from "@/lib/aemet-overlay";
+import type { AemetMapImage, Corners } from "@/lib/aemet-overlay";
 import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
 import type { CompositeLayer } from "@/hooks/use-radar-composite";
 import type { CompositeMode } from "@/lib/composite";
