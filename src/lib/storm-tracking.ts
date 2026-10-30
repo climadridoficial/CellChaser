@@ -11,7 +11,7 @@ export interface StormTrack { id: string; points: TrackPoint[]; intensity: Inten
 
 // Reflectivity classes, not a severe-weather classification or warning.
 /** Smaller echoes (a few pixels) are treated as probable false echoes. */
-export const MIN_RADIUS_KM = 2.5;
+export const MIN_RADIUS_KM = 3.5;
 export function cellIntensity(dbz: number): Intensity {
   return dbz >= 60 ? "extreme" : dbz >= 50 ? "veryStrong" : dbz >= 40 ? "strong" : "light";
 }
@@ -131,7 +131,7 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
 
 /** A one-scan dot is unconfirmed; retain only repeated detections in real data. */
 export function confirmedStormTracks(frames: CellFrame[], radarId: string): StormTrack[] {
-  return dedupeTracks(trackCells(frames, radarId)).filter(track => track.points.length >= 2 && (track.points.at(-1)?.radiusKm ?? 0) >= MIN_RADIUS_KM);
+  return dedupeTracks(trackCells(frames, radarId)).filter(track => track.points.length >= 3 && (track.points.at(-1)?.radiusKm ?? 0) >= MIN_RADIUS_KM);
 }
 /** Gap (km) between two echo edges below which they count as the same storm. */
 export const MERGE_GAP_KM = 8;
