@@ -71,6 +71,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [collapsed, setCollapsed] = useState(false);
   const atRef = useRef(at);
   atRef.current = at;
+  const rangeModeRef = useRef(rangeMode);
+  rangeModeRef.current = rangeMode;
   // Decoded scans by file + product + elevation, so slider steps are instant.
   const cacheRef = useRef(new Map<string, Promise<RenderedScan>>());
   useEffect(() => {
