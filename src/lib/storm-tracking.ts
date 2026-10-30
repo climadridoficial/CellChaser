@@ -100,7 +100,9 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
     // Emphasise the newest segment so the quadrilateral turns with the cell.
     const vx = 0.8 * dx / hours + 0.2 * ox / oldHours, vy = 0.8 * dy / hours + 0.2 * oy / oldHours, speed = Math.hypot(vx, vy);
     if (speed < 2 || speed > 130) return track;
-    const px = -vy / speed, py = vx / speed, width = Math.max(2, last.radiusKm), farWidth = width + 5 + speed * 0.05;
+    // A couple of speckle pixels are probably false echoes: no cone for them.
+    if (last.radiusKm < 2.5) return track;
+    const px = -vy / speed, py = vx / speed, width = Math.max(6, last.radiusKm), farWidth = width + 5 + speed * 0.05;
     const forecast = [offset(last, px * width, py * width), offset(last, -px * width, -py * width), offset(last, vx * 0.5 - px * farWidth, vy * 0.5 - py * farWidth), offset(last, vx * 0.5 + px * farWidth, vy * 0.5 + py * farWidth)];
     return { ...track, forecast, speedKmh: Math.round(speed) };
   });
