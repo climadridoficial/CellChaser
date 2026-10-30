@@ -6,7 +6,7 @@ import { fetchScanHistory, pickScan } from "@/lib/ord";
 import { decodeAndRender } from "@/lib/odim";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds } from "@/lib/aemet-overlay";
-import { AEMET_CALIBRATION } from "@/lib/aemet-calibration";
+import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames, type AemetFrame } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState } from "@/lib/composite";
 import { HISTORY_HOURS, slotAt, STEPS, STEP_MS } from "@/lib/timeline";
@@ -52,7 +52,7 @@ function aemetFrameQuery(code: string, frame: AemetFrame) {
   return {
     queryKey: ["composite-aemet-frame", code, frame.observedAt] as const,
     queryFn: async (): Promise<{ echoes: string; observedAt: string | null }> => {
-      const images = await processAemetImage(code, await fetchAemetFrameUrl(frame));
+      const images = await processAemetImage(code, await fetchAemetFrameUrl(frame), AEMET_CORNERS[code]);
       return { echoes: images.echoes, observedAt: frame.observedAt };
     },
   };

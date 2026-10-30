@@ -1,3 +1,4 @@
+import { cachedPlan, warpRgba } from './aemet-warp';
 export const AEMET_REFRESH_MS = 10 * 60_000;
 export type RadarBounds = [[number, number], [number, number]];
 export interface AemetMapImage {
@@ -192,7 +193,8 @@ export async function loadAemetImages(code: string, tick: number): Promise<{ ori
 }
 
 /** Crops the raw AEMET GIF at `src` and strips everything but the echoes. */
-export async function processAemetImage(code: string, src: string): Promise<{ original: string; echoes: string }> {
+/** With `corners`, `echoes` is warped (rotation/stretch) into the corners' enclosing map box. */
+export async function processAemetImage(code: string, src: string, corners?: Corners): Promise<{ original: string; echoes: string }> {
   const img = new Image();
   img.src = src;
   await img.decode();
@@ -212,8 +214,19 @@ export async function processAemetImage(code: string, src: string): Promise<{ or
   pixels.data.set(usable
     ? removeOutlines(pixels.data, canvas.width, canvas.height, outline)
     : maskEchoPixels(pixels.data, canvas.width, canvas.height));
-  ctx.putImageData(pixels, 0, 0);
-  return { original, echoes: canvas.toDataURL('image/png') };
+  if (!corners) {
+    ctx.putImageData(pixels, 0, 0);
+    return { original, echoes: canvas.toDataURL('image/png') };
+  }
+  // Outlines are removed in source pixels first; only then rotate/stretch.
+  const plan = cachedPlan(code, corners, canvas.width, canvas.height);
+  const out = document.createElement('canvas');
+  out.width = plan.width;
+  out.height = plan.height;
+  const octx = out.getContext('2d');
+  if (!octx) throw new Error('No se pudo procesar la imagen.');
+  octx.putImageData(new ImageData(warpRgba(plan, pixels.data), plan.width, plan.height), 0, 0);
+  return { original, echoes: out.toDataURL('image/png') };
 }
 /** Rotates corners by `degrees` (clockwise on the map) around their centre, locally Mercator-scaled. */
 export function rotateCorners(c: Corners, degrees: number): Corners {
