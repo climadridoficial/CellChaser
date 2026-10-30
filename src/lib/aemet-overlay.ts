@@ -180,13 +180,13 @@ function loadOutline(code: string): Promise<Uint8Array | null> {
 }
 
 /** Latest image; `observedAt` is the time printed on it (null if unreadable). */
-export async function loadAemetImages(code: string, tick: number): Promise<{ original: string; echoes: string; observedAt: string | null }> {
+export async function loadAemetImages(code: string, tick: number, corners?: Corners): Promise<{ original: string; echoes: string; observedAt: string | null }> {
   const response = await fetch(`/api/public/aemet-radar?r=${encodeURIComponent(code)}&t=${tick}`);
   if (!response.ok || response.status === 204) throw new Error('No se pudo cargar la imagen de AEMET.');
   const observedAt = response.headers.get('x-observed-at');
   const blobUrl = URL.createObjectURL(await response.blob());
   try {
-    return { ...(await processAemetImage(code, blobUrl)), observedAt };
+    return { ...(await processAemetImage(code, blobUrl, corners)), observedAt };
   } finally {
     URL.revokeObjectURL(blobUrl);
   }
