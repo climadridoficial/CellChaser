@@ -225,7 +225,7 @@ export async function processAemetImage(code: string, src: string, corners?: Cor
   out.height = plan.height;
   const octx = out.getContext('2d');
   if (!octx) throw new Error('No se pudo procesar la imagen.');
-  octx.putImageData(new ImageData(warpRgba(plan, pixels.data), plan.width, plan.height), 0, 0);
+  octx.putImageData(new ImageData(warpRgba(plan, pixels.data) as Uint8ClampedArray<ArrayBuffer>, plan.width, plan.height), 0, 0);
   return { original, echoes: out.toDataURL('image/png') };
 }
 /** Rotates corners by `degrees` (clockwise on the map) around their centre, locally Mercator-scaled. */

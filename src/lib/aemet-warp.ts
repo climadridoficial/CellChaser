@@ -60,7 +60,7 @@ export function warpPlan(corners: Corners, srcW: number, srcH: number): WarpPlan
 }
 
 export function warpRgba(plan: WarpPlan, rgba: Uint8ClampedArray): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(plan.width * plan.height * 4);
+  const out = new Uint8ClampedArray(new ArrayBuffer(plan.width * plan.height * 4));
   plan.source.forEach((s, i) => { if (s >= 0) out.set(rgba.subarray(s * 4, s * 4 + 4), i * 4); });
   return out;
 }
