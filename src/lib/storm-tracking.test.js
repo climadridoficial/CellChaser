@@ -105,3 +105,8 @@ test("fragments of one storm merge into a single cell", async () => {
   const merged = mergeCells([{ lat: 40, lon: -3, dbz: 45, radiusKm: 5 }, { lat: 40.1, lon: -3, dbz: 40, radiusKm: 4 }, { lat: 41, lon: -3, dbz: 40, radiusKm: 4 }]);
   expect(merged.length).toBe(2);
 });
+test("a repeated stale AEMET frame does not remove the forecast cone", () => {
+  const big = (m, lon) => ({ time: t0 + m * 60_000, cells: [{ lat: 40, lon, dbz: 45, radiusKm: 8 }] });
+  const track = trackCells([big(0, -3), big(10, -2.92), big(20, -2.84), big(30, -2.84)], "radar")[0];
+  expect(track.forecast).toHaveLength(4);
+});
