@@ -161,7 +161,7 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
 /** Legend ticks for the currently selected product. */
 export function legendStops(info: ProductInfo): { value: number; css: string }[] {
   if (info.scale === "reflectivity" && !useOperaScheme()) {
-    return AEMET_STEPS.map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
+    return [WEAK_STOPS[0]!, ...AEMET_STEPS].map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
   }
   const steps = 9;
   return Array.from({ length: steps }, (_, i) => {
