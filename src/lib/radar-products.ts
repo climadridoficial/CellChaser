@@ -123,9 +123,9 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
   if (info.scale === "reflectivity") {
     // Same stepped categories as AEMET OpenData images, so both read alike.
     if (value < AEMET_STEPS[0]![0]) return [0, 0, 0, 0];
-    let c = AEMET_STEPS[0]![1];
-    for (const [from, rgb] of AEMET_STEPS) if (value >= from) c = rgb;
-    return [c[0], c[1], c[2], 255];
+    // Blend between AEMET colours so detail isn't lost to hard 6 dBZ bands.
+    const [r, g, b] = interp(AEMET_STEPS, value);
+    return [r, g, b, 255];
   }
   if (info.scale === "velocity") {
     const [r, g, b] = interp(VELOCITY_STOPS, value);
