@@ -10,6 +10,8 @@ import type { CompositeLayer } from "@/hooks/use-radar-composite";
 import type { CompositeMode } from "@/lib/composite";
 import { useStormTracks } from "@/hooks/use-storm-tracks";
 import StormTracks from "./StormTracks";
+import { legendStops, productInfo } from "@/lib/radar-products";
+import { colorToValue, samplePixel } from "@/lib/inspector";
 
 interface Props {
   tileUrl: string | null;
@@ -311,6 +313,57 @@ export default function RadarMap({
     setLocMode(next);
   };
 
+  // Crosshair inspector + vertical colour key
+  const [inspectOn, setInspectOn] = useState(false);
+  const [keyOn, setKeyOn] = useState(true);
+  const [readout, setReadout] = useState<string | null>(null);
+  const info = scan ? scan.info : productInfo("DBZH");
+  const showKey = keyOn && (!!scan || composite.length > 0);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !inspectOn) return;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const center = map.getCenter();
+      const z = map.getZoom();
+      const p = map.project(center, z);
+      const overlays: L.ImageOverlay[] = [];
+      if (overlayRef.current) overlays.push(overlayRef.current);
+      else overlays.push(...[...compositeRef.current.values()].reverse());
+      let result: string | null = null;
+      let covered = false;
+      for (const o of overlays) {
+        const b = o.getBounds();
+        if (!b.contains(center)) continue;
+        const img = o.getElement() as HTMLImageElement | undefined;
+        if (!img) continue;
+        const nw = map.project(b.getNorthWest(), z);
+        const se = map.project(b.getSouthEast(), z);
+        const px = samplePixel(img, (p.x - nw.x) / (se.x - nw.x), (p.y - nw.y) / (se.y - nw.y));
+        if (!px) continue;
+        covered = true;
+        if (px[3] < 30) continue;
+        const v = colorToValue(info, px[0], px[1], px[2]);
+        if (v === null) continue;
+        result = `${info.key} ${v.toFixed(info.scale === "reflectivity" ? 0 : 1)} ${info.unit}`;
+        break;
+      }
+      setReadout(result ?? (covered ? t("inspectNoEcho") : t("inspectNoData")));
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(read); };
+    schedule();
+    map.on("move", schedule);
+    const id = window.setInterval(schedule, 1000);
+    return () => {
+      map.off("move", schedule);
+      window.clearInterval(id);
+      if (frame) cancelAnimationFrame(frame);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectOn, scan, composite, info.key]);
+
   const label =
     locMode === "on" ? t("locationOn") : locMode === "heading" ? t("locationHeading") : t("locationOff");
 
@@ -330,6 +383,26 @@ export default function RadarMap({
         <p>{storms.loading ? t("updating") : !storms.supported ? t("stormUnsupported") : storms.incomplete ? t("stormPartial") : !storms.tracks.length ? t("stormNone") : !storms.tracks.some(s => s.forecast) ? t("stormWaiting") : `${storms.tracks.length} · ${t("stormTracks")}`}</p>
         <p className="text-muted-foreground">{t("stormDisclaimer")}</p>
       </div>}
+      {showKey && (
+        <div className="color-key" aria-label={info.label}>
+          <div className="color-key-unit">{info.unit || info.key}</div>
+          {[...legendStops(info)].reverse().map((s) => (
+            <div key={s.value} className="color-key-row"><i style={{ background: s.css }} />{s.value}</div>
+          ))}
+        </div>
+      )}
+      {inspectOn && (
+        <>
+          <div className="inspector-cross" aria-hidden="true" />
+          <div className="inspector-readout" role="status">{readout ?? "…"}</div>
+        </>
+      )}
+      <button type="button" onClick={() => setInspectOn((v) => !v)} aria-pressed={inspectOn} aria-label={t("inspector")} title={t("inspector")} className={`map-tool-btn inspector-btn${inspectOn ? " map-tool-on" : ""}`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v6M12 15v6M3 12h6M15 12h6" /></svg>
+      </button>
+      <button type="button" onClick={() => setKeyOn((v) => !v)} aria-pressed={keyOn} aria-label={t("colorKey")} title={t("colorKey")} className={`map-tool-btn key-btn${keyOn ? " map-tool-on" : ""}`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><rect x="8" y="3" width="8" height="18" rx="1" /><path d="M8 9h8M8 15h8" /></svg>
+      </button>
       <button type="button" onClick={cycleLoc} aria-label={label} title={label} className={`loc-btn loc-btn-${locMode}`}>
         {locMode === "heading" ? (
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2 19 21 12 17 5 21z" /></svg>
