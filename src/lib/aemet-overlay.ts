@@ -1,3 +1,4 @@
+import { cachedPlan, warpRgba } from './aemet-warp';
 export const AEMET_REFRESH_MS = 10 * 60_000;
 export type RadarBounds = [[number, number], [number, number]];
 export interface AemetMapImage {
@@ -179,20 +180,21 @@ function loadOutline(code: string): Promise<Uint8Array | null> {
 }
 
 /** Latest image; `observedAt` is the time printed on it (null if unreadable). */
-export async function loadAemetImages(code: string, tick: number): Promise<{ original: string; echoes: string; observedAt: string | null }> {
+export async function loadAemetImages(code: string, tick: number, corners?: Corners): Promise<{ original: string; echoes: string; observedAt: string | null }> {
   const response = await fetch(`/api/public/aemet-radar?r=${encodeURIComponent(code)}&t=${tick}`);
   if (!response.ok || response.status === 204) throw new Error('No se pudo cargar la imagen de AEMET.');
   const observedAt = response.headers.get('x-observed-at');
   const blobUrl = URL.createObjectURL(await response.blob());
   try {
-    return { ...(await processAemetImage(code, blobUrl)), observedAt };
+    return { ...(await processAemetImage(code, blobUrl, corners)), observedAt };
   } finally {
     URL.revokeObjectURL(blobUrl);
   }
 }
 
 /** Crops the raw AEMET GIF at `src` and strips everything but the echoes. */
-export async function processAemetImage(code: string, src: string): Promise<{ original: string; echoes: string }> {
+/** With `corners`, `echoes` is warped (rotation/stretch) into the corners' enclosing map box. */
+export async function processAemetImage(code: string, src: string, corners?: Corners): Promise<{ original: string; echoes: string }> {
   const img = new Image();
   img.src = src;
   await img.decode();
@@ -212,8 +214,19 @@ export async function processAemetImage(code: string, src: string): Promise<{ or
   pixels.data.set(usable
     ? removeOutlines(pixels.data, canvas.width, canvas.height, outline)
     : maskEchoPixels(pixels.data, canvas.width, canvas.height));
-  ctx.putImageData(pixels, 0, 0);
-  return { original, echoes: canvas.toDataURL('image/png') };
+  if (!corners) {
+    ctx.putImageData(pixels, 0, 0);
+    return { original, echoes: canvas.toDataURL('image/png') };
+  }
+  // Outlines are removed in source pixels first; only then rotate/stretch.
+  const plan = cachedPlan(code, corners, canvas.width, canvas.height);
+  const out = document.createElement('canvas');
+  out.width = plan.width;
+  out.height = plan.height;
+  const octx = out.getContext('2d');
+  if (!octx) throw new Error('No se pudo procesar la imagen.');
+  octx.putImageData(new ImageData(warpRgba(plan, pixels.data) as Uint8ClampedArray<ArrayBuffer>, plan.width, plan.height), 0, 0);
+  return { original, echoes: out.toDataURL('image/png') };
 }
 /** Rotates corners by `degrees` (clockwise on the map) around their centre, locally Mercator-scaled. */
 export function rotateCorners(c: Corners, degrees: number): Corners {

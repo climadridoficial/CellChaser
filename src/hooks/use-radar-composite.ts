@@ -6,7 +6,7 @@ import { fetchScanHistory, pickScan } from "@/lib/ord";
 import { decodeAndRender } from "@/lib/odim";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds } from "@/lib/aemet-overlay";
-import { AEMET_CALIBRATION } from "@/lib/aemet-calibration";
+import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames, type AemetFrame } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState } from "@/lib/composite";
 import { HISTORY_HOURS, slotAt, STEPS, STEP_MS } from "@/lib/timeline";
@@ -50,9 +50,9 @@ function operaScanQuery(s: RadarStation, pick: Pick) {
 
 function aemetFrameQuery(code: string, frame: AemetFrame) {
   return {
-    queryKey: ["composite-aemet-frame", code, frame.observedAt] as const,
+    queryKey: ["composite-aemet-frame", code, frame.observedAt, "warp1"] as const,
     queryFn: async (): Promise<{ echoes: string; observedAt: string | null }> => {
-      const images = await processAemetImage(code, await fetchAemetFrameUrl(frame));
+      const images = await processAemetImage(code, await fetchAemetFrameUrl(frame), AEMET_CORNERS[code]);
       return { echoes: images.echoes, observedAt: frame.observedAt };
     },
   };
@@ -129,7 +129,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const frame = aemetFrames[i];
       const live = at === null;
       return {
-        queryKey: live ? ["composite-aemet", code] : ["composite-aemet-frame", code, frame?.observedAt ?? null],
+        queryKey: live ? ["composite-aemet", code, "warp1"] : ["composite-aemet-frame", code, frame?.observedAt ?? null, "warp1"],
         enabled: !!wantAemet[i] && (live || !!frame),
         staleTime: live ? AEMET_REFRESH_MS : Infinity,
         refetchInterval: live ? AEMET_REFRESH_MS : (false as const),
@@ -138,7 +138,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         queryFn: async (): Promise<{ echoes: string; observedAt: string | null }> => {
           if (!code) throw new Error("No AEMET radar");
           if (live) {
-            const images = await loadAemetImages(code, Math.floor(Date.now() / AEMET_REFRESH_MS));
+            const images = await loadAemetImages(code, Math.floor(Date.now() / AEMET_REFRESH_MS), AEMET_CORNERS[code]);
             return { echoes: images.echoes, observedAt: images.observedAt };
           }
           if (!frame) throw new Error("No archived frame");
