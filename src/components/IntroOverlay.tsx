@@ -1,20 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import introAsset from "@/assets/cellchaser-intro.mp4.asset.json";
+import { useEffect, useState } from "react";
 import introImage from "@/assets/cellchaser-intro.webp.asset.json";
-
-const INTRO_MS = 3300;
 
 const SEEN_KEY = "cellchaser.introSeen";
 const FADE_MS = 700;
+const INTRO_MS = 3300;
 
+// The intro is an animated image (not a video) so it always plays,
+// even in iOS low-power mode, with no play button.
 export default function IntroOverlay() {
   const [open, setOpen] = useState<boolean | null>(null);
   const [closing, setClosing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [fallback, setFallback] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Decide only after hydration so SSR stays consistent.
     let seen = false;
     try {
       seen = window.localStorage.getItem(SEEN_KEY) === "1";
@@ -33,45 +31,21 @@ export default function IntroOverlay() {
     };
   }, [open]);
 
-  const close = () => {
-    if (closing) return;
-    setClosing(true);
-    try {
-      window.localStorage.setItem(SEEN_KEY, "1");
-    } catch {
-      /* storage unavailable */
-    }
-    window.setTimeout(() => setOpen(false), FADE_MS);
-  };
-
-  // Start playback programmatically; if the browser still refuses (e.g. iOS
-  // low-power mode), the very next tap anywhere on the intro starts it.
-  const play = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    void video.play().catch(() => setFallback(true));
-  };
-
   useEffect(() => {
-    if (open !== true) return;
-    const id = window.setTimeout(play, 60);
-    const start = () => play();
-    window.addEventListener("pointerdown", start);
-    return () => {
-      window.clearTimeout(id);
-      window.removeEventListener("pointerdown", start);
-    };
-  }, [open]);
-
-  // Low-power mode blocks every video: show the animated image instead, which
-  // always animates, and close after the intro's length.
-  useEffect(() => {
-    if (!fallback) return;
-    const id = window.setTimeout(close, INTRO_MS);
+    if (!open || !loaded) return;
+    const id = window.setTimeout(() => {
+      setClosing(true);
+      try {
+        window.localStorage.setItem(SEEN_KEY, "1");
+      } catch {
+        /* storage unavailable */
+      }
+      window.setTimeout(() => setOpen(false), FADE_MS);
+    }, INTRO_MS);
     return () => window.clearTimeout(id);
-  }, [fallback]);
+  }, [open, loaded]);
 
-  if (open === null || !open) return null;
+  if (!open) return null;
 
   return (
     <div
@@ -79,22 +53,8 @@ export default function IntroOverlay() {
       role="dialog"
       aria-modal="true"
       aria-label="CellChaser"
-      onClick={play}
     >
-      {fallback ? (
-        <img className="intro-video" src={introImage.url} alt="" />
-      ) : (
-      <video
-        ref={videoRef}
-        className="intro-video"
-        src={introAsset.url}
-        muted
-        playsInline
-        preload="auto"
-        disablePictureInPicture
-        onEnded={close}
-      />
-      )}
+      <img className="intro-video" src={introImage.url} alt="" onLoad={() => setLoaded(true)} />
     </div>
   );
 }
