@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import introImage from "@/assets/cellchaser-intro.webp.asset.json";
+import introImage from "@/assets/cellchaser-intro-30.webp.asset.json";
 
 const SEEN_KEY = "cellchaser.introSeen";
 const FADE_MS = 700;
