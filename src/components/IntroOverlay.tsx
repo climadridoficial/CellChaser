@@ -31,6 +31,20 @@ export default function IntroOverlay() {
     };
   }, [open]);
 
+  // Download and decode the whole animation before showing it, so it never
+  // starts playing while frames are still arriving.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const img = new Image();
+    img.src = introImage.url;
+    const ready = () => !cancelled && setLoaded(true);
+    img.decode().then(ready, ready);
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open || !loaded) return;
     const id = window.setTimeout(() => {
@@ -54,7 +68,7 @@ export default function IntroOverlay() {
       aria-modal="true"
       aria-label="CellChaser"
     >
-      <img className="intro-video" src={introImage.url} alt="" onLoad={() => setLoaded(true)} />
+      {loaded && <img className="intro-video" src={introImage.url} alt="" />}
     </div>
   );
 }
