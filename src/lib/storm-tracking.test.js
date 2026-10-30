@@ -3,7 +3,7 @@ import { cellIntensity, detectCells, trackCells, confirmedStormTracks } from "./
 import { aemetDbz } from "./storm-images";
 
 const t0 = Date.parse("2026-10-29T17:00:00Z");
-const cell = (lon, dbz = 35) => ({ lat: 40, lon, dbz, radiusKm: 3 });
+const cell = (lon, dbz = 35) => ({ lat: 40, lon, dbz, radiusKm: 4 });
 const frame = (minutes, lon, dbz) => ({ time: t0 + minutes * 60_000, cells: [cell(lon, dbz)] });
 
 test("forecast intensities are green/light, yellow/strong, red/very strong and magenta/extreme", () => {
@@ -66,7 +66,8 @@ test("thin linework and scattered dots are not storm cells", () => {
 });
 test("real tracks suppress single-scan echoes and forecasts wait for three scans", () => {
   expect(confirmedStormTracks([frame(0,-3,50)], "radar")).toEqual([]);
-  expect(confirmedStormTracks([frame(0,-3,50),frame(10,-2.92,50)], "radar")[0].forecast).toBeNull();
+  expect(confirmedStormTracks([frame(0,-3,50),frame(10,-2.92,50)], "radar")).toEqual([]);
+  expect(confirmedStormTracks([frame(0,-3,50),frame(10,-2.92,50),frame(20,-2.84,50)], "radar")).toHaveLength(1);
 });
 test("forecast turns south with the latest measured storm motion", () => {
   const frames = [frame(0,-3,50),frame(10,-2.92,50), { time:t0+20*60_000, cells:[{...cell(-2.92,50),lat:39.92}] }];
@@ -109,4 +110,14 @@ test("a repeated stale AEMET frame does not remove the forecast cone", () => {
   const big = (m, lon) => ({ time: t0 + m * 60_000, cells: [{ lat: 40, lon, dbz: 45, radiusKm: 8 }] });
   const track = trackCells([big(0, -3), big(10, -2.92), big(20, -2.84), big(30, -2.84)], "radar")[0];
   expect(track.forecast).toHaveLength(4);
+});
+test("long thin echo lines (clutter/interference rays) are not storm cells", () => {
+  const values = new Float32Array(40 * 40).fill(NaN);
+  for (let x = 2; x < 38; x++) for (const y of [20, 21]) values[y * 40 + x] = 50;
+  expect(detectCells({ values, width: 40, height: 40, bounds: [[39,-4],[41,-2]] })).toEqual([]);
+});
+test("weak blobs without a solid >=35 dBZ core are not storm cells", () => {
+  const values = new Float32Array(400).fill(NaN);
+  for (let y = 5; y < 15; y++) for (let x = 5; x < 15; x++) values[y * 20 + x] = 32;
+  expect(detectCells({ values, width: 20, height: 20, bounds: [[39,-4],[41,-2]] })).toEqual([]);
 });
