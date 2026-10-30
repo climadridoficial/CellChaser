@@ -128,6 +128,7 @@ export default function RadarMap({
         zIndex: 350,
         className: "radar-overlay",
         interactive: false,
+      }).addTo(map),
       }) as L.ImageOverlay & { radarId?: string };
       overlay.radarId = layer.radarId;
       const retireOld = () => {
@@ -212,6 +213,7 @@ export default function RadarMap({
       zIndex: 400,
       className: "radar-overlay",
       interactive: false,
+      }).addTo(map),
     });
     const retire = () => previous?.remove();
     overlay.once("load", retire);
@@ -237,7 +239,7 @@ export default function RadarMap({
     const rings = (station.id.startsWith("aemet-") ? [240] : [250, 150]).map((km) =>
       L.circle([station.lat, station.lon], {
         radius: km * 1000, color: "#94a3b8", weight: 1.5, dashArray: km === 150 ? "2 6" : "8 6", fill: false, interactive: false,
-      }).bindTooltip(`${km} km`, { permanent: true, direction: "top", className: "range-ring-label", offset: [0, 0] })
+      }).addTo(map),
         .addTo(map),
     );
     return () => rings.forEach((r) => r.remove());
@@ -280,6 +282,7 @@ export default function RadarMap({
               iconAnchor: [30, 30],
             }),
             interactive: false,
+      }).addTo(map),
             zIndexOffset: 1000,
           }).addTo(map);
         } else userRef.current.setLatLng(ll);
