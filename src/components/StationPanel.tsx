@@ -10,7 +10,7 @@ import { legendStops, productInfo } from "@/lib/radar-products";
 import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
 import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
-import { HISTORY_HOURS, pickFrame } from "@/lib/timeline";
+import { HISTORY_HOURS, pickFrame, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
@@ -235,7 +235,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       cancelled = true;
       report(NO_PRELOAD);
     };
-  }, [historyMode, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
+  }, [historyMode, at, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
 
   const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
   useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);

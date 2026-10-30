@@ -9,7 +9,7 @@ import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds 
 import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames, type AemetFrame } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState } from "@/lib/composite";
-import { HISTORY_HOURS, slotAt, STEPS, STEP_MS } from "@/lib/timeline";
+import { HISTORY_HOURS, slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
 
