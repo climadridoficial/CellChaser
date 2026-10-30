@@ -221,8 +221,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       report(NO_PRELOAD);
       return;
     }
-    const since = Date.now() - (HISTORY_HOURS + 0.5) * 3600_000;
-    const todo = files.filter((f) => Date.parse(f.time) >= since).sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+    // Only scans from the slider position onwards (towards live), nearest first.
+    const since = Math.max(Date.now() - (HISTORY_HOURS + 0.5) * 3600_000, (at ?? Date.now()) - STEP_MS);
+    const todo = files.filter((f) => Date.parse(f.time) > since).sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
     let cancelled = false;
     let done = 0;
     report({ done, total: todo.length });
