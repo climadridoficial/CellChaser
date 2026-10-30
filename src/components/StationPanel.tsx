@@ -10,7 +10,7 @@ import { legendStops, productInfo } from "@/lib/radar-products";
 import { Button } from "@/components/ui/button";
 import { Move } from "lucide-react";
 import { AEMET_ALIGNMENT_ENABLED } from "@/lib/aemet-calibration";
-import { HISTORY_HOURS, pickFrame } from "@/lib/timeline";
+import { HISTORY_HOURS, pickFrame, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
@@ -221,8 +221,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       report(NO_PRELOAD);
       return;
     }
-    const since = Date.now() - (HISTORY_HOURS + 0.5) * 3600_000;
-    const todo = files.filter((f) => Date.parse(f.time) >= since).sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+    // Only scans from the slider position onwards (towards live), nearest first.
+    const since = Math.max(Date.now() - (HISTORY_HOURS + 0.5) * 3600_000, (at ?? Date.now()) - STEP_MS);
+    const todo = files.filter((f) => Date.parse(f.time) > since).sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
     let cancelled = false;
     let done = 0;
     report({ done, total: todo.length });
@@ -234,7 +235,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
       cancelled = true;
       report(NO_PRELOAD);
     };
-  }, [historyMode, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
+  }, [historyMode, at, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
 
   const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
   useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);

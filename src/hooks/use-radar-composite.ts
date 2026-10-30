@@ -9,7 +9,7 @@ import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds 
 import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
 import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames, type AemetFrame } from "@/lib/aemet-history";
 import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type CompositeMode, type OperaState } from "@/lib/composite";
-import { HISTORY_HOURS, slotAt, STEPS, STEP_MS } from "@/lib/timeline";
+import { HISTORY_HOURS, slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
 
@@ -198,13 +198,14 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   // History mode: decode every slot once so sliding/playback is instant.
   const qc = useQueryClient();
   const historyMode = at !== null;
+  const startSlot = slotIndex(at, Date.now());
   const tasks = useMemo(() => {
     if (!historyMode || mode === "off") return [];
     if (history.some((q, i) => q.isPending && !radars[i]?.offline && (wantOpera || !aemetCodes[i]))) return [];
     const base = Date.now();
     const seen = new Map<string, () => Promise<unknown>>();
-    // Newest first: the slider starts near "now".
-    for (let slot = STEPS - 1; slot >= 0; slot--) {
+    // Only the slider position onwards (towards live), nearest first.
+    for (let slot = startSlot; slot < STEPS; slot++) {
       const t = slotAt(slot, base)!;
       radars.forEach((s, i) => {
         const list = history[i]?.data;
@@ -225,7 +226,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     }
     return [...seen.entries()];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyMode, mode, radars, frames.data, history.map((q) => q.dataUpdatedAt).join(","), history.map((q) => q.isPending).join(",")]);
+  }, [historyMode, startSlot, mode, radars, frames.data, history.map((q) => q.dataUpdatedAt).join(","), history.map((q) => q.isPending).join(",")]);
 
   const [preload, setPreload] = useState<PreloadProgress>(NO_PRELOAD);
   const planKey = tasks.map(([k]) => k).join("|");
