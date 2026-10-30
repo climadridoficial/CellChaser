@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import type { StormTrack } from "./storm-tracking";
+import { dedupeTracks, type StormTrack } from "./storm-tracking";
 import { radarFrameVisible } from "./radar-freshness";
 import { OPERA_MAX_AGE_MS, AEMET_LIVE_MAX_AGE_MS } from "./composite";
 
@@ -31,5 +31,5 @@ export const getSharedStormTracks = createServerFn({method:"GET"})
       }).find(Boolean);
       if (row) tracks.push(...row.tracks as unknown as StormTrack[]); else missing++;
     }
-    return {tracks,incomplete:missing>0};
+    return {tracks:dedupeTracks(tracks),incomplete:missing>0};
   });
