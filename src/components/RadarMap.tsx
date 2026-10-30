@@ -180,7 +180,8 @@ export default function RadarMap({
     const group = aemetRef.current;
     if (!group) return;
     group.clearLayers();
-    const renderer = L.canvas({ padding: 0.3 });
+    // An explicit renderer controls the pane; the circle's pane alone is ignored.
+    const renderer = L.canvas({ padding: 0.3, pane: "markerPane" });
     for (const o of aemet) {
       const active = o.idema === aemetSelected;
       const dot = L.circleMarker([o.lat, o.lon], {
@@ -196,6 +197,10 @@ export default function RadarMap({
       dot.on("click", () => aemetHandler.current(o));
       dot.addTo(group);
     }
+    return () => {
+      group.clearLayers();
+      renderer.remove();
+    };
   }, [aemet, aemetSelected]);
 
   // Decoded radar scan overlay: the old image stays until the new one has loaded.
