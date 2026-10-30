@@ -57,6 +57,7 @@ export default function RadarMap({
   const aemetHandler = useRef(onSelectAemet);
   aemetHandler.current = onSelectAemet;
   const containerRef = useRef<HTMLDivElement>(null);
+  const baseRef = useRef<L.TileLayer | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const storms = useStormTracks(showStorms && !aemetImage?.editing, selectedId, stormStations, at, compositeMode);
   const tileRef = useRef<L.TileLayer | null>(null);
@@ -74,7 +75,7 @@ export default function RadarMap({
       attributionControl: true,
       worldCopyJump: true,
     });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    baseRef.current = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · radar: RainViewer / EUMETNET OPERA',
       maxZoom: 12,
     }).addTo(map);
@@ -227,6 +228,22 @@ export default function RadarMap({
     const station = stations.find((s) => s.id === selectedId);
     if (station) map.flyTo([station.lat, station.lon], Math.max(map.getZoom(), 7), { duration: 0.7 });
   }, [selectedId, stations]);
+
+  // Base map: OpenStreetMap streets or Esri satellite imagery (keyless) with place labels.
+  const [satellite, setSatellite] = useState(false);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !satellite) return;
+    baseRef.current?.remove();
+    const imagery = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Imagery &copy; Esri · radar: RainViewer / EUMETNET OPERA", maxZoom: 12, zIndex: 0,
+    }).addTo(map);
+    const labels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 12, zIndex: 1 }).addTo(map);
+    return () => {
+      imagery.remove(); labels.remove();
+      baseRef.current?.addTo(map);
+    };
+  }, [satellite]);
 
   // Range rings of the selected radar. AEMET publishes two OPERA scans per radar:
   // long range (250 km, DBZH/TH) and short-range Doppler (~150 km, DBZH/VRADH).
@@ -414,6 +431,9 @@ export default function RadarMap({
       )}
       <button type="button" onClick={() => setInspectOn((v) => !v)} aria-pressed={inspectOn} aria-label={t("inspector")} title={t("inspector")} className={`map-tool-btn inspector-btn${inspectOn ? " map-tool-on" : ""}`}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v6M12 15v6M3 12h6M15 12h6" /></svg>
+      </button>
+      <button type="button" onClick={() => setSatellite((v) => !v)} aria-pressed={satellite} aria-label={t("satellite")} title={t("satellite")} className={`map-tool-btn sat-btn${satellite ? " map-tool-on" : ""}`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>
       </button>
       <button type="button" onClick={() => setKeyOn((v) => !v)} aria-pressed={keyOn} aria-label={t("colorKey")} title={t("colorKey")} className={`map-tool-btn key-btn${keyOn ? " map-tool-on" : ""}`}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><rect x="8" y="3" width="8" height="18" rx="1" /><path d="M8 9h8M8 15h8" /></svg>

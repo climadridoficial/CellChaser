@@ -144,6 +144,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     () => [...new Set((scans ?? []).map((s) => s.product))].sort(),
     [scans],
   );
+  // Every elevation this radar scans (any product); ones missing for this product are shown disabled.
+  const allLevels = useMemo(() => [...new Set((scans ?? []).map((s) => s.level))].sort((a, b) => a - b), [scans]);
   const levels = useMemo(
     () => (scans ?? []).filter((s) => s.product === product).map((s) => s.level).sort((a, b) => a - b),
     [scans, product],
@@ -342,9 +344,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
               className="select mt-2"
               disabled={levels.length === 0}
             >
-              {levels.map((l) => (
-                <option key={l} value={l}>
-                  {l}°
+              {allLevels.map((l) => (
+                <option key={l} value={l} disabled={!levels.includes(l)}>
+                  {l}°{levels.includes(l) ? "" : ` (${t("levelUnavailable")})`}
                 </option>
               ))}
               {levels.length === 0 && <option value="">—</option>}
