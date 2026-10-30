@@ -89,7 +89,9 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
     active = next;
   }
   return active.map(track => {
-    const last = track.points.at(-1), recent = track.points.slice(-4), first = recent[0];
+    // AEMET often re-serves the same image: identical repeated positions are stale frames, not a stopped storm.
+    const distinct = track.points.filter((p, i, all) => i === 0 || p.lat !== all[i - 1]!.lat || p.lon !== all[i - 1]!.lon);
+    const last = distinct.at(-1), recent = distinct.slice(-4), first = recent[0];
     if (!last || !first || recent.length < 3 || last.time <= first.time) return track;
     const before = recent.at(-2), older = recent.at(-3);
     if (!before || !older) return track;
