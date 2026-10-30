@@ -32,6 +32,8 @@ export function useSettings() {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
+      const migrated = !!window.localStorage.getItem("radares.compositeV2");
+      window.localStorage.setItem("radares.compositeV2", "1");
       if (raw) {
         const stored = JSON.parse(raw) as RadarSettings;
         // Older versions stored an empty LibreWXR URL; fall back to the public instance.
@@ -40,8 +42,7 @@ export function useSettings() {
         if (stored.country === "724" && !window.localStorage.getItem("radares.iberia")) stored.country = "iberia";
         window.localStorage.setItem("radares.iberia", "1");
         // OPERA with OpenData fallback became the default; move users still on the old default once.
-        if (stored.composite === "opendata" && !window.localStorage.getItem("radares.compositeV2")) stored.composite = "opera-fallback";
-        window.localStorage.setItem("radares.compositeV2", "1");
+        if (stored.composite === "opendata" && !migrated) stored.composite = "opera-fallback";
         setSettings({ ...DEFAULT_SETTINGS, ...stored });
       }
     } catch {
