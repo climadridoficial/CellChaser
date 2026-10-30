@@ -40,17 +40,43 @@ export default function IntroOverlay() {
     window.setTimeout(() => setOpen(false), FADE_MS);
   };
 
+  // Start playback programmatically; if the browser still refuses (e.g. iOS
+  // low-power mode), the very next tap anywhere on the intro starts it.
+  const play = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    void video.play().catch(() => {});
+  };
+
+  useEffect(() => {
+    if (open !== true) return;
+    const id = window.setTimeout(play, 60);
+    const start = () => play();
+    window.addEventListener("pointerdown", start);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("pointerdown", start);
+    };
+  }, [open]);
+
   if (open === null || !open) return null;
 
   return (
-    <div className={closing ? "intro-overlay intro-fade" : "intro-overlay"} role="dialog" aria-modal="true" aria-label="CellChaser">
+    <div
+      className={closing ? "intro-overlay intro-fade" : "intro-overlay"}
+      role="dialog"
+      aria-modal="true"
+      aria-label="CellChaser"
+      onClick={play}
+    >
       <video
         ref={videoRef}
         className="intro-video"
         src={introAsset.url}
-        autoPlay
         muted
         playsInline
+        preload="auto"
+        disablePictureInPicture
         onEnded={close}
       />
     </div>
