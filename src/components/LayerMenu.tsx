@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SCHEME_KEY } from "@/lib/radar-products";
 import type { TileSource } from "@/lib/settings";
 import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
 
