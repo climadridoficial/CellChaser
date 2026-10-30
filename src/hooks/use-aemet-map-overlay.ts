@@ -139,14 +139,3 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
   useEffect(() => { syncRef.current?.(); }, [value]);
 }
 
-/** Rotates a quadrilateral by `degrees` around its centre in map pixel space. */
-export function rotateCorners(map: L.Map, c: Corners, degrees: number): Corners {
-  const px = c.map(p => map.latLngToLayerPoint(p));
-  const centre = px.reduce((a, b) => a.add(b), L.point(0, 0)).divideBy(4);
-  const r = degrees * Math.PI / 180, cos = Math.cos(r), sin = Math.sin(r);
-  return px.map(q => {
-    const dx = q.x - centre.x, dy = q.y - centre.y;
-    const l = map.layerPointToLatLng(L.point(centre.x + dx * cos - dy * sin, centre.y + dx * sin + dy * cos));
-    return [l.lat, l.lng];
-  }) as Corners;
-}

@@ -215,3 +215,12 @@ export async function processAemetImage(code: string, src: string): Promise<{ or
   ctx.putImageData(pixels, 0, 0);
   return { original, echoes: canvas.toDataURL('image/png') };
 }
+/** Rotates corners by `degrees` (clockwise on the map) around their centre, locally Mercator-scaled. */
+export function rotateCorners(c: Corners, degrees: number): Corners {
+  const lat0 = c.reduce((a, p) => a + p[0], 0) / 4, lon0 = c.reduce((a, p) => a + p[1], 0) / 4;
+  const k = Math.cos(lat0 * Math.PI / 180), r = degrees * Math.PI / 180, cos = Math.cos(r), sin = Math.sin(r);
+  return c.map(([lat, lon]) => {
+    const x = (lon - lon0) * k, y = -(lat - lat0);
+    return [lat0 - (x * sin + y * cos), lon0 + (x * cos - y * sin) / k];
+  }) as Corners;
+}
