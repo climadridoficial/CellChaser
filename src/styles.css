@@ -505,3 +505,25 @@
 .storm-legend-scale i { width: 6px; height: 6px; background: var(--storm-color); }
 @media (min-width: 768px) { .storm-legend { top: 4.75rem; left: auto; right: 0.75rem; } }
 
+/* First-visit intro video */
+.intro-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--background);
+}
+.intro-video {
+  width: min(100%, 62.5rem); aspect-ratio: 16 / 9;
+  object-fit: contain; background: var(--secondary);
+}
+.intro-actions {
+  position: absolute; bottom: 1.25rem; right: 1.25rem;
+  display: flex; gap: 0.5rem;
+}
+.intro-skip, .intro-sound {
+  border: 1px solid var(--border); border-radius: 8px;
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  color: var(--foreground); font-size: 0.8rem; font-weight: 500;
+  padding: 0.45rem 0.9rem; cursor: pointer;
+}
+.intro-skip:hover, .intro-sound:hover { background: var(--accent); }
+

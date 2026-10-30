@@ -28,3 +28,6 @@
 - [x] OPERA composite + station panel follow the slider
 - [x] AEMET archive (every 5 min) + footer timestamp reading
 - [x] Footer digits 4, 5, 8 solved from publishing lag until real glyphs are captured
+
+# First-visit intro video
+- [x] Show uploaded intro video (3s, 16:9) to first-time visitors, skippable, remembered via localStorage

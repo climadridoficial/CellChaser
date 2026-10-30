@@ -115,6 +115,8 @@ export const MESSAGES = {
   locationOff: r("Ubicación desactivada (activar)", "Localização desativada (ativar)", "Ubicació desactivada (activa)", "Localización desactivada (activar)", "Kokapena desaktibatuta (aktibatu)", "Location off (switch on)"),
   loadStations: r("Cargando estaciones europeas…", "A carregar estações europeias…", "Carregant estacions europees…", "Cargando estacións europeas…", "Europako estazioak kargatzen…", "Loading European stations…"),
   loadFailed: r("No se pudieron cargar los datos.", "Não foi possível carregar os dados.", "No s’han pogut carregar les dades.", "Non se puideron cargar os datos.", "Ezin izan dira datuak kargatu.", "Could not load data."),
+  introSkip: r("Pular", "Pular", "Ometre", "Saltar", "Saltatu", "Skip"),
+  introSound: r("Ativar som", "Ativar som", "Activa el so", "Activar o son", "Soinua aktibatu", "Turn on sound"),
   reflectivity: r("Reflectividad", "Refletividade", "Reflectivitat", "Reflectividade", "Islagarritasuna", "Reflectivity"),
   rawReflectivity: r("Reflectividad bruta", "Refletividade bruta", "Reflectivitat bruta", "Reflectividade bruta", "Islagarritasun gordina", "Raw reflectivity"),
   velocity: r("Velocidad radial", "Velocidade radial", "Velocitat radial", "Velocidade radial", "Abiadura erradiala", "Radial velocity"),
