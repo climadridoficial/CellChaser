@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import introAsset from "@/assets/cellchaser-intro.mp4.asset.json";
+import introImage from "@/assets/cellchaser-intro.webp.asset.json";
+
+const INTRO_MS = 3300;
 
 const SEEN_KEY = "cellchaser.introSeen";
 const FADE_MS = 700;
@@ -8,6 +11,7 @@ export default function IntroOverlay() {
   const [open, setOpen] = useState<boolean | null>(null);
   const [closing, setClosing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [fallback, setFallback] = useState(false);
 
   useEffect(() => {
     // Decide only after hydration so SSR stays consistent.
@@ -45,7 +49,7 @@ export default function IntroOverlay() {
   const play = () => {
     const video = videoRef.current;
     if (!video) return;
-    void video.play().catch(() => {});
+    void video.play().catch(() => setFallback(true));
   };
 
   useEffect(() => {
@@ -59,6 +63,14 @@ export default function IntroOverlay() {
     };
   }, [open]);
 
+  // Low-power mode blocks every video: show the animated image instead, which
+  // always animates, and close after the intro's length.
+  useEffect(() => {
+    if (!fallback) return;
+    const id = window.setTimeout(close, INTRO_MS);
+    return () => window.clearTimeout(id);
+  }, [fallback]);
+
   if (open === null || !open) return null;
 
   return (
@@ -69,6 +81,9 @@ export default function IntroOverlay() {
       aria-label="CellChaser"
       onClick={play}
     >
+      {fallback ? (
+        <img className="intro-video" src={introImage.url} alt="" />
+      ) : (
       <video
         ref={videoRef}
         className="intro-video"
@@ -79,6 +94,7 @@ export default function IntroOverlay() {
         disablePictureInPicture
         onEnded={close}
       />
+      )}
     </div>
   );
 }
