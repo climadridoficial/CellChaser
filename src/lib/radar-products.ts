@@ -77,6 +77,12 @@ const AEMET_STEPS: [number, [number, number, number]][] = [
   [66, [255, 0, 0]], [72, [200, 0, 90]],
 ];
 
+const WEAK_STOPS: Stop[] = [
+  [-15, [70, 90, 140]],
+  [0, [60, 100, 190]],
+  [12, [0, 0, 252]],
+];
+
 /** Test feature: "aemet" (default) or the original "opera" reflectivity colours. */
 export const SCHEME_KEY = "cellchaser.dbzScheme";
 function useOperaScheme(): boolean {
@@ -132,7 +138,13 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
       const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
       return [r, g, b, 255];
     }
-    if (value < AEMET_STEPS[0]![0]) return [0, 0, 0, 0];
+    if (value < -15) return [0, 0, 0, 0];
+    // Weak echoes below AEMET's 12 dBZ floor stay visible in muted blues,
+    // keeping full OPERA detail (drizzle, clutter rings) like the old scheme.
+    if (value < AEMET_STEPS[0]![0]) {
+      const [r, g, b] = interp(WEAK_STOPS, value);
+      return [r, g, b, 255];
+    }
     // Blend between AEMET colours so detail isn't lost to hard 6 dBZ bands.
     const [r, g, b] = interp(AEMET_STEPS, value);
     return [r, g, b, 255];
@@ -149,7 +161,7 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
 /** Legend ticks for the currently selected product. */
 export function legendStops(info: ProductInfo): { value: number; css: string }[] {
   if (info.scale === "reflectivity" && !useOperaScheme()) {
-    return AEMET_STEPS.map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
+    return [WEAK_STOPS[0]!, ...AEMET_STEPS].map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
   }
   const steps = 9;
   return Array.from({ length: steps }, (_, i) => {
