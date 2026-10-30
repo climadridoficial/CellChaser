@@ -3,6 +3,7 @@ import { Move, Save, X, RotateCcw, RotateCw, Pencil, EyeOff } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
+import { AEMET_CALIBRATION } from '@/lib/aemet-calibration';
 import { useRadarSession } from '@/components/RadarSession';
 import { AEMET_REFRESH_MS, boundsOfCorners, cornersFromBounds, initialBounds, loadAemetImages, rotateCorners, validBounds, validCorners, type AemetMapImage, type Corners, type RadarBounds } from '@/lib/aemet-overlay';
 
@@ -63,7 +64,7 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
     if (!images || !ready || !visible) return;
     const current = valueRef.current;
     const editing = !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
-    const corners = saved ?? current?.corners ?? cornersFromBounds(current?.bounds ?? initialBounds(target.lat, target.lon));
+    const corners = saved ?? current?.corners ?? cornersFromBounds(current?.bounds ?? AEMET_CALIBRATION[target.code] ?? initialBounds(target.lat, target.lon));
     onChange({ code: target.code, corners, bounds: boundsOfCorners(corners), image: editing ? images.original : images.echoes, editing, opacity: current?.opacity ?? 0.5 });
   }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange]);
 
