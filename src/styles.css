@@ -424,6 +424,12 @@
   border-radius: 4px;
   background: var(--card);
 }
+.aemet-corner span { width: 28px; height: 28px; }
+.aemet-rotate { background: transparent; border: 0; cursor: grab; }
+.aemet-rotate span {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px;
+  border: 3px solid var(--primary); background: var(--card); color: var(--primary); font-size: 16px;
+}
 .aemet-alignment-bar input { accent-color: var(--primary); }
 
 /* Map time slider: under the toolbar on phones, bottom centre on desktop. */

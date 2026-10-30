@@ -1,0 +1,1 @@
+ALTER TABLE public.radar_alignments ADD COLUMN IF NOT EXISTS corners jsonb;

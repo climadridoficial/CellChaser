@@ -40,6 +40,7 @@ export type Database = {
       }
       radar_alignments: {
         Row: {
+          corners: Json | null
           east: number
           north: number
           radar_code: string
@@ -49,6 +50,7 @@ export type Database = {
           west: number
         }
         Insert: {
+          corners?: Json | null
           east: number
           north: number
           radar_code: string
@@ -58,6 +60,7 @@ export type Database = {
           west: number
         }
         Update: {
+          corners?: Json | null
           east?: number
           north?: number
           radar_code?: string

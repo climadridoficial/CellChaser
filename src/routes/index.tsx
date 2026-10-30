@@ -16,7 +16,7 @@ import { aemetOnlyStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
 import { RadarSession } from "@/components/RadarSession";
-import type { AemetMapImage, RadarBounds } from "@/lib/aemet-overlay";
+import { boundsOfCorners, type AemetMapImage, type Corners } from "@/lib/aemet-overlay";
 import MapLoadBoundary from "@/components/MapLoadBoundary";
 import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
@@ -61,7 +61,7 @@ function Home() {
   const [alignmentTarget, setAlignmentTarget] = useState<AlignmentTarget | null>(null);
   const [aemetImage, setAemetImage] = useState<AemetMapImage | null>(null);
   const handleAemetImage = useCallback((value: AemetMapImage | null) => setAemetImage(value), []);
-  const handleAemetBounds = useCallback((bounds: RadarBounds) => setAemetImage(current => current ? { ...current, bounds } : current), []);
+  const handleAemetBounds = useCallback((corners: Corners) => setAemetImage(current => current ? { ...current, corners, bounds: boundsOfCorners(corners) } : current), []);
   const [at, setAt] = useState<number | null>(null);
   const [showStorms, setShowStorms] = useState(false);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
