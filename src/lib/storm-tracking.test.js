@@ -96,6 +96,6 @@ test("speckle-sized cells get no cone and small cells get a minimum-size cone", 
   const tiny = (minutes, lon) => ({ time: t0 + minutes * 60_000, cells: [{ lat: 40, lon, dbz: 45, radiusKm: 1 }] });
   expect(trackCells([tiny(0, -3), tiny(10, -2.92), tiny(20, -2.84)], "radar")[0].forecast).toBeNull();
   const track = trackCells([frame(0, -3, 45), frame(10, -2.92, 45), frame(20, -2.84, 45)], "radar")[0];
-  const nearKm = Math.abs(track.forecast[0][1] - track.forecast[1][1]) * 111.32 * Math.cos(40 * Math.PI / 180);
+  const nearKm = Math.hypot((track.forecast[0][0] - track.forecast[1][0]) * 111.32, (track.forecast[0][1] - track.forecast[1][1]) * 111.32 * Math.cos(40 * Math.PI / 180));
   expect(nearKm).toBeGreaterThanOrEqual(11.9);
 });
