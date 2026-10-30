@@ -56,19 +56,6 @@ export function productInfo(key: string): ProductInfo {
 
 type Stop = [number, [number, number, number]];
 
-const REFLECTIVITY_STOPS: Stop[] = [
-  [-15, [70, 90, 140]],
-  [-5, [60, 130, 210]],
-  [5, [55, 175, 235]],
-  [15, [70, 220, 235]],
-  [25, [60, 210, 120]],
-  [35, [240, 220, 70]],
-  [45, [240, 140, 40]],
-  [55, [225, 45, 45]],
-  [65, [190, 40, 150]],
-  [75, [250, 240, 255]],
-];
-
 // AEMET OpenData legend: 12..72 dBZ in 6 dBZ categories.
 const AEMET_STEPS: [number, [number, number, number]][] = [
   [12, [0, 0, 252]], [18, [0, 148, 252]], [24, [0, 252, 252]],
@@ -83,11 +70,6 @@ const WEAK_STOPS: Stop[] = [
   [12, [0, 0, 252]],
 ];
 
-/** Test feature: "aemet" (default) or the original "opera" reflectivity colours. */
-export const SCHEME_KEY = "cellchaser.dbzScheme";
-function useOperaScheme(): boolean {
-  try { return typeof window !== "undefined" && localStorage.getItem(SCHEME_KEY) === "opera"; } catch { return false; }
-}
 
 // Classic Doppler scale: green = toward radar (negative), red = away (positive).
 const VELOCITY_STOPS: Stop[] = [
@@ -133,11 +115,6 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
   if (info.scale === "reflectivity") {
     // Same stepped categories as AEMET OpenData images, so both read alike.
-    if (useOperaScheme()) {
-      if (value < -15) return [0, 0, 0, 0];
-      const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
-      return [r, g, b, 255];
-    }
     if (value < -15) return [0, 0, 0, 0];
     // Weak echoes below AEMET's 12 dBZ floor stay visible in muted blues,
     // keeping full OPERA detail (drizzle, clutter rings) like the old scheme.
@@ -160,7 +137,7 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
 
 /** Legend ticks for the currently selected product. */
 export function legendStops(info: ProductInfo): { value: number; css: string }[] {
-  if (info.scale === "reflectivity" && !useOperaScheme()) {
+  if (info.scale === "reflectivity") {
     return [WEAK_STOPS[0]!, ...AEMET_STEPS].map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
   }
   const steps = 9;
