@@ -128,7 +128,6 @@ export default function RadarMap({
         zIndex: 350,
         className: "radar-overlay",
         interactive: false,
-      }).addTo(map),
       }) as L.ImageOverlay & { radarId?: string };
       overlay.radarId = layer.radarId;
       const retireOld = () => {
@@ -213,7 +212,6 @@ export default function RadarMap({
       zIndex: 400,
       className: "radar-overlay",
       interactive: false,
-      }).addTo(map),
     });
     const retire = () => previous?.remove();
     overlay.once("load", retire);
@@ -281,7 +279,6 @@ export default function RadarMap({
               iconAnchor: [30, 30],
             }),
             interactive: false,
-      }).addTo(map),
             zIndexOffset: 1000,
           }).addTo(map);
         } else userRef.current.setLatLng(ll);
