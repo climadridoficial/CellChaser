@@ -16,7 +16,7 @@ const r = (es: string, pt: string, ca: string, gl: string, eu: string, en: strin
 export const MESSAGES = {
   stormTracks: r("Movimiento de células", "Movimento das células", "Moviment de cèl·lules", "Movemento das células", "Zelulen mugimendua", "Cell movement"),
   stormForecast: r("Previsión experimental · 30 min", "Previsão experimental · 30 min", "Previsió experimental · 30 min", "Previsión experimental · 30 min", "Iragarpen esperimentala · 30 min", "Experimental forecast · 30 min"),
-  stormDisclaimer: r("Estimación por reflectividad; no es un aviso oficial. AEMET: posición e intensidad aproximadas.", "Estimativa por refletividade; não é um aviso oficial. AEMET: posição e intensidade aproximadas.", "Estimació per reflectivitat; no és un avís oficial. AEMET: posició i intensitat aproximades.", "Estimación por reflectividade; non é un aviso oficial. AEMET: posición e intensidade aproximadas.", "Islagarritasunaren araberako estimazioa; ez da abisu ofiziala. AEMET: gutxi gorabeherako kokapena eta intentsitatea.", "Reflectivity estimate, not an official warning. AEMET position and intensity are approximate."),
+  stormDisclaimer: r("Estimación experimental; no es un aviso oficial.", "Estimativa experimental; não é um aviso oficial.", "Estimació experimental; no és un avís oficial.", "Estimación experimental; non é un aviso oficial.", "Estimazio esperimentala; ez da abisu ofiziala.", "Experimental estimate, not an official warning."),
   stormLight: r("Ligera", "Ligeira", "Lleugera", "Lixeira", "Arina", "Light"),
   stormStrong: r("Fuerte", "Forte", "Forta", "Forte", "Indartsua", "Strong"),
   stormVeryStrong: r("Muy fuerte", "Muito forte", "Molt forta", "Moi forte", "Oso indartsua", "Very strong"),
