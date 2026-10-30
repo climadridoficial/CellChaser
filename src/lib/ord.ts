@@ -35,6 +35,8 @@ export interface ScanFile {
   href: string;
   time: string; // ISO
   bytes: number | null;
+  /** AEMET publishes two volumes: short-range Doppler (with VRADH, finer bins) and long-range (without). */
+  range?: "short" | "long";
 }
 
 function authHeaders(apiKey?: string): HeadersInit {
@@ -150,6 +152,7 @@ export async function fetchScanFiles(
     // Some ORD parameter-filtered queries return empty despite publishing the
     // quantity in multi-product volumes. Discover volumes and filter locally.
     if (!cov.parameters || !(opts.parameterName in cov.parameters)) continue;
+    const range = Object.keys(cov.parameters).some((k) => k.startsWith("VRAD")) ? "short" : "long";
     for (const link of cov.links ?? []) {
       if (link.type !== "application/x-odim") continue;
       const m = FILE_TIME.exec(link.href);
@@ -158,6 +161,7 @@ export async function fetchScanFiles(
         href: link.href,
         time: `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`,
         bytes: link.length ?? null,
+        range,
       });
     }
   }

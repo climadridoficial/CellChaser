@@ -56,7 +56,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
   const [hours, setHours] = useState(1);
-  const [files, setFiles] = useState<ScanFile[] | null>(null);
+  const [allFiles, setFiles] = useState<ScanFile[] | null>(null);
+  const [rangeMode, setRangeMode] = useState<"short" | "long">("short");
+  const hasBothRanges = !!allFiles?.some((f) => f.range === "short") && !!allFiles?.some((f) => f.range === "long");
+  const files = useMemo(
+    () => (allFiles && hasBothRanges ? allFiles.filter((f) => f.range === rangeMode) : allFiles),
+    [allFiles, hasBothRanges, rangeMode],
+  );
   const [filesKey, setFilesKey] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
@@ -160,7 +166,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
         if (cancelled) return;
         setFiles(list);
         setFilesKey(selectionKey);
-        setSelectedTime(fileFor(list, atRef.current));
+        const both = list.some((f) => f.range === "short") && list.some((f) => f.range === "long");
+        const shown = both ? list.filter((f) => f.range === rangeModeRef.current) : list;
+        setSelectedTime(fileFor(shown, atRef.current));
         setStatus(list.length ? null : "No scans published in this time range.");
       })
       .catch((e: Error) => {
@@ -178,7 +186,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   useEffect(() => {
     if (files && filesKey === selectionKey) setSelectedTime(fileFor(files, at));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, now]);
+  }, [at, now, rangeMode]);
 
   // Decode + render the selected scan
   useEffect(() => {
@@ -312,6 +320,16 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
             <p className="hint mt-2">{t("notPublished", { p: missing.join(", ") })}</p>
           )}
         </section>
+
+        {hasBothRanges && (
+          <section>
+            <h3 className="section-title">{t("rangeTitle")}</h3>
+            <select value={rangeMode} onChange={(e) => setRangeMode(e.target.value as "short" | "long")} className="select mt-2">
+              <option value="short">{t("rangeShort")}</option>
+              <option value="long">{t("rangeLong")}</option>
+            </select>
+          </section>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <section>
