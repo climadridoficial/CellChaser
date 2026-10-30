@@ -240,7 +240,6 @@ export default function RadarMap({
       L.circle([station.lat, station.lon], {
         radius: km * 1000, color: "#94a3b8", weight: 1.5, dashArray: km === 150 ? "2 6" : "8 6", fill: false, interactive: false,
       }).addTo(map),
-        .addTo(map),
     );
     return () => rings.forEach((r) => r.remove());
   }, [selectedId, stations]);
