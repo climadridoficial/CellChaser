@@ -1,5 +1,6 @@
 import { useI18n } from "@/lib/i18n";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SCHEME_KEY } from "@/lib/radar-products";
 import type { TileSource } from "@/lib/settings";
 import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
 
@@ -149,6 +150,8 @@ export default function LayerMenu(props: Props) {
             />
           </label>
 
+          <SchemeToggle />
+
           <button
             onClick={() => {
               onOpenChange(false);
@@ -161,5 +164,29 @@ export default function LayerMenu(props: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+function SchemeToggle() {
+  const [opera, setOpera] = useState(false);
+  useEffect(() => {
+    try { setOpera(localStorage.getItem(SCHEME_KEY) === "opera"); } catch { /* ignore */ }
+  }, []);
+  return (
+    <label className="mt-1 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
+      <span>
+        <span className="block text-xs font-medium text-foreground">OPERA colours (test)</span>
+        <span className="hint block">{opera ? "Original OPERA scheme" : "AEMET OpenData scheme"}</span>
+      </span>
+      <input
+        type="checkbox"
+        checked={opera}
+        onChange={(e) => {
+          try { localStorage.setItem(SCHEME_KEY, e.target.checked ? "opera" : "aemet"); } catch { /* ignore */ }
+          window.location.reload();
+        }}
+        className="h-4 w-4 accent-[var(--primary)]"
+      />
+    </label>
   );
 }

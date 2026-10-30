@@ -76,7 +76,12 @@ const AEMET_STEPS: [number, [number, number, number]][] = [
   [48, [255, 255, 0]], [54, [255, 187, 0]], [60, [255, 127, 0]],
   [66, [255, 0, 0]], [72, [200, 0, 90]],
 ];
-void REFLECTIVITY_STOPS;
+
+/** Test feature: "aemet" (default) or the original "opera" reflectivity colours. */
+export const SCHEME_KEY = "cellchaser.dbzScheme";
+function useOperaScheme(): boolean {
+  try { return typeof window !== "undefined" && localStorage.getItem(SCHEME_KEY) === "opera"; } catch { return false; }
+}
 
 // Classic Doppler scale: green = toward radar (negative), red = away (positive).
 const VELOCITY_STOPS: Stop[] = [
@@ -122,6 +127,11 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
   if (info.scale === "reflectivity") {
     // Same stepped categories as AEMET OpenData images, so both read alike.
+    if (useOperaScheme()) {
+      if (value < -15) return [0, 0, 0, 0];
+      const [r, g, b] = interp(REFLECTIVITY_STOPS, value);
+      return [r, g, b, 255];
+    }
     if (value < AEMET_STEPS[0]![0]) return [0, 0, 0, 0];
     // Blend between AEMET colours so detail isn't lost to hard 6 dBZ bands.
     const [r, g, b] = interp(AEMET_STEPS, value);
@@ -138,7 +148,7 @@ export function colorFor(info: ProductInfo, value: number): [number, number, num
 
 /** Legend ticks for the currently selected product. */
 export function legendStops(info: ProductInfo): { value: number; css: string }[] {
-  if (info.scale === "reflectivity") {
+  if (info.scale === "reflectivity" && !useOperaScheme()) {
     return AEMET_STEPS.map(([value, [r, g, b]]) => ({ value, css: `rgb(${r},${g},${b})` }));
   }
   const steps = 9;
