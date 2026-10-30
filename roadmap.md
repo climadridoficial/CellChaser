@@ -30,4 +30,4 @@
 - [x] Footer digits 4, 5, 8 solved from publishing lag until real glyphs are captured
 
 # First-visit intro video
-- [ ] Show uploaded intro video (3s, 16:9) to first-time visitors, skippable, remembered via localStorage
+- [x] Show uploaded intro video (3s, 16:9) to first-time visitors, skippable, remembered via localStorage
