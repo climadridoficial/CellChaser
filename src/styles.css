@@ -510,7 +510,9 @@
   position: fixed; inset: 0; z-index: 2000;
   display: flex; align-items: center; justify-content: center;
   background: var(--background);
+  opacity: 1; transition: opacity 0.7s ease-out;
 }
+.intro-overlay.intro-fade { opacity: 0; pointer-events: none; }
 .intro-video {
   width: min(100%, 62.5rem); aspect-ratio: 16 / 9;
   object-fit: contain; background: var(--secondary);
