@@ -34,7 +34,7 @@ export default function AemetBackup({ code, at }: { code: string; at: number | n
         return { src: await fetchAemetFrameUrl(frame), observedAt: frame.observedAt };
       }
       const res = await fetch(`/api/public/aemet-radar?r=${code}&t=${Math.floor(Date.now() / TEN_MIN)}`);
-      if (!res.ok) throw new Error("AEMET");
+      if (!res.ok || res.status === 204) throw new Error("AEMET");
       return { src: await blobToDataUrl(await res.blob()), observedAt: res.headers.get("x-observed-at") };
     },
   });

@@ -30,17 +30,13 @@ export const Route = createFileRoute("/api/public/aemet-radar")({
           const bytes = new Uint8Array(await data.arrayBuffer());
           const observed = aemetGifTime(bytes, Date.now());
           if (!radarFrameVisible(observed, null, AEMET_LIVE_MAX_AGE_MS, Date.now())) {
-            return new Response("AEMET no publica una imagen actual de este radar.", {
-              status: 503,
-              headers: { "Retry-After": "120", "Cache-Control": "no-store" },
-            });
+            // Expected outage, not a server fault: 204 tells the app "no current image".
+            return new Response(null, { status: 204, headers: { "Retry-After": "120", "Cache-Control": "no-store", "X-Unavailable": encodeURIComponent("AEMET no publica una imagen actual de este radar.") } });
           }
           return gifResponse(bytes, observed, "live");
         } catch (e) {
-          return new Response(`AEMET no disponible: ${(e as Error).message}`, {
-            status: 503,
-            headers: { "Retry-After": "120", "Cache-Control": "no-store" },
-          });
+          // Expected outage, not a server fault: 204 tells the app "no current image".
+            return new Response(null, { status: 204, headers: { "Retry-After": "120", "Cache-Control": "no-store", "X-Unavailable": encodeURIComponent(`AEMET no disponible: ${(e as Error).message}`) } });
         }
       },
     },
