@@ -28,9 +28,10 @@ export async function processAemetStormFrame(client: Client, code: string, time:
 }
 
 /** Scheduled ingest, not a per-viewer computation. Concurrency stays below six. */
-export async function refreshOperaStorms(client: Client) {
-  const stations = (await fetchStations()).filter(s=>IBERIA.includes(s.country.replace(/^0+/,"")));
-  const results: {radarId:string;ok:boolean}[] = [];
+export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
+  // Split across several scheduled requests: one request has a limited number of outbound calls.
+  const stations = (await fetchStations()).filter(s=>IBERIA.includes(s.country.replace(/^0+/,""))).sort((a,b)=>a.id.localeCompare(b.id)).filter((_,i)=>i%parts===part);
+  const results: {radarId:string;ok:boolean;error?:string}[] = [];
   for (let i=0;i<stations.length;i+=2) {
     await Promise.all(stations.slice(i,i+2).map(async station=>{
       try {
@@ -40,7 +41,7 @@ export async function refreshOperaStorms(client: Client) {
         const cached = await client.from("storm_cell_frames").select("observed_at").eq("radar_id",station.id).eq("source","opera").eq("algorithm_version",STORM_VERSION).gte("observed_at",new Date(Date.now()-90*60_000).toISOString());
         if (cached.error) throw cached.error;
         const known = new Set((cached.data??[]).map(f=>Date.parse(f.observed_at)));
-        const times = [...new Set(history.map(f=>Date.parse(f.time)))].filter(t=>t<=Date.parse(current.time)&&t>=Date.parse(current.time)-3600_000).sort((a,b)=>a-b);
+        const times = [...new Set(history.map(f=>Date.parse(f.time)))].filter(t=>t<=Date.parse(current.time)&&t>=Date.parse(current.time)-3600_000).sort((a,b)=>a-b).slice(-3);
         for (const t of times) {
           if (known.has(t)) continue;
           const pick = pickScan(history.filter(f=>Date.parse(f.time)===t),t,60_000);
@@ -53,9 +54,10 @@ export async function refreshOperaStorms(client: Client) {
         }
         await client.from("storm_source_state").upsert({radar_id:station.id,source:"opera",available:true,checked_at:new Date().toISOString()});
         results.push({radarId:station.id,ok:true});
-      } catch {
+      } catch (e) {
+        console.error("OPERA storm refresh failed", station.id, (e as Error).message);
         await client.from("storm_source_state").upsert({radar_id:station.id,source:"opera",available:false,checked_at:new Date().toISOString()});
-        results.push({radarId:station.id,ok:false});
+        results.push({radarId:station.id,ok:false,error:(e as Error).message});
       }
     }));
   }
