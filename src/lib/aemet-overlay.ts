@@ -6,6 +6,38 @@ export interface AemetMapImage {
   bounds: RadarBounds;
   editing: boolean;
   opacity: number;
+  /** Free quadrilateral [NW, NE, SE, SW] as [lat, lon]; overrides bounds when set. */
+  corners?: Corners;
+}
+export type LatLon = [number, number];
+export type Corners = [LatLon, LatLon, LatLon, LatLon];
+
+export function cornersFromBounds([[s, w], [n, e]]: RadarBounds): Corners {
+  return [[n, w], [n, e], [s, e], [s, w]];
+}
+export function boundsOfCorners(c: Corners): RadarBounds {
+  const lats = c.map(p => p[0]), lons = c.map(p => p[1]);
+  return [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
+}
+export function validCorners(c: unknown): c is Corners {
+  return Array.isArray(c) && c.length === 4 && c.every(p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) && Math.abs(p[0]) <= 85 && Math.abs(p[1]) <= 180);
+}
+
+/** CSS matrix3d mapping a w×h image (origin top-left) onto pixel quad [TL, TR, BR, BL]. */
+export function quadMatrix(w: number, h: number, q: [number, number][]): number[] {
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q as [[number, number], [number, number], [number, number], [number, number]];
+  const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+  let a, b, d, e, g = 0, k = 0;
+  if (Math.abs(sx) < 1e-9 && Math.abs(sy) < 1e-9) {
+    a = x1 - x0; b = x3 - x0; d = y1 - y0; e = y3 - y0;
+  } else {
+    const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2;
+    const den = dx1 * dy2 - dx2 * dy1;
+    g = (sx * dy2 - dx2 * sy) / den;
+    k = (dx1 * sy - sx * dy1) / den;
+    a = x1 - x0 + g * x1; b = x3 - x0 + k * x3; d = y1 - y0 + g * y1; e = y3 - y0 + k * y3;
+  }
+  return [a / w, d / w, 0, g / w, b / h, e / h, 0, k / h, 0, 0, 1, 0, x0, y0, 0, 1];
 }
 
 export function validBounds(value: RadarBounds): boolean {

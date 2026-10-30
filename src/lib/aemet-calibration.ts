@@ -4,7 +4,7 @@ import type { RadarBounds } from "./aemet-overlay";
  * Manual alignment tools for AEMET images. Turned off now that every radar has
  * been aligned; flip to true to bring back the "Alinear imagen AEMET" button.
  */
-export const AEMET_ALIGNMENT_ENABLED = false;
+export const AEMET_ALIGNMENT_ENABLED = true;
 
 /**
  * Map bounds [[south, west], [north, east]] for each AEMET regional image,
