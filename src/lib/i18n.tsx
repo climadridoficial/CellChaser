@@ -73,6 +73,8 @@ export const MESSAGES = {
   rangeTitle: r("Alcance", "Alcance", "Abast", "Alcance", "Irismena", "Range"),
   rangeShort: r("Corto alcance (más detalle, ~150 km)", "Curto alcance (mais detalhe, ~150 km)", "Curt abast (més detall, ~150 km)", "Curto alcance (máis detalle, ~150 km)", "Irismen laburra (xehetasun gehiago, ~150 km)", "Short range (finer detail, ~150 km)"),
   rangeLong: r("Largo alcance (250 km)", "Longo alcance (250 km)", "Llarg abast (250 km)", "Longo alcance (250 km)", "Irismen luzea (250 km)", "Long range (250 km)"),
+  satellite: r("Mapa satélite", "Mapa de satélite", "Mapa satèl·lit", "Mapa satélite", "Satelite mapa", "Satellite map"),
+  levelUnavailable: r("no disponible", "indisponível", "no disponible", "non dispoñible", "ez dago erabilgarri", "unavailable"),
   elevation: r("Elevación", "Elevação", "Elevació", "Elevación", "Altuera", "Elevation"),
   timeRange: r("Intervalo", "Intervalo", "Interval", "Intervalo", "Tartea", "Time range"),
   scanTime: r("Hora del escaneo", "Hora da varredura", "Hora de l'escaneig", "Hora do escaneo", "Eskaneatze ordua", "Scan time"),

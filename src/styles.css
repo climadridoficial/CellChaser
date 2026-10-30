@@ -537,6 +537,7 @@
 }
 .inspector-btn { bottom: 136px; }
 .key-btn { bottom: 176px; }
+.sat-btn { bottom: 216px; }
 .map-tool-on { color: oklch(0.7 0.18 250); }
 .inspector-cross {
   position: absolute; z-index: 950; left: 50%; top: 50%; width: 36px; height: 36px;
