@@ -79,7 +79,6 @@ export default function IntroOverlay() {
       role="dialog"
       aria-modal="true"
       aria-label="CellChaser"
-      onTransitionEnd={undefined}
     >
       <video
         ref={(node) => {
