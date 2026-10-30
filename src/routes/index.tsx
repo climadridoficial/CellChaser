@@ -15,6 +15,7 @@ import AemetPanel from "@/components/AemetPanel";
 import { aemetOnlyStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
+import IntroOverlay from "@/components/IntroOverlay";
 import { RadarSession } from "@/components/RadarSession";
 import { boundsOfCorners, type AemetMapImage, type Corners } from "@/lib/aemet-overlay";
 import MapLoadBoundary from "@/components/MapLoadBoundary";
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <LanguageProvider><RadarSession><Home /></RadarSession></LanguageProvider>,
+  component: () => <LanguageProvider><RadarSession><IntroOverlay /><Home /></RadarSession></LanguageProvider>,
 });
 
 function Home() {
