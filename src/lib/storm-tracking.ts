@@ -40,12 +40,27 @@ export function detectCells(grid: EchoGrid): Cell[] {
     }
     if (dbzs.length < 6 || dbzs.length * pixelArea < Math.PI * MIN_RADIUS_KM ** 2) continue;
     const members = new Set(queue);
-    // At least one solid 2x2 >=30 dBZ core, not a chain of diagonal dots.
-    const core = queue.some(i => {
+    // Solid >=35 dBZ core covering a real area (not a few hot pixels / diagonal dots).
+    let corePixels = 0, solid = false;
+    for (const i of queue) {
+      if (!(Number(values[i]) >= 35)) continue;
+      corePixels++;
       const x = i % width, y = Math.floor(i / width);
-      return x + 1 < width && y + 1 < height && [i, i + 1, i + width, i + width + 1].every(j => members.has(j) && Number(values[j]) >= 30);
-    });
-    if (!core) continue;
+      if (!solid && x + 1 < width && y + 1 < height && [i, i + 1, i + width, i + width + 1].every(j => members.has(j) && Number(values[j]) >= 35)) solid = true;
+    }
+    if (!solid || corePixels * pixelArea < 3) continue;
+    // Shape: reject thin lines/rays/rings (clutter, interference, outline leftovers).
+    let minX = width, maxX = 0, minY = height, maxY = 0, mx = 0, my = 0;
+    for (const i of queue) { const x = i % width, y = Math.floor(i / width); mx += x; my += y; if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+    mx /= queue.length; my /= queue.length;
+    let cxx = 0, cyy = 0, cxy = 0;
+    for (const i of queue) { const dx = i % width - mx, dy = Math.floor(i / width) - my; cxx += dx * dx; cyy += dy * dy; cxy += dx * dy; }
+    const tr = cxx + cyy, det = cxx * cyy - cxy * cxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+    const elongation = Math.sqrt((tr / 2 + disc) / Math.max(1e-6, tr / 2 - disc));
+    const fill = queue.length / ((maxX - minX + 1) * (maxY - minY + 1));
+    if (elongation > 5 || fill < 0.15) continue;
+    // Speckled/noisy texture: real storms have a large share of contiguous echo above 30 dBZ.
+    if (dbzs.filter(v => v >= 30).length / dbzs.length < 0.25) continue;
     dbzs.sort((a, b) => a - b);
     cells.push({ lat: latitudeFromY(top - sy / weight / height * (top - bottom)), lon: west + sx / weight / width * (east - west), dbz: dbzs[Math.floor((dbzs.length - 1) * 0.9)] ?? 25, radiusKm: Math.sqrt(dbzs.length * pixelArea / Math.PI) });
   }
