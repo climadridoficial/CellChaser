@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
         if (authFailure) return authFailure;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { processAemetStormFrame, refreshOperaStorms } = await import("@/lib/storm-pipeline.server");
+        const { processAemetStormFrame } = await import("@/lib/storm-pipeline.server");
         const cutoff = Date.now() - RETENTION_MS;
         const results: {code:string;status:string;observedAt?:string}[] = [];
         const codes = [...AEMET_RADAR_CODES];
@@ -58,11 +58,10 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
             }
           }),
         ));
-        const opera = await refreshOperaStorms(supabaseAdmin);
         await supabaseAdmin.from("aemet_radar_frames").delete().lt("observed_at", new Date(cutoff).toISOString());
         await supabaseAdmin.from("storm_cell_frames").delete().lt("observed_at",new Date(cutoff).toISOString());
         await supabaseAdmin.from("storm_track_frames").delete().lt("observed_at",new Date(cutoff).toISOString());
-        return Response.json({ results, opera });
+        return Response.json({ results });
       },
     },
   },
