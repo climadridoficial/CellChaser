@@ -99,3 +99,9 @@ test("speckle-sized cells get no cone and small cells get a minimum-size cone", 
   const nearKm = Math.hypot((track.forecast[0][0] - track.forecast[1][0]) * 111.32, (track.forecast[0][1] - track.forecast[1][1]) * 111.32 * Math.cos(40 * Math.PI / 180));
   expect(nearKm).toBeGreaterThanOrEqual(11.9);
 });
+
+test("fragments of one storm merge into a single cell", async () => {
+  const { mergeCells } = await import("./storm-tracking.ts");
+  const merged = mergeCells([{ lat: 40, lon: -3, dbz: 45, radiusKm: 5 }, { lat: 40.1, lon: -3, dbz: 40, radiusKm: 4 }, { lat: 41, lon: -3, dbz: 40, radiusKm: 4 }]);
+  expect(merged.length).toBe(2);
+});

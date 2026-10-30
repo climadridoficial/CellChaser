@@ -61,7 +61,7 @@ function offset(cell: Cell, x: number, y: number): [number, number] {
 
 /** Rebuild chronologically so scrubbing never uses future observations. */
 export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
-  const ordered = [...new Map(frames.map(f => [f.time, f])).values()].sort((a, b) => a.time - b.time);
+  const ordered = [...new Map(frames.map(f => [f.time, { ...f, cells: mergeCells(f.cells) }])).values()].sort((a, b) => a.time - b.time);
   let active: StormTrack[] = []; let serial = 0;
   for (const frame of ordered) {
     const previous = active.filter(t => { const p = t.points.at(-1); return p && frame.time > p.time && frame.time - p.time <= 20 * 60_000; });
@@ -112,5 +112,40 @@ export function trackCells(frames: CellFrame[], radarId: string): StormTrack[] {
 
 /** A one-scan dot is unconfirmed; retain only repeated detections in real data. */
 export function confirmedStormTracks(frames: CellFrame[], radarId: string): StormTrack[] {
-  return trackCells(frames, radarId).filter(track => track.points.length >= 2 && (track.points.at(-1)?.radiusKm ?? 0) >= MIN_RADIUS_KM);
+  return dedupeTracks(trackCells(frames, radarId)).filter(track => track.points.length >= 2 && (track.points.at(-1)?.radiusKm ?? 0) >= MIN_RADIUS_KM);
+}
+/** Gap (km) between two echo edges below which they count as the same storm. */
+export const MERGE_GAP_KM = 8;
+
+/** Fuse fragments of one storm (touching or nearly touching cells) into one cell. */
+export function mergeCells(cells: Cell[]): Cell[] {
+  const groups: Cell[][] = [];
+  const sorted = [...cells].sort((a, b) => b.radiusKm ** 2 * b.dbz - a.radiusKm ** 2 * a.dbz);
+  for (const cell of sorted) {
+    const group = groups.find(g => g.some(o => polarAt(cell.lat, cell.lon, o.lat, o.lon).distance / 1000 <= cell.radiusKm + o.radiusKm + MERGE_GAP_KM));
+    if (group) group.push(cell); else groups.push([cell]);
+  }
+  return groups.map(g => {
+    if (g.length === 1) return g[0]!;
+    const area = g.reduce((s, c) => s + c.radiusKm ** 2, 0);
+    return {
+      lat: g.reduce((s, c) => s + c.lat * c.radiusKm ** 2, 0) / area,
+      lon: g.reduce((s, c) => s + c.lon * c.radiusKm ** 2, 0) / area,
+      dbz: Math.max(...g.map(c => c.dbz)),
+      radiusKm: Math.sqrt(area),
+    };
+  });
+}
+
+/** One cone per storm: drop tracks (e.g. from overlapping radars) sitting on a bigger one. */
+export function dedupeTracks(tracks: StormTrack[]): StormTrack[] {
+  const score = (t: StormTrack) => (t.forecast ? 1e6 : 0) + t.points.length * 1e3 + (t.points.at(-1)?.radiusKm ?? 0);
+  const kept: StormTrack[] = [];
+  for (const t of [...tracks].sort((a, b) => score(b) - score(a))) {
+    const p = t.points.at(-1);
+    if (!p) continue;
+    if (kept.some(k => { const q = k.points.at(-1)!; return polarAt(p.lat, p.lon, q.lat, q.lon).distance / 1000 <= p.radiusKm + q.radiusKm + MERGE_GAP_KM; })) continue;
+    kept.push(t);
+  }
+  return kept;
 }
