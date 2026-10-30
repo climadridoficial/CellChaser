@@ -228,6 +228,8 @@ export default function RadarMap({
 
   // User location: "on" (dot), "heading" (dot + direction cone), "off"
   const [locMode, setLocMode] = useState<"on" | "heading" | "off">("on");
+  const [legendHidden, setLegendHidden] = useState(false);
+  useEffect(() => { if (!showStorms) setLegendHidden(false); }, [showStorms]);
   const userRef = useRef<L.Marker | null>(null);
   const headingRef = useRef<number | null>(null);
   const centeredRef = useRef(false);
@@ -316,7 +318,8 @@ export default function RadarMap({
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
       <StormTracks map={mapRef.current} tracks={storms.tracks} />
-      {showStorms && <div className="storm-legend" role="status">
+      {showStorms && !legendHidden && <div className="storm-legend" role="status">
+        <button type="button" className="storm-legend-close" aria-label={t("close")} title={t("close")} onClick={() => setLegendHidden(true)}>×</button>
         <div className="font-medium">{t("stormForecast")}</div>
         <div className="storm-legend-scale">
           <span><i className="storm-light" />{t("stormLight")} &lt;40</span>
