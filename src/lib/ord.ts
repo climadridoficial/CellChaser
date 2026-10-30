@@ -60,6 +60,8 @@ async function getJson<T>(url: string, apiKey?: string): Promise<T> {
         : `OPERA request failed (${res.status})`,
     );
   }
+  // 204: no data published for this query (radar offline); treat as an empty result.
+  if (res.status === 204) return {} as T;
   return (await res.json()) as T;
 }
 

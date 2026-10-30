@@ -28,6 +28,8 @@ export const Route = createFileRoute("/api/public/odim")({
 
         const auth = request.headers.get("authorization");
         const upstream = await fetch(target.toString(), auth ? { headers: { Authorization: auth } } : undefined);
+        // 204 = upstream has no data for this query (e.g. a radar not transmitting); not an error.
+        if (upstream.status === 204) return new Response(null, { status: 204 });
         if (!upstream.ok || !upstream.body) {
           return new Response("Upstream error", { status: upstream.status || 502 });
         }
