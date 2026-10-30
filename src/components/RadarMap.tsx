@@ -228,6 +228,21 @@ export default function RadarMap({
     if (station) map.flyTo([station.lat, station.lon], Math.max(map.getZoom(), 7), { duration: 0.7 });
   }, [selectedId, stations]);
 
+  // Range rings of the selected radar. AEMET publishes two OPERA scans per radar:
+  // long range (250 km, DBZH/TH) and short-range Doppler (~150 km, DBZH/VRADH).
+  useEffect(() => {
+    const map = mapRef.current;
+    const station = selectedId ? stations.find((s) => s.id === selectedId) : null;
+    if (!map || !station) return;
+    const rings = (station.id.startsWith("aemet-") ? [240] : [250, 150]).map((km) =>
+      L.circle([station.lat, station.lon], {
+        radius: km * 1000, color: "#94a3b8", weight: 1.5, dashArray: km === 150 ? "2 6" : "8 6", fill: false, interactive: false,
+      }).addTo(map),
+    );
+    return () => rings.forEach((r) => r.remove());
+  }, [selectedId, stations]);
+
+
   // User location: "on" (dot), "heading" (dot + direction cone), "off"
   const [locMode, setLocMode] = useState<"on" | "heading" | "off">("on");
   const [legendHidden, setLegendHidden] = useState(false);
