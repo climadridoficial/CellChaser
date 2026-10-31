@@ -32,7 +32,8 @@ interface Props {
   at: number | null;
   compositeMode: CompositeMode;
   /** AEMET lightning-strike map (transparent PNG data URL) or null when off. */
-  lightning: string | null;
+  lightning: AemetMapImage | null;
+  onLightningBounds: (corners: Corners) => void;
 }
 
 export default function RadarMap({
@@ -53,6 +54,7 @@ export default function RadarMap({
   at,
   compositeMode,
   lightning,
+  onLightningBounds,
 }: Props) {
   const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
@@ -110,7 +112,7 @@ export default function RadarMap({
   }, [tileUrl, scan, !!aemetImage]);
 
   useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
-  useLightningOverlay(mapRef, lightning);
+  useLightningOverlay(mapRef, lightning, onLightningBounds);
 
   // Spain radar composite: one image per radar. A replaced image stays until
   // its successor has finished loading, so time steps never flash empty.

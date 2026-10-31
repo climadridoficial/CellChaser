@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { cornersFromBounds, quadMatrix, type AemetMapImage, type Corners } from '@/lib/aemet-overlay';
 
-const W = 480, H = 460;
 const cornersOf = (v: AemetMapImage): Corners => v.corners ?? cornersFromBounds(v.bounds);
 
 /** Draws the AEMET image as a free quadrilateral (4 independent corners) with drag, per-corner stretch and rotation. */
-export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: AemetMapImage | null, onCorners: (corners: Corners) => void) {
+export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: AemetMapImage | null, onCorners: (corners: Corners) => void, size = { w: 480, h: 460 }, lightning = false) {
+  const W = size.w, H = size.h;
   const valueRef = useRef(value);
   const handlerRef = useRef(onCorners);
   const syncRef = useRef<(() => void) | null>(null);
@@ -17,10 +17,10 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
     const map = mapRef.current;
     if (!map || !value) return;
     const editing = value.editing;
-    const img = L.DomUtil.create('img', `leaflet-zoom-hide radar-overlay ${editing ? 'aemet-align-image' : 'aemet-echo-image'}`) as HTMLImageElement;
+    const img = L.DomUtil.create('img', `leaflet-zoom-animated radar-overlay ${lightning ? 'lightning-overlay' : ''} ${editing ? 'aemet-align-image' : 'aemet-echo-image'}`) as HTMLImageElement;
     img.src = value.image;
     img.draggable = false;
-    Object.assign(img.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, maxWidth: 'none', maxHeight: 'none', transformOrigin: '0 0', zIndex: '450', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none' });
+    Object.assign(img.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, maxWidth: 'none', maxHeight: 'none', transformOrigin: '0 0', zIndex: lightning ? '460' : '450', pointerEvents: editing ? 'auto' : 'none', touchAction: 'none' });
     map.getPanes().overlayPane.appendChild(img);
 
     const border = editing ? L.polygon([], { className: 'aemet-align-border', fill: false, interactive: false, weight: 2, noClip: true, smoothFactor: 0 } as L.PolylineOptions).addTo(map) : null;
@@ -30,7 +30,7 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
     const toLL = (pts: L.Point[]) => pts.map(p => { const l = map.layerPointToLatLng(p); return [l.lat, l.lng]; }) as Corners;
     const rotatorPos = (c: Corners) => {
       const px = toPx(c);
-      const mid = px[0]!.add(px[1]!).divideBy(2);
+      const mid = (px[0] ?? L.point(0, 0)).add(px[1] ?? L.point(0, 0)).divideBy(2);
       const centre = px.reduce((a, b) => a.add(b), L.point(0, 0)).divideBy(4);
       const dir = mid.subtract(centre);
       const len = Math.hypot(dir.x, dir.y) || 1;
@@ -45,7 +45,7 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
       img.style.transform = `matrix3d(${quadMatrix(W, H, px.map(p => [p.x, p.y])).join(',')})`;
       img.style.opacity = String(v.editing ? v.opacity : 0.85);
       border?.setLatLngs(c);
-      corners.forEach((m, i) => m.setLatLng(c[i]!));
+      corners.forEach((m, i) => { const point = c[i]; if (point) m.setLatLng(point); });
       rotator?.setLatLng(rotatorPos(c));
     };
     syncRef.current = sync;
@@ -104,12 +104,14 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
         if (!v) return;
         startPx = toPx(cornersOf(v));
         centre = startPx.reduce((a, b) => a.add(b), L.point(0, 0)).divideBy(4);
-        const p = map.latLngToLayerPoint(rotator!.getLatLng());
+        if (!rotator) return;
+        const p = map.latLngToLayerPoint(rotator.getLatLng());
         startAngle = Math.atan2(p.y - centre.y, p.x - centre.x);
       });
       rotator.on('drag', () => {
         if (!startPx.length) return;
-        const p = map.latLngToLayerPoint(rotator!.getLatLng());
+        if (!rotator) return;
+        const p = map.latLngToLayerPoint(rotator.getLatLng());
         const a = Math.atan2(p.y - centre.y, p.x - centre.x) - startAngle;
         const cos = Math.cos(a), sin = Math.sin(a);
         handlerRef.current(toLL(startPx.map(q => {
@@ -121,9 +123,20 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
       map.fitBounds(L.latLngBounds(c0), { paddingTopLeft: [35, 95], paddingBottomRight: [35, 130], animate: false });
     }
     sync();
-    map.on('zoomend viewreset resize', sync);
+    const animateZoom = (event: L.ZoomAnimEvent) => {
+      const v = valueRef.current;
+      if (!v) return;
+      const pane = map.getPane('mapPane');
+      const panePos = pane ? L.DomUtil.getPosition(pane) : L.point(0, 0);
+      const origin = map.project(event.center, event.zoom).subtract(map.getSize().divideBy(2)).add(panePos).round();
+      const points = cornersOf(v).map(c => map.project(c, event.zoom).subtract(origin));
+      img.style.transform = `matrix3d(${quadMatrix(W, H, points.map(p => [p.x, p.y])).join(',')})`;
+    };
+    map.on('zoom viewreset resize', sync);
+    map.on('zoomanim', animateZoom);
     return () => {
-      map.off('zoomend viewreset resize', sync);
+      map.off('zoom viewreset resize', sync);
+      map.off('zoomanim', animateZoom);
       endDrag?.();
       img.removeEventListener('pointerdown', down);
       img.remove();
@@ -134,7 +147,7 @@ export function useAemetMapOverlay(mapRef: { current: L.Map | null }, value: Aem
     };
     // Corners and opacity update in place, never recreate during a drag.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value?.code, value?.image, value?.editing, mapRef]);
+  }, [value?.code, value?.image, value?.editing, mapRef, W, H, lightning]);
 
   useEffect(() => { syncRef.current?.(); }, [value]);
 }
