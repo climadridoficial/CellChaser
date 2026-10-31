@@ -30,9 +30,9 @@ export function useLightningOverlay(mapRef: { current: L.Map | null }, image: st
       img.style.transform = `matrix3d(${quadMatrix(LIGHTNING_SIZE.w, LIGHTNING_SIZE.h, px.map((p) => [p.x, p.y])).join(",")})`;
     };
     sync();
-    map.on("zoom move viewreset", sync);
+    map.on("zoomend viewreset resize", sync);
     return () => {
-      map.off("zoom move viewreset", sync);
+      map.off("zoomend viewreset resize", sync);
       img.remove();
     };
   }, [mapRef, image]);
