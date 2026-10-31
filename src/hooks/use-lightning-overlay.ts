@@ -1,39 +1,9 @@
-import { useEffect } from "react";
-import L from "leaflet";
-import { quadMatrix } from "@/lib/aemet-overlay";
-import { LIGHTNING_CORNERS, LIGHTNING_SIZE } from "@/lib/aemet-lightning";
+import type L from "leaflet";
+import type { AemetMapImage, Corners } from "@/lib/aemet-overlay";
+import { LIGHTNING_SIZE } from "@/lib/aemet-lightning";
+import { useAemetMapOverlay } from "./use-aemet-map-overlay";
 
 /** Draws the AEMET lightning map as a static quadrilateral above radar echoes. */
-export function useLightningOverlay(mapRef: { current: L.Map | null }, image: string | null) {
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !image) return;
-    const img = L.DomUtil.create("img", "leaflet-zoom-hide lightning-overlay") as HTMLImageElement;
-    img.src = image;
-    img.draggable = false;
-    Object.assign(img.style, {
-      position: "absolute",
-      left: "0",
-      top: "0",
-      width: `${LIGHTNING_SIZE.w}px`,
-      height: `${LIGHTNING_SIZE.h}px`,
-      maxWidth: "none",
-      maxHeight: "none",
-      transformOrigin: "0 0",
-      zIndex: "460",
-      pointerEvents: "none",
-    });
-    map.getPanes().overlayPane.appendChild(img);
-
-    const sync = () => {
-      const px = LIGHTNING_CORNERS.map((p) => map.latLngToLayerPoint(p));
-      img.style.transform = `matrix3d(${quadMatrix(LIGHTNING_SIZE.w, LIGHTNING_SIZE.h, px.map((p) => [p.x, p.y])).join(",")})`;
-    };
-    sync();
-    map.on("zoomend viewreset resize", sync);
-    return () => {
-      map.off("zoomend viewreset resize", sync);
-      img.remove();
-    };
-  }, [mapRef, image]);
+export function useLightningOverlay(mapRef: { current: L.Map | null }, value: AemetMapImage | null, onCorners: (corners: Corners) => void) {
+  useAemetMapOverlay(mapRef, value, onCorners, LIGHTNING_SIZE, true);
 }

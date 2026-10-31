@@ -13,9 +13,11 @@ interface Props {
   value: AemetMapImage | null;
   onChange: (value: AemetMapImage | null) => void;
   onClose: () => void;
+  loadImages?: () => Promise<{ original: string; echoes: string }>;
+  defaultCorners?: Corners;
 }
 
-export default function AemetAlignment({ target, value, onChange, onClose }: Props) {
+export default function AemetAlignment({ target, value, onChange, onClose, loadImages, defaultCorners }: Props) {
   const { userId, ready } = useRadarSession();
   const [images, setImages] = useState<{ original: string; echoes: string } | null>(null);
   const [saved, setSaved] = useState<Corners | null>(null);
@@ -35,11 +37,11 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
     let live = true;
     setImages(null);
     setError(null);
-    loadAemetImages(target.code, tick).then(next => {
+    (loadImages ? loadImages() : loadAemetImages(target.code, tick)).then(next => {
       if (live) setImages(next);
     }).catch(e => { if (live) setError((e as Error).message); });
     return () => { live = false; };
-  }, [target.code, tick]);
+  }, [target.code, tick, loadImages]);
 
   useEffect(() => {
     if (!ready) return;
@@ -63,10 +65,10 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
   useEffect(() => {
     if (!images || !ready || !visible) return;
     const current = valueRef.current;
-    const editing = !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
-    const corners = saved ?? current?.corners ?? cornersFromBounds(current?.bounds ?? AEMET_CALIBRATION[target.code] ?? initialBounds(target.lat, target.lon));
+    const editing = Boolean(loadImages) || !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
+    const corners = saved ?? current?.corners ?? defaultCorners ?? cornersFromBounds(current?.bounds ?? AEMET_CALIBRATION[target.code] ?? initialBounds(target.lat, target.lon));
     onChange({ code: target.code, corners, bounds: boundsOfCorners(corners), image: editing ? images.original : images.echoes, editing, opacity: current?.opacity ?? 0.5 });
-  }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange]);
+  }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange, loadImages, defaultCorners]);
 
   const signIn = async (provider: 'google' | 'lovable') => {
     setBusy(true);
@@ -89,9 +91,9 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
     setSaved(stored);
   };
 
-  return <aside className="aemet-alignment-bar" aria-label="Alineación del radar AEMET">
+  return <aside className="aemet-alignment-bar" aria-label={loadImages ? 'Alineación de rayos AEMET' : 'Alineación del radar AEMET'}>
     <div className="flex items-center justify-between gap-2">
-      <div className="min-w-0"><h2 className="truncate text-sm font-semibold">{target.name}</h2><p className="text-xs text-muted-foreground">AEMET · {value?.editing ? 'Alinear imagen' : saved ? 'Alineación guardada · dBZ' : 'Cargando imagen…'}</p></div>
+      <div className="min-w-0"><h2 className="truncate text-sm font-semibold">{target.name}</h2><p className="text-xs text-muted-foreground">AEMET · {value?.editing ? 'Alinear imagen' : saved ? 'Alineación guardada' : 'Cargando imagen…'}</p></div>
       <Button variant="ghost" size="icon" onClick={onClose} title="Cerrar" aria-label="Cerrar alineación"><X /></Button>
     </div>
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
@@ -100,7 +102,7 @@ export default function AemetAlignment({ target, value, onChange, onClose }: Pro
       <p className="text-xs text-muted-foreground">Arrastra la imagen para moverla, cada esquina para estirarla sola y ⟳ para girarla.</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={!userId || busy} onClick={save}><Save />{busy ? 'Guardando…' : 'Guardar'}</Button>
-        <Button variant="outline" size="icon" title="Restablecer posición" aria-label="Restablecer posición" onClick={() => { const b = initialBounds(target.lat,target.lon); onChange({ ...value, bounds: b, corners: cornersFromBounds(b) }); }}><RotateCcw /></Button>
+        <Button variant="outline" size="icon" title="Restablecer posición" aria-label="Restablecer posición" onClick={() => { const c = defaultCorners ?? cornersFromBounds(initialBounds(target.lat,target.lon)); onChange({ ...value, bounds: boundsOfCorners(c), corners: c }); }}><RotateCcw /></Button>
         {[-1, -0.1, 0.1, 1].map(deg => <Button key={deg} variant="outline" size="sm" title={`Girar ${deg}°`} onClick={() => { const c = rotateCorners(value.corners ?? cornersFromBounds(value.bounds), deg); onChange({ ...value, corners: c, bounds: boundsOfCorners(c) }); }}>{deg < 0 ? <RotateCcw /> : <RotateCw />}{Math.abs(deg)}°</Button>)}
         {saved && <Button variant="ghost" size="sm" onClick={() => images && onChange({ ...value, corners: saved, bounds: boundsOfCorners(saved), image: images.echoes, editing: false })}>Cancelar</Button>}
       </div>

@@ -20,7 +20,7 @@ export const LIGHTNING_SIZE = { w: CROP.w, h: CROP.h };
  * Black background and magenta coast/province linework are removed; the
  * coloured strike markers (age-coded) stay.
  */
-export async function loadLightningImage(): Promise<string> {
+export async function loadLightningImages(): Promise<{ original: string; echoes: string }> {
   const response = await fetch("/api/public/aemet-lightning");
   if (!response.ok) throw new Error("No se pudo cargar el mapa de rayos de AEMET.");
   const blobUrl = URL.createObjectURL(await response.blob());
@@ -37,17 +37,22 @@ export async function loadLightningImage(): Promise<string> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo procesar la imagen.");
     ctx.drawImage(img, CROP.x, CROP.y, CROP.w, CROP.h, 0, 0, CROP.w, CROP.h);
+    const original = canvas.toDataURL("image/png");
     const pixels = ctx.getImageData(0, 0, CROP.w, CROP.h);
     const d = pixels.data;
     for (let i = 0; i < d.length; i += 4) {
-      const r = d[i]!, g = d[i + 1]!, b = d[i + 2]!;
+      const r = d[i] ?? 0, g = d[i + 1] ?? 0, b = d[i + 2] ?? 0;
       const black = r < 40 && g < 40 && b < 40;
       const magenta = r > 180 && b > 180 && g < 120;
       d[i + 3] = black || magenta ? 0 : 255;
     }
     ctx.putImageData(pixels, 0, 0);
-    return canvas.toDataURL("image/png");
+    return { original, echoes: canvas.toDataURL("image/png") };
   } finally {
     URL.revokeObjectURL(blobUrl);
   }
+}
+
+export async function loadLightningImage(): Promise<string> {
+  return (await loadLightningImages()).echoes;
 }
