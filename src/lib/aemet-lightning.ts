@@ -2,13 +2,13 @@ import type { Corners } from "./aemet-overlay";
 
 // AEMET lightning map (red/rayos/mapa): 640×480 GIF, plate-carrée projection.
 // The map frame is inset at x 19–619, y 19–422; the legend sits below it.
-// Corners calibrated against known coastline points (Touriñán, Estaca de
-// Bares, Mallorca) with sub-pixel residuals of ~2 px.
+// Saved owner alignment, copied after manual calibration on 31 Oct 2026.
+export const LIGHTNING_ALIGNMENT_ENABLED = false;
 export const LIGHTNING_CORNERS: Corners = [
-  [44.968, -13.002], // NW
-  [44.968, 7.104], // NE
-  [33.991, 7.104], // SE
-  [33.991, -13.002], // SW
+  [44.91035917458495, -13.040771484375002], // NW
+  [44.81691551782855, 6.888427734375], // NE
+  [33.815666308702774, 6.866455078125001], // SE
+  [33.80653802509606, -12.985839843750002], // SW
 ];
 
 // Crop just inside the frame lines.
