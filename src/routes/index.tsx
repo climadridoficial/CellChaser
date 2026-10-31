@@ -157,7 +157,7 @@ function Home() {
   }, []);
 
   return (
-    <main className="relative h-screen w-full overflow-hidden bg-background">
+    <main className="relative h-dvh w-full overflow-hidden bg-background">
       <h1 className="sr-only">CellChaser — European weather radar layers</h1>
 
       <div className="absolute inset-0">
