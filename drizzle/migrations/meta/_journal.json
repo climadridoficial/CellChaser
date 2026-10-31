@@ -43,6 +43,13 @@
       "when": 1793383003882,
       "tag": "0005_alignment_corners",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793450286072,
+      "tag": "0006_allow_lightning_alignment",
+      "breakpoints": true
     }
   ]
 }

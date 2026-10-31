@@ -1,0 +1,2 @@
+ALTER TABLE public.radar_alignments DROP CONSTRAINT radar_alignments_radar_code_check;
+ALTER TABLE public.radar_alignments ADD CONSTRAINT radar_alignments_radar_code_check CHECK (radar_code IN ('ml','ca','se','ba','vd','am','za','cc','ss','ma','co','mu','pm','sa','va','lightning'));
