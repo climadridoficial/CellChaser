@@ -52,6 +52,7 @@ export default function RadarMap({
   stormStations,
   at,
   compositeMode,
+  lightning,
 }: Props) {
   const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
@@ -109,6 +110,7 @@ export default function RadarMap({
   }, [tileUrl, scan, !!aemetImage]);
 
   useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
+  useLightningOverlay(mapRef, lightning);
 
   // Spain radar composite: one image per radar. A replaced image stays until
   // its successor has finished loading, so time steps never flash empty.
