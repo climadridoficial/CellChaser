@@ -223,6 +223,15 @@ function Home() {
           onShowStormsChange={setShowStorms}
         />
         <LanguageMenu />
+        {!alignmentTarget && (
+          <TimeSlider
+            at={at}
+            onChange={setAt}
+            loading={composite.loading || rainviewer.isFetching}
+            preload={sumProgress(compositeOn ? composite.preload : NO_PRELOAD, selected ? stationPreload : NO_PRELOAD)}
+            note={sliderNote}
+          />
+        )}
       </div>
 
       {(stations.isLoading || stations.isError) && (
@@ -247,16 +256,6 @@ function Home() {
             setScan(null);
             setAemetSel(null);
           }}
-        />
-      )}
-
-      {!alignmentTarget && (
-        <TimeSlider
-          at={at}
-          onChange={setAt}
-          loading={composite.loading || rainviewer.isFetching}
-          preload={sumProgress(compositeOn ? composite.preload : NO_PRELOAD, selected ? stationPreload : NO_PRELOAD)}
-          note={sliderNote}
         />
       )}
 
