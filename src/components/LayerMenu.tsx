@@ -2,6 +2,8 @@ import { useI18n } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import type { TileSource } from "@/lib/settings";
 import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -22,6 +24,7 @@ interface Props {
   onShowStormsChange: (show: boolean) => void;
   showLightning: boolean;
   onShowLightningChange: (show: boolean) => void;
+  onAlignLightning: () => void;
 }
 
 const SOURCES: { id: TileSource; label: string; note: string }[] = [
@@ -132,6 +135,7 @@ export default function LayerMenu(props: Props) {
             </span>
             <input type="checkbox" checked={props.showLightning} onChange={e => props.onShowLightningChange(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
           </label>
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { onOpenChange(false); props.onAlignLightning(); }}><Pencil />{t("alignLightning")}</Button>
           <label className="mt-2 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>
               <span className="block text-xs font-medium text-foreground">{t("operaStations")}</span>

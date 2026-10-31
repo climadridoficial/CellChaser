@@ -3,7 +3,7 @@ import { LanguageProvider, useI18n } from "@/lib/i18n";
 import LanguageMenu from "@/components/LanguageMenu";
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, lazy, useCallback, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { fetchStations } from "@/lib/ord";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
@@ -16,14 +16,15 @@ import { aemetOnlyStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
 import IntroOverlay from "@/components/IntroOverlay";
-import { RadarSession } from "@/components/RadarSession";
-import { boundsOfCorners, type AemetMapImage, type Corners } from "@/lib/aemet-overlay";
+import { RadarSession, useRadarSession } from "@/components/RadarSession";
+import { boundsOfCorners, validCorners, type AemetMapImage, type Corners } from "@/lib/aemet-overlay";
 import MapLoadBoundary from "@/components/MapLoadBoundary";
 import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
 import { pickFrame } from "@/lib/timeline";
 import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
-import { loadLightningImage } from "@/lib/aemet-lightning";
+import { LIGHTNING_CORNERS, loadLightningImages } from "@/lib/aemet-lightning";
+import { supabase } from "@/integrations/supabase/client";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { t } = useI18n();
+  const { userId } = useRadarSession();
   const { settings, update, loaded } = useSettings();
   const [tileSource, setTileSource] = useState<TileSource>("rainviewer");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,6 +69,22 @@ function Home() {
   const [at, setAt] = useState<number | null>(null);
   const [showStorms, setShowStorms] = useState(false);
   const [showLightning, setShowLightning] = useState(false);
+  const [alignLightning, setAlignLightning] = useState(false);
+  const [lightningEdit, setLightningEdit] = useState<AemetMapImage | null>(null);
+  const [lightningCorners, setLightningCorners] = useState<Corners>(LIGHTNING_CORNERS);
+  const handleLightningImage = useCallback((value: AemetMapImage | null) => {
+    setLightningEdit(value);
+    if (value?.corners && !value.editing) setLightningCorners(value.corners);
+  }, []);
+  const handleLightningBounds = useCallback((corners: Corners) => setLightningEdit(current => current ? { ...current, corners, bounds: boundsOfCorners(corners) } : current), []);
+  useEffect(() => {
+    let live = true;
+    setLightningCorners(LIGHTNING_CORNERS);
+    if (userId) supabase.from('radar_alignments').select('corners').eq('user_id', userId).eq('radar_code', 'lightning').maybeSingle().then(({ data }) => {
+      if (live && validCorners(data?.corners)) setLightningCorners(data.corners);
+    });
+    return () => { live = false; };
+  }, [userId]);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
@@ -107,8 +125,14 @@ function Home() {
     staleTime: 10 * 60_000,
     refetchInterval: 10 * 60_000,
     retry: 1,
-    queryFn: loadLightningImage,
+    queryFn: loadLightningImages,
   });
+  const lightningOverlay = useMemo<AemetMapImage | null>(() => {
+    if (!showLightning) return null;
+    if (alignLightning && lightningEdit) return lightningEdit;
+    if (!lightning.data) return null;
+    return { code: 'lightning', image: lightning.data.echoes, corners: lightningCorners, bounds: boundsOfCorners(lightningCorners), editing: false, opacity: 0.85 };
+  }, [showLightning, alignLightning, lightningEdit, lightning.data, lightningCorners]);
 
   const aemetNote = aemet.isError
       ? t("loadFailed")
@@ -193,7 +217,8 @@ function Home() {
               stormStations={spainRadars}
               at={at}
               compositeMode={settings.composite}
-              lightning={showLightning ? (lightning.data ?? null) : null}
+              lightning={lightningOverlay}
+              onLightningBounds={handleLightningBounds}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
@@ -235,6 +260,7 @@ function Home() {
           onShowStormsChange={setShowStorms}
           showLightning={showLightning}
           onShowLightningChange={setShowLightning}
+          onAlignLightning={() => { closeAlignment(); closePanel(); setAemetSel(null); setLightningEdit(null); setShowLightning(true); setAlignLightning(true); }}
         />
         <LanguageMenu />
       </div>
@@ -264,7 +290,7 @@ function Home() {
         />
       )}
 
-      {!alignmentTarget && (
+      {!alignmentTarget && !alignLightning && (
         <TimeSlider
           at={at}
           onChange={setAt}
@@ -277,6 +303,7 @@ function Home() {
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
 
       {alignmentTarget && <AemetAlignment key={alignmentTarget.code} target={alignmentTarget} value={aemetImage} onChange={handleAemetImage} onClose={closeAlignment} />}
+      {alignLightning && <AemetAlignment target={{ code: 'lightning', name: t('lightning'), lat: 40, lon: -3 }} value={lightningEdit} onChange={handleLightningImage} onClose={() => { setAlignLightning(false); setLightningEdit(null); }} loadImages={loadLightningImages} defaultCorners={lightningCorners} />}
 
       {settingsOpen && (
         <SettingsSheet
