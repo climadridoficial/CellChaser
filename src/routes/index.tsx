@@ -23,6 +23,7 @@ import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
 import { pickFrame } from "@/lib/timeline";
 import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
+import { loadLightningImage } from "@/lib/aemet-lightning";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -65,6 +66,7 @@ function Home() {
   const handleAemetBounds = useCallback((corners: Corners) => setAemetImage(current => current ? { ...current, corners, bounds: boundsOfCorners(corners) } : current), []);
   const [at, setAt] = useState<number | null>(null);
   const [showStorms, setShowStorms] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
@@ -99,6 +101,15 @@ function Home() {
     refetchInterval: 60 * 60_000,
     queryFn: () => fetchAemetStations(settings.aemetKey.trim() || undefined),
   });
+  const lightning = useQuery({
+    queryKey: ["aemet-lightning"],
+    enabled: showLightning,
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    retry: 1,
+    queryFn: loadLightningImage,
+  });
+
   const aemetNote = aemet.isError
       ? t("loadFailed")
       : aemet.data
@@ -182,6 +193,7 @@ function Home() {
               stormStations={spainRadars}
               at={at}
               compositeMode={settings.composite}
+              lightning={showLightning ? (lightning.data ?? null) : null}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
@@ -221,6 +233,8 @@ function Home() {
           compositeNote={compositeNote}
           showStorms={showStorms}
           onShowStormsChange={setShowStorms}
+          showLightning={showLightning}
+          onShowLightningChange={setShowLightning}
         />
         <LanguageMenu />
       </div>

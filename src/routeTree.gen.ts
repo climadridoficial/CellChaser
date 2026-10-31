@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAemetRouteImport } from './routes/api/public/aemet'
+import { Route as ApiPublicAemetLightningRouteImport } from './routes/api/public/aemet-lightning'
 import { Route as ApiPublicAemetRadarRouteImport } from './routes/api/public/aemet-radar'
 import { Route as ApiPublicOdimRouteImport } from './routes/api/public/odim'
 import { Route as ApiPublicJobsAemetArchiveRouteImport } from './routes/api/public/jobs/aemet-archive'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiPublicAemetRoute = ApiPublicAemetRouteImport.update({
   id: '/api/public/aemet',
   path: '/api/public/aemet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAemetLightningRoute = ApiPublicAemetLightningRouteImport.update({
+  id: '/api/public/aemet-lightning',
+  path: '/api/public/aemet-lightning',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAemetRadarRoute = ApiPublicAemetRadarRouteImport.update({
@@ -52,6 +58,7 @@ const ApiPublicJobsOperaStormsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/aemet': typeof ApiPublicAemetRoute
+  '/api/public/aemet-lightning': typeof ApiPublicAemetLightningRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/aemet': typeof ApiPublicAemetRoute
+  '/api/public/aemet-lightning': typeof ApiPublicAemetLightningRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/public/aemet': typeof ApiPublicAemetRoute
+  '/api/public/aemet-lightning': typeof ApiPublicAemetLightningRoute
   '/api/public/aemet-radar': typeof ApiPublicAemetRadarRoute
   '/api/public/odim': typeof ApiPublicOdimRoute
   '/api/public/jobs/aemet-archive': typeof ApiPublicJobsAemetArchiveRoute
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/api/public/aemet'
+    | '/api/public/aemet-lightning'
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/public/aemet'
+    | '/api/public/aemet-lightning'
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/api/public/aemet'
+    | '/api/public/aemet-lightning'
     | '/api/public/aemet-radar'
     | '/api/public/odim'
     | '/api/public/jobs/aemet-archive'
@@ -104,6 +116,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicAemetRoute: typeof ApiPublicAemetRoute
+  ApiPublicAemetLightningRoute: typeof ApiPublicAemetLightningRoute
   ApiPublicAemetRadarRoute: typeof ApiPublicAemetRadarRoute
   ApiPublicOdimRoute: typeof ApiPublicOdimRoute
   ApiPublicJobsAemetArchiveRoute: typeof ApiPublicJobsAemetArchiveRoute
@@ -124,6 +137,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/aemet'
       fullPath: '/api/public/aemet'
       preLoaderRoute: typeof ApiPublicAemetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/aemet-lightning': {
+      id: '/api/public/aemet-lightning'
+      path: '/api/public/aemet-lightning'
+      fullPath: '/api/public/aemet-lightning'
+      preLoaderRoute: typeof ApiPublicAemetLightningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/aemet-radar': {
@@ -160,6 +180,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicAemetRoute: ApiPublicAemetRoute,
+  ApiPublicAemetLightningRoute: ApiPublicAemetLightningRoute,
   ApiPublicAemetRadarRoute: ApiPublicAemetRadarRoute,
   ApiPublicOdimRoute: ApiPublicOdimRoute,
   ApiPublicJobsAemetArchiveRoute: ApiPublicJobsAemetArchiveRoute,

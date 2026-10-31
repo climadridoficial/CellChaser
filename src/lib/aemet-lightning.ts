@@ -1,0 +1,53 @@
+import type { Corners } from "./aemet-overlay";
+
+// AEMET lightning map (red/rayos/mapa): 640×480 GIF, plate-carrée projection.
+// The map frame is inset at x 19–619, y 19–422; the legend sits below it.
+// Corners calibrated against known coastline points (Touriñán, Estaca de
+// Bares, Mallorca) with sub-pixel residuals of ~2 px.
+export const LIGHTNING_CORNERS: Corners = [
+  [44.968, -13.002], // NW
+  [44.968, 7.104], // NE
+  [33.991, 7.104], // SE
+  [33.991, -13.002], // SW
+];
+
+// Crop just inside the frame lines.
+const CROP = { x: 20, y: 20, w: 598, h: 402 };
+export const LIGHTNING_SIZE = { w: CROP.w, h: CROP.h };
+
+/**
+ * Latest AEMET lightning-strike map as a transparent PNG data URL.
+ * Black background and magenta coast/province linework are removed; the
+ * coloured strike markers (age-coded) stay.
+ */
+export async function loadLightningImage(): Promise<string> {
+  const response = await fetch("/api/public/aemet-lightning");
+  if (!response.ok) throw new Error("No se pudo cargar el mapa de rayos de AEMET.");
+  const blobUrl = URL.createObjectURL(await response.blob());
+  try {
+    const img = new Image();
+    img.src = blobUrl;
+    await img.decode();
+    if (img.naturalWidth !== 640 || img.naturalHeight !== 480) {
+      throw new Error("El formato del mapa de rayos de AEMET ha cambiado.");
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = CROP.w;
+    canvas.height = CROP.h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo procesar la imagen.");
+    ctx.drawImage(img, CROP.x, CROP.y, CROP.w, CROP.h, 0, 0, CROP.w, CROP.h);
+    const pixels = ctx.getImageData(0, 0, CROP.w, CROP.h);
+    const d = pixels.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i]!, g = d[i + 1]!, b = d[i + 2]!;
+      const black = r < 40 && g < 40 && b < 40;
+      const magenta = r > 180 && b > 180 && g < 120;
+      d[i + 3] = black || magenta ? 0 : 255;
+    }
+    ctx.putImageData(pixels, 0, 0);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}

@@ -20,6 +20,8 @@ interface Props {
   compositeNote: string;
   showStorms: boolean;
   onShowStormsChange: (show: boolean) => void;
+  showLightning: boolean;
+  onShowLightningChange: (show: boolean) => void;
 }
 
 const SOURCES: { id: TileSource; label: string; note: string }[] = [
@@ -122,6 +124,13 @@ export default function LayerMenu(props: Props) {
           <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span className="text-xs font-medium">{t("stormTracks")}</span>
             <input type="checkbox" checked={props.showStorms} onChange={e => props.onShowStormsChange(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
+          </label>
+          <label className="mt-1 flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 hover:bg-secondary/70">
+            <span>
+              <span className="block text-xs font-medium text-foreground">{t("lightning")}</span>
+              <span className="hint block">{t("lightningNote")}</span>
+            </span>
+            <input type="checkbox" checked={props.showLightning} onChange={e => props.onShowLightningChange(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
           </label>
           <label className="mt-2 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>

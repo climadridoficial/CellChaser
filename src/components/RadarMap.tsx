@@ -6,6 +6,7 @@ import type { RenderedScan } from "@/lib/odim";
 import type { AemetObs } from "@/lib/aemet";
 import type { AemetMapImage, Corners } from "@/lib/aemet-overlay";
 import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
+import { useLightningOverlay } from "@/hooks/use-lightning-overlay";
 import type { CompositeLayer } from "@/hooks/use-radar-composite";
 import type { CompositeMode } from "@/lib/composite";
 import { useStormTracks } from "@/hooks/use-storm-tracks";
@@ -30,6 +31,8 @@ interface Props {
   stormStations: RadarStation[];
   at: number | null;
   compositeMode: CompositeMode;
+  /** AEMET lightning-strike map (transparent PNG data URL) or null when off. */
+  lightning: string | null;
 }
 
 export default function RadarMap({
@@ -49,6 +52,7 @@ export default function RadarMap({
   stormStations,
   at,
   compositeMode,
+  lightning,
 }: Props) {
   const { t } = useI18n();
   const compositeRef = useRef<Map<string, L.ImageOverlay>>(new Map());
@@ -106,6 +110,7 @@ export default function RadarMap({
   }, [tileUrl, scan, !!aemetImage]);
 
   useAemetMapOverlay(mapRef, aemetImage, onAemetBounds);
+  useLightningOverlay(mapRef, lightning);
 
   // Spain radar composite: one image per radar. A replaced image stays until
   // its successor has finished loading, so time steps never flash empty.
