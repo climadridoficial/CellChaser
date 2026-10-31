@@ -186,16 +186,30 @@ export default function RadarMap({
       const active = o.idema === aemetSelected;
       const dot = L.circleMarker([o.lat, o.lon], {
         renderer,
-        radius: active ? 7 : 4.5,
+        radius: active ? 7 : 5,
         color: "#0b1020",
         weight: 1,
         fillColor: active ? "#ffffff" : "#ffb020",
         fillOpacity: 0.95,
         pane: "markerPane",
       });
-      dot.bindTooltip(`${o.name}${o.ta !== undefined ? ` · ${o.ta} °C` : ""}`, { direction: "top" });
-      dot.on("click", () => aemetHandler.current(o));
+      // Invisible wider ring makes each dot much easier to tap on touch screens.
+      const hit = L.circleMarker([o.lat, o.lon], {
+        renderer,
+        radius: 14,
+        stroke: false,
+        fillColor: "#000000",
+        fillOpacity: 0.001,
+        pane: "markerPane",
+      });
+      const tip = `${o.name}${o.ta !== undefined ? ` · ${o.ta} °C` : ""}`;
+      dot.bindTooltip(tip, { direction: "top" });
+      hit.bindTooltip(tip, { direction: "top" });
+      const pick = () => aemetHandler.current(o);
+      dot.on("click", pick);
+      hit.on("click", pick);
       dot.addTo(group);
+      hit.addTo(group);
     }
     return () => {
       group.clearLayers();
