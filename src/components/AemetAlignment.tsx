@@ -65,7 +65,7 @@ export default function AemetAlignment({ target, value, onChange, onClose, loadI
   useEffect(() => {
     if (!images || !ready || !visible) return;
     const current = valueRef.current;
-    const editing = Boolean(loadImages) || !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
+    const editing = loadImages ? (current?.code === target.code ? current.editing : true) : !saved || Boolean(current?.editing && current.code === target.code && current.image === images.original);
     const corners = saved ?? current?.corners ?? defaultCorners ?? cornersFromBounds(current?.bounds ?? AEMET_CALIBRATION[target.code] ?? initialBounds(target.lat, target.lon));
     onChange({ code: target.code, corners, bounds: boundsOfCorners(corners), image: editing ? images.original : images.echoes, editing, opacity: current?.opacity ?? 0.5 });
   }, [images, saved, target.code, target.lat, target.lon, ready, visible, onChange, loadImages, defaultCorners]);
