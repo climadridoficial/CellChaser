@@ -449,7 +449,9 @@
 }
 @media (min-width: 768px) {
   .time-slider {
-    top: auto;
+    position: absolute;
+    z-index: 1050;
+    flex: none;
     bottom: 1.75rem;
     left: 24.5rem;
     right: 4rem;
