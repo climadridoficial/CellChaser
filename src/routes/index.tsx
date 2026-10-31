@@ -101,6 +101,15 @@ function Home() {
     refetchInterval: 60 * 60_000,
     queryFn: () => fetchAemetStations(settings.aemetKey.trim() || undefined),
   });
+  const lightning = useQuery({
+    queryKey: ["aemet-lightning"],
+    enabled: showLightning,
+    staleTime: 10 * 60_000,
+    refetchInterval: 10 * 60_000,
+    retry: 1,
+    queryFn: loadLightningImage,
+  });
+
   const aemetNote = aemet.isError
       ? t("loadFailed")
       : aemet.data
@@ -184,6 +193,7 @@ function Home() {
               stormStations={spainRadars}
               at={at}
               compositeMode={settings.composite}
+              lightning={showLightning ? (lightning.data ?? null) : null}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
               onSelectAemet={(o) => {
@@ -223,6 +233,8 @@ function Home() {
           compositeNote={compositeNote}
           showStorms={showStorms}
           onShowStormsChange={setShowStorms}
+          showLightning={showLightning}
+          onShowLightningChange={setShowLightning}
         />
         <LanguageMenu />
       </div>
