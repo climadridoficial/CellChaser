@@ -1,5 +1,5 @@
 # Radar scan corrections
-- [ ] Verify lightning age legend below the unchanged radar key and crosshair lightning reading.
+- [x] Verify lightning age legend below the unchanged radar key and crosshair lightning reading; real strike inspected and age/geometry tests passed.
 - [x] Fix lightning movement during zoom and add original-image four-corner alignment; signed-in corner stretching, rotation, saving and reloading verified.
 - [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.
 - [x] Harden false-echo detection and turning forecasts, with regression tests.
