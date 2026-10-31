@@ -15,6 +15,8 @@ const r = (es: string, pt: string, ca: string, gl: string, eu: string, en: strin
 
 export const MESSAGES = {
   stormTracks: r("Movimiento de células", "Movimento das células", "Moviment de cèl·lules", "Movemento das células", "Zelulen mugimendua", "Cell movement"),
+  lightning: r("Rayos (AEMET)", "Raios (AEMET)", "Llamps (AEMET)", "Raíos (AEMET)", "Tximistak (AEMET)", "Lightning (AEMET)"),
+  lightningNote: r("Descargas de las últimas 12 h; el color indica la antigüedad.", "Descargas das últimas 12 h; a cor indica a antiguidade.", "Descàrregues de les darreres 12 h; el color indica l'antiguitat.", "Descargas das últimas 12 h; a cor indica a antigüidade.", "Azken 12 orduko deskargak; koloreak zaharritasuna adierazten du.", "Strikes from the last 12 h; colour shows age."),
   stormForecast: r("Previsión experimental · 60 min", "Previsão experimental · 60 min", "Previsió experimental · 60 min", "Previsión experimental · 60 min", "Iragarpen esperimentala · 60 min", "Experimental forecast · 60 min"),
   stormDisclaimer: r("Estimación experimental; no es un aviso oficial.", "Estimativa experimental; não é um aviso oficial.", "Estimació experimental; no és un avís oficial.", "Estimación experimental; non é un aviso oficial.", "Estimazio esperimentala; ez da abisu ofiziala.", "Experimental estimate, not an official warning."),
   stormLight: r("Ligera", "Ligeira", "Lleugera", "Lixeira", "Arina", "Light"),
