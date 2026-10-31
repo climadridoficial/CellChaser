@@ -1,5 +1,5 @@
 # Radar scan corrections
-- [ ] Fix lightning movement during zoom and add original-image four-corner alignment with authenticated saving.
+- [x] Fix lightning movement during zoom and add original-image four-corner alignment; signed-in corner stretching, rotation, saving and reloading verified.
 - [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.
 - [x] Harden false-echo detection and turning forecasts, with regression tests.
 - [x] Move real tracking to shared server computation, independent of composite visibility; actual 15 AEMET / 10 OPERA ingest and matching desktop/mobile observations verified.
