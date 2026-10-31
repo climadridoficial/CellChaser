@@ -23,6 +23,7 @@ import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
 import { pickFrame } from "@/lib/timeline";
 import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
+import { loadLightningImage } from "@/lib/aemet-lightning";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -65,6 +66,7 @@ function Home() {
   const handleAemetBounds = useCallback((corners: Corners) => setAemetImage(current => current ? { ...current, corners, bounds: boundsOfCorners(corners) } : current), []);
   const [at, setAt] = useState<number | null>(null);
   const [showStorms, setShowStorms] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
   const closeAlignment = useCallback(() => { setAlignmentTarget(null); setAemetImage(null); }, []);
 
   const rainviewer = useQuery({
