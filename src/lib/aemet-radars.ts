@@ -18,8 +18,21 @@ export const OPERA_TO_AEMET: Record<string, string> = {
   estjv: "ma",
 };
 
-/** AEMET radars not present in OPERA. Positions are approximate. */
+/** Static locations, not live availability, from EUMETNET's OPERA inventory:
+ * https://www.eumetnet.eu/wp-content/themes/aeron-child/observations-programme/current-activities/opera/database/OPERA_Database/OPERA_RADARS_DB.json
+ * Keep every AEMET radar selectable when ORD discovery is unavailable.
+ */
 const AEMET_ONLY: { code: string; name: string; lat: number; lon: number }[] = [
+  { code: "ml", name: "Málaga (Alhaurín el Grande)", lat: 36.6134, lon: -4.6593 },
+  { code: "ca", name: "Gran Canaria (Artenara)", lat: 28.0189, lon: -15.6145 },
+  { code: "se", name: "Sevilla (Castillo de las Guardas)", lat: 37.6887, lon: -6.3331 },
+  { code: "ba", name: "Barcelona (Gelida)", lat: 41.4082, lon: 1.8849 },
+  { code: "vd", name: "Palencia (Autilla del Pino)", lat: 41.9956, lon: -4.6028 },
+  { code: "am", name: "Almería (Níjar)", lat: 36.8324, lon: -2.0821 },
+  { code: "za", name: "Zaragoza (Perdiguera)", lat: 41.7339, lon: -0.5459 },
+  { code: "cc", name: "Cáceres (Sierra de Fuentes)", lat: 39.4288, lon: -6.2853 },
+  { code: "ss", name: "Vizcaya (Baquio)", lat: 43.4033, lon: -2.8419 },
+  { code: "ma", name: "Madrid (Torrejón de Velasco)", lat: 40.1759, lon: -3.7136 },
   { code: "co", name: "A Coruña (Cerceda)", lat: 43.17, lon: -8.53 },
   { code: "mu", name: "Murcia (Sierra de la Puerta)", lat: 38.26, lon: -1.19 },
   { code: "pm", name: "Illes Balears (Palma)", lat: 39.37, lon: 2.79 },
@@ -33,10 +46,10 @@ export function aemetCodeFor(station: RadarStation): string | null {
   return station.aemetCode ?? OPERA_TO_AEMET[station.code] ?? null;
 }
 
-/** AEMET-only radars as map stations, skipping any that reappear in OPERA. */
+/** Undiscovered AEMET radars as backup stations, replaced by OPERA on recovery. */
 export function aemetOnlyStations(opera: RadarStation[]): RadarStation[] {
   return AEMET_ONLY.filter(
-    (r) => !opera.some((s) => OPERA_TO_AEMET[s.code] === r.code),
+    (r) => !opera.some((s) => aemetCodeFor(s) === r.code),
   ).map((r) => ({
     id: `aemet-${r.code}`,
     code: r.code,
