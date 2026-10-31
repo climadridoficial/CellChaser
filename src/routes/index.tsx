@@ -109,6 +109,8 @@ function Home() {
     queryKey: ["ord-stations", settings.meteogateKey],
     enabled: loaded,
     staleTime: 30 * 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: (failureCount, error) => !error.message.includes("rate limit") && failureCount < 1,
     queryFn: () => fetchStations(settings.meteogateKey || undefined),
   });
 

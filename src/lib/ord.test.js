@@ -1,5 +1,15 @@
 import { expect, test } from "bun:test";
-import { fetchScanFiles } from "./ord";
+import { fetchScanFiles, fetchStations } from "./ord";
+
+test("empty OPERA discovery does not crash the radar list", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => new Response(null, { status: 204 });
+  try {
+    expect(await fetchStations()).toEqual([]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
 
 test("velocity selects its own multi-product volume without the broken parameter filter", async () => {
   const original = globalThis.fetch;
