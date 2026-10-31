@@ -13,6 +13,9 @@ import { useStormTracks } from "@/hooks/use-storm-tracks";
 import StormTracks from "./StormTracks";
 import { legendStops, productInfo } from "@/lib/radar-products";
 import { colorToValue, samplePixel } from "@/lib/inspector";
+import { LIGHTNING_AGES, lightningAge, quadFraction } from "@/lib/lightning-inspector";
+import { LIGHTNING_SIZE } from "@/lib/aemet-lightning";
+import { cornersFromBounds } from "@/lib/aemet-overlay";
 
 interface Props {
   tileUrl: string | null;
@@ -375,6 +378,7 @@ export default function RadarMap({
   const [inspectOn, setInspectOn] = useState(false);
   const [keyOn, setKeyOn] = useState(true);
   const [readout, setReadout] = useState<string | null>(null);
+  const [lightningReadout, setLightningReadout] = useState<string | null>(null);
   const info = scan ? scan.info : productInfo("DBZH");
   const showKey = keyOn && (!!scan || composite.length > 0);
 
@@ -409,6 +413,23 @@ export default function RadarMap({
         break;
       }
       setReadout(result ?? (covered ? t("inspectNoEcho") : t("inspectNoData")));
+      let age: string | null = null;
+      if (lightning && !lightning.editing) {
+        const img = map.getContainer().querySelector<HTMLImageElement>('img.lightning-overlay');
+        const corners = (lightning.corners ?? cornersFromBounds(lightning.bounds)).map(c => { const px = map.latLngToLayerPoint(c); return [px.x, px.y] as [number, number]; });
+        const target = map.latLngToLayerPoint(center);
+        const fraction = quadFraction([target.x, target.y], corners, LIGHTNING_SIZE.w, LIGHTNING_SIZE.h);
+        if (img && fraction) {
+          // Small source-pixel tolerance for AEMET's tiny cross markers.
+          for (let radius = 0; radius <= 2 && !age; radius++) {
+            for (let y = -radius; y <= radius && !age; y++) for (let x = -radius; x <= radius && !age; x++) {
+              const pixel = samplePixel(img, fraction[0] + x / LIGHTNING_SIZE.w, fraction[1] + y / LIGHTNING_SIZE.h);
+              if (pixel) age = lightningAge(pixel);
+            }
+          }
+        }
+      }
+      setLightningReadout(age ? t("inspectLightningAge", { h: age }) : t("inspectNoLightning"));
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(read); };
     schedule();
@@ -420,7 +441,7 @@ export default function RadarMap({
       if (frame) cancelAnimationFrame(frame);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspectOn, scan, composite, info.key]);
+  }, [inspectOn, scan, composite, info.key, lightning, t]);
 
   const label =
     locMode === "on" ? t("locationOn") : locMode === "heading" ? t("locationHeading") : t("locationOff");
@@ -447,12 +468,17 @@ export default function RadarMap({
           {[...legendStops(info)].reverse().map((s) => (
             <div key={s.value} className="color-key-row"><i style={{ background: s.css }} />{s.value}</div>
           ))}
+          {lightning && <div className="lightning-key" aria-label={t("lightningAgeKey")}>
+            <div className="color-key-unit">{t("lightningShort")}</div>
+            {LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{age.hours} h</div>)}
+          </div>}
         </div>
       )}
+      {keyOn && lightning && !showKey && <div className="color-key" aria-label={t("lightningAgeKey")}><div className="color-key-unit">{t("lightningShort")}</div>{LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{age.hours} h</div>)}</div>}
       {inspectOn && (
         <>
           <div className="inspector-cross" aria-hidden="true" />
-          <div className="inspector-readout" role="status">{readout ?? "…"}</div>
+          <div className="inspector-readout" role="status"><div>{readout ?? "…"}</div>{lightning && <div className="text-xs text-muted-foreground">{lightningReadout ?? "…"}</div>}</div>
         </>
       )}
       <button type="button" onClick={() => setInspectOn((v) => !v)} aria-pressed={inspectOn} aria-label={t("inspector")} title={t("inspector")} className={`map-tool-btn inspector-btn${inspectOn ? " map-tool-on" : ""}`}>

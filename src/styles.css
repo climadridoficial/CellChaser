@@ -62,6 +62,12 @@
 }
 
 :root {
+  --lightning-recent: oklch(0.968 0.211 109.77);
+  --lightning-red: oklch(0.628 0.258 29.23);
+  --lightning-white: oklch(1 0 0);
+  --lightning-green: oklch(0.866 0.295 142.5);
+  --lightning-cyan: oklch(0.905 0.155 194.77);
+  --lightning-old: oklch(0.452 0.313 264.05);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
@@ -562,3 +568,15 @@
 .color-key-unit { font-weight: 600; margin-bottom: 0.2rem; text-align: center; }
 .color-key-row { display: flex; align-items: center; gap: 0.25rem; }
 .color-key-row i { display: block; width: 10px; height: 12px; }
+.lightning-key {
+  position: absolute; top: calc(100% + 8px); left: -1px;
+  display: flex; flex-direction: column; gap: 1px; padding: 0.3rem;
+  background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: 4px;
+  white-space: nowrap;
+}
+.lightning-age-recent { background: var(--lightning-recent); }
+.lightning-age-red { background: var(--lightning-red); }
+.lightning-age-white { background: var(--lightning-white); }
+.lightning-age-green { background: var(--lightning-green); }
+.lightning-age-cyan { background: var(--lightning-cyan); }
+.lightning-age-old { background: var(--lightning-old); }
