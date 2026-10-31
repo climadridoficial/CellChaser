@@ -4,6 +4,7 @@ import type { TileSource } from "@/lib/settings";
 import { COMPOSITE_MODES, type CompositeMode } from "@/lib/composite";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { LIGHTNING_ALIGNMENT_ENABLED } from "@/lib/aemet-lightning";
 
 interface Props {
   open: boolean;
@@ -135,7 +136,7 @@ export default function LayerMenu(props: Props) {
             </span>
             <input type="checkbox" checked={props.showLightning} onChange={e => props.onShowLightningChange(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
           </label>
-          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { onOpenChange(false); props.onAlignLightning(); }}><Pencil />{t("alignLightning")}</Button>
+          {LIGHTNING_ALIGNMENT_ENABLED && <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { onOpenChange(false); props.onAlignLightning(); }}><Pencil />{t("alignLightning")}</Button>}
           <label className="mt-2 flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 hover:bg-secondary/70">
             <span>
               <span className="block text-xs font-medium text-foreground">{t("operaStations")}</span>

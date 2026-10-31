@@ -19,6 +19,7 @@
 - AEMET alignment and echo display share the same validated image crop and Leaflet bounds; this preserves manual registration across image refreshes without inventing geographic precision.
 - Store radar alignments per authenticated user and radar code in Cloud with owner-scoped RLS; no anonymous writes or browser-only durable calibration storage.
 - Reuse the quadrilateral AEMET renderer and alignment editor for lightning with its own source dimensions and the owner-scoped `lightning` calibration key; this keeps corner editing, source cropping and zoom registration consistent without changing radar calibrations.
+- Keep lightning calibration tools behind LIGHTNING_ALIGNMENT_ENABLED after calibration and copy the confirmed saved corners into the shared default; strip background and outlines before the same quadrilateral transform so normal viewing retains registration.
 - AEMET outline removal uses fixed per-radar outline maps in public/aemet-masks (captured from near-rain-free frames), falling back to the thin-line heuristic if the layout no longer matches; outline pixels over rain take the dominant neighbouring echo colour only, never generative image editing.
 - Keep lazy map loading inside its own error boundary with explicit reload recovery; stale preview module failures must not blank the entire radar app.
 - One shared time-slider position (null = live, 10-minute slots, src/lib/timeline.ts) drives tiles, the Spain composite and the station panel; every source publishes on that cadence, so frames are matched only within their own slot.

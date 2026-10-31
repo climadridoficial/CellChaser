@@ -23,7 +23,7 @@ import { useRadarComposite } from "@/hooks/use-radar-composite";
 import TimeSlider from "@/components/TimeSlider";
 import { pickFrame } from "@/lib/timeline";
 import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
-import { LIGHTNING_CORNERS, loadLightningImages } from "@/lib/aemet-lightning";
+import { LIGHTNING_ALIGNMENT_ENABLED, LIGHTNING_CORNERS, loadLightningImages } from "@/lib/aemet-lightning";
 import { supabase } from "@/integrations/supabase/client";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
@@ -129,7 +129,7 @@ function Home() {
   });
   const lightningOverlay = useMemo<AemetMapImage | null>(() => {
     if (!showLightning) return null;
-    if (alignLightning && lightningEdit) return lightningEdit;
+    if (LIGHTNING_ALIGNMENT_ENABLED && alignLightning && lightningEdit) return lightningEdit;
     if (!lightning.data) return null;
     return { code: 'lightning', image: lightning.data.echoes, corners: lightningCorners, bounds: boundsOfCorners(lightningCorners), editing: false, opacity: 0.85 };
   }, [showLightning, alignLightning, lightningEdit, lightning.data, lightningCorners]);
@@ -303,7 +303,7 @@ function Home() {
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
 
       {alignmentTarget && <AemetAlignment key={alignmentTarget.code} target={alignmentTarget} value={aemetImage} onChange={handleAemetImage} onClose={closeAlignment} />}
-      {alignLightning && <AemetAlignment target={{ code: 'lightning', name: t('lightning'), lat: 40, lon: -3 }} value={lightningEdit} onChange={handleLightningImage} onClose={() => { setAlignLightning(false); setLightningEdit(null); }} loadImages={loadLightningImages} defaultCorners={lightningCorners} />}
+      {LIGHTNING_ALIGNMENT_ENABLED && alignLightning && <AemetAlignment target={{ code: 'lightning', name: t('lightning'), lat: 40, lon: -3 }} value={lightningEdit} onChange={handleLightningImage} onClose={() => { setAlignLightning(false); setLightningEdit(null); }} loadImages={loadLightningImages} defaultCorners={lightningCorners} />}
 
       {settingsOpen && (
         <SettingsSheet
