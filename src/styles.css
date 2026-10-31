@@ -212,9 +212,9 @@
 @utility toolbar {
   position: absolute;
   z-index: 1150;
-  top: calc(0.75rem + env(safe-area-inset-top, 0px));
-  left: calc(0.75rem + env(safe-area-inset-left, 0px));
-  right: calc(0.75rem + env(safe-area-inset-right, 0px));
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -392,9 +392,7 @@
   mask: radial-gradient(circle, black 0 30px, transparent 30px);
 }
 .loc-btn {
-  position: absolute; z-index: 1000;
-  right: calc(10px + env(safe-area-inset-right, 0px));
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  position: absolute; z-index: 1000; right: 10px; bottom: 96px;
   width: 34px; height: 34px; display: grid; place-items: center; border-radius: 4px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted-foreground);
 }
@@ -438,9 +436,9 @@
 .time-slider {
   position: absolute;
   z-index: 1050;
-  top: calc(4.4rem + env(safe-area-inset-top, 0px));
-  left: calc(0.75rem + env(safe-area-inset-left, 0px));
-  right: calc(0.75rem + env(safe-area-inset-right, 0px));
+  top: 4.4rem;
+  left: 0.75rem;
+  right: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -533,14 +531,13 @@
 
 
 .map-tool-btn {
-  position: absolute; z-index: 1000;
-  right: calc(10px + env(safe-area-inset-right, 0px));
+  position: absolute; z-index: 1000; right: 10px;
   width: 34px; height: 34px; display: grid; place-items: center; border-radius: 4px;
   background: var(--card); border: 1px solid var(--border); color: var(--muted-foreground);
 }
-.inspector-btn { bottom: calc(136px + env(safe-area-inset-bottom, 0px)); }
-.key-btn { bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
-.sat-btn { bottom: calc(216px + env(safe-area-inset-bottom, 0px)); }
+.inspector-btn { bottom: 136px; }
+.key-btn { bottom: 176px; }
+.sat-btn { bottom: 216px; }
 .map-tool-on { color: oklch(0.7 0.18 250); }
 .inspector-cross {
   position: absolute; z-index: 950; left: 50%; top: 50%; width: 36px; height: 36px;
