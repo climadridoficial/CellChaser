@@ -1,17 +1,14 @@
 import { useI18n, translatedCountry } from "@/lib/i18n";
 import { COUNTRIES } from "@/lib/ord";
 import type { RadarSettings } from "@/lib/settings";
-import { Button } from "@/components/ui/button";
-import { ArrowDownUp } from "lucide-react";
 
 interface Props {
   settings: RadarSettings;
   onChange: (patch: Partial<RadarSettings>) => void;
   onClose: () => void;
-  onAdjustToolbar: () => void;
 }
 
-export default function SettingsSheet({ settings, onChange, onClose, onAdjustToolbar }: Props) {
+export default function SettingsSheet({ settings, onChange, onClose }: Props) {
   const { t, locale } = useI18n();
   return (
     <div className="fixed inset-0 z-[1200] flex items-start justify-center bg-background/70 px-4 py-10 backdrop-blur-sm">
@@ -23,9 +20,6 @@ export default function SettingsSheet({ settings, onChange, onClose, onAdjustToo
           </button>
         </header>
         <div className="space-y-6 px-5 py-5">
-          <section>
-            <Button variant="outline" onClick={onAdjustToolbar}><ArrowDownUp />{t("adjustToolbar")}</Button>
-          </section>
           <section>
             <h3 className="section-title">{t("baseUrl")}</h3>
             <input

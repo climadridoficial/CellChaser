@@ -225,7 +225,6 @@
   background-color: color-mix(in oklab, var(--card) 90%, transparent);
   backdrop-filter: blur(14px);
   box-shadow: 0 16px 40px -22px oklch(0 0 0 / 0.8);
-  translate: 0 var(--toolbar-offset, 0px);
 }
 
 @utility brand {
@@ -435,9 +434,13 @@
 }
 .aemet-alignment-bar input { accent-color: var(--primary); }
 
-/* Map time slider: second row of the toolbar on phones, bottom centre on desktop. */
+/* Map time slider: under the toolbar on phones, bottom centre on desktop. */
 .time-slider {
-  flex: 1 1 100%;
+  position: absolute;
+  z-index: 1050;
+  top: calc(4.4rem + env(safe-area-inset-top, 0px));
+  left: calc(0.75rem + env(safe-area-inset-left, 0px));
+  right: calc(0.75rem + env(safe-area-inset-right, 0px));
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -450,9 +453,7 @@
 }
 @media (min-width: 768px) {
   .time-slider {
-    position: fixed;
-    z-index: 1050;
-    flex: none;
+    top: auto;
     bottom: 1.75rem;
     left: 24.5rem;
     right: 4rem;
@@ -564,24 +565,3 @@
 .color-key-unit { font-weight: 600; margin-bottom: 0.2rem; text-align: center; }
 .color-key-row { display: flex; align-items: center; gap: 0.25rem; }
 .color-key-row i { display: block; width: 10px; height: 12px; }
-
-.toolbar-adjusting { outline: 2px solid var(--primary); }
-.toolbar-drag-handle {
-  flex: 1 1 100%; height: 28px; touch-action: none; cursor: ns-resize;
-  color: var(--primary); user-select: none;
-}
-.toolbar-adjusting > :not(.toolbar-drag-handle) { pointer-events: none; }
-.toolbar-adjust-backdrop {
-  position: fixed; inset: 0; z-index: 1149;
-  background: color-mix(in oklab, var(--background) 55%, transparent);
-}
-.toolbar-adjust-prompt {
-  position: fixed; z-index: 1160;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  left: max(16px, env(safe-area-inset-left, 0px));
-  right: max(16px, env(safe-area-inset-right, 0px));
-  max-width: 26rem; margin-inline: auto;
-  display: grid; gap: 10px; padding: 16px;
-  border: 1px solid var(--border); border-radius: 8px;
-  background: var(--card); color: var(--foreground);
-}

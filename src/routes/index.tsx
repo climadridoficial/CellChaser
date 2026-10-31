@@ -3,11 +3,7 @@ import { LanguageProvider, useI18n } from "@/lib/i18n";
 import LanguageMenu from "@/components/LanguageMenu";
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, lazy, useCallback, useMemo, useState, useEffect, useRef, type CSSProperties } from "react";
-import { GripHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import ToolbarAdjustment from "@/components/ToolbarAdjustment";
-import { TOOLBAR_POSITION_KEY, clampToolbarOffset, readToolbarPosition } from "@/lib/toolbar-position";
+import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { fetchStations } from "@/lib/ord";
 import type { RadarStation } from "@/lib/ord";
 import type { RenderedScan } from "@/lib/odim";
@@ -49,7 +45,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <LanguageProvider><RadarSession><Home /></RadarSession></LanguageProvider>,
+  component: () => <LanguageProvider><RadarSession><IntroOverlay /><Home /></RadarSession></LanguageProvider>,
 });
 
 function Home() {
@@ -61,44 +57,6 @@ function Home() {
   const [selected, setSelected] = useState<RadarStation | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [introDone, setIntroDone] = useState(false);
-  const finishIntro = useCallback(() => setIntroDone(true), []);
-  const [positionLoaded, setPositionLoaded] = useState(false);
-  const [savedOffset, setSavedOffset] = useState<number | null>(null);
-  const [toolbarOffset, setToolbarOffset] = useState(0);
-  const [adjustingToolbar, setAdjustingToolbar] = useState(false);
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ y: number; offset: number } | null>(null);
-  const constrainOffset = useCallback((value: number) => {
-    const element = toolbarRef.current;
-    if (!element) return value;
-    const baseTop = parseFloat(getComputedStyle(element).top) || 0;
-    return clampToolbarOffset(value, baseTop, element.offsetHeight, window.innerHeight);
-  }, []);
-  useEffect(() => {
-    let value: number | null = null;
-    try { value = readToolbarPosition(localStorage.getItem(TOOLBAR_POSITION_KEY)); } catch { /* Session-only adjustment. */ }
-    setSavedOffset(value);
-    setToolbarOffset(constrainOffset(value ?? 0));
-    setPositionLoaded(true);
-  }, [constrainOffset]);
-  useEffect(() => {
-    if (introDone && positionLoaded && savedOffset === null) setAdjustingToolbar(true);
-  }, [introDone, positionLoaded, savedOffset]);
-  useEffect(() => {
-    const resize = () => setToolbarOffset(value => constrainOffset(value));
-    window.addEventListener("resize", resize);
-    const observer = new ResizeObserver(resize);
-    if (toolbarRef.current) observer.observe(toolbarRef.current);
-    return () => { window.removeEventListener("resize", resize); observer.disconnect(); };
-  }, [constrainOffset]);
-  const saveToolbarPosition = () => {
-    const value = constrainOffset(toolbarOffset);
-    try { localStorage.setItem(TOOLBAR_POSITION_KEY, JSON.stringify(value)); } catch { /* Keep it for this visit. */ }
-    setSavedOffset(value);
-    setToolbarOffset(value);
-    setAdjustingToolbar(false);
-  };
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
   const [alignmentTarget, setAlignmentTarget] = useState<AlignmentTarget | null>(null);
@@ -200,7 +158,6 @@ function Home() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-background">
-      <IntroOverlay onComplete={finishIntro} />
       <h1 className="sr-only">CellChaser — European weather radar layers</h1>
 
       <div className="absolute inset-0">
@@ -239,26 +196,7 @@ function Home() {
         </ClientOnly>
       </div>
 
-      <div ref={toolbarRef} className={adjustingToolbar ? "toolbar toolbar-adjusting" : "toolbar"} style={{ "--toolbar-offset": `${toolbarOffset}px` } as CSSProperties}>
-        {adjustingToolbar && (
-          <Button variant="ghost" className="toolbar-drag-handle" aria-label={t("dragToolbar")}
-            onPointerDown={event => {
-              event.currentTarget.setPointerCapture(event.pointerId);
-              dragRef.current = { y: event.clientY, offset: toolbarOffset };
-            }}
-            onPointerMove={event => {
-              const drag = dragRef.current;
-              if (drag) setToolbarOffset(constrainOffset(drag.offset + event.clientY - drag.y));
-            }}
-            onPointerUp={() => { dragRef.current = null; }}
-            onPointerCancel={() => { dragRef.current = null; }}
-            onKeyDown={event => {
-              if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-              event.preventDefault();
-              setToolbarOffset(value => constrainOffset(value + (event.key === "ArrowDown" ? 4 : -4)));
-            }}
-          ><GripHorizontal /></Button>
-        )}
+      <div className="toolbar">
         <span className="brand">
           Cell<span className="text-primary">Chaser</span>
         </span>
@@ -285,21 +223,7 @@ function Home() {
           onShowStormsChange={setShowStorms}
         />
         <LanguageMenu />
-        {!alignmentTarget && (
-          <TimeSlider
-            at={at}
-            onChange={setAt}
-            loading={composite.loading || rainviewer.isFetching}
-            preload={sumProgress(compositeOn ? composite.preload : NO_PRELOAD, selected ? stationPreload : NO_PRELOAD)}
-            note={sliderNote}
-          />
-        )}
       </div>
-
-      {adjustingToolbar && <ToolbarAdjustment onSave={saveToolbarPosition} onCancel={savedOffset === null ? undefined : () => {
-        setToolbarOffset(constrainOffset(savedOffset));
-        setAdjustingToolbar(false);
-      }} />}
 
       {(stations.isLoading || stations.isError) && (
         <div className="statusbar">
@@ -326,6 +250,16 @@ function Home() {
         />
       )}
 
+      {!alignmentTarget && (
+        <TimeSlider
+          at={at}
+          onChange={setAt}
+          loading={composite.loading || rainviewer.isFetching}
+          preload={sumProgress(compositeOn ? composite.preload : NO_PRELOAD, selected ? stationPreload : NO_PRELOAD)}
+          note={sliderNote}
+        />
+      )}
+
       {aemetSel && !selected && <AemetPanel obs={aemetSel} onClose={() => setAemetSel(null)} />}
 
       {alignmentTarget && <AemetAlignment key={alignmentTarget.code} target={alignmentTarget} value={aemetImage} onChange={handleAemetImage} onClose={closeAlignment} />}
@@ -335,7 +269,6 @@ function Home() {
           settings={settings}
           onChange={update}
           onClose={() => setSettingsOpen(false)}
-          onAdjustToolbar={() => { setSettingsOpen(false); setMenuOpen(false); setAdjustingToolbar(true); }}
         />
       )}
     </main>
