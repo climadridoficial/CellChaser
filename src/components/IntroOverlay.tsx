@@ -7,7 +7,7 @@ const INTRO_MS = 3300;
 
 // The intro is an animated image (not a video) so it always plays,
 // even in iOS low-power mode, with no play button.
-export default function IntroOverlay() {
+export default function IntroOverlay({ onComplete }: { onComplete: () => void }) {
   const [open, setOpen] = useState<boolean | null>(null);
   const [closing, setClosing] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -20,7 +20,8 @@ export default function IntroOverlay() {
       seen = true;
     }
     setOpen(!seen);
-  }, []);
+    if (seen) onComplete();
+  }, [onComplete]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,10 +55,10 @@ export default function IntroOverlay() {
       } catch {
         /* storage unavailable */
       }
-      window.setTimeout(() => setOpen(false), FADE_MS);
+      window.setTimeout(() => { setOpen(false); onComplete(); }, FADE_MS);
     }, INTRO_MS);
     return () => window.clearTimeout(id);
-  }, [open, loaded]);
+  }, [open, loaded, onComplete]);
 
   if (!open) return null;
 

@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [ ] Add first-visit vertical menu adjustment after the intro, with saved positioning and readjustment in Settings; verify dragging and persistence.
 - [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.
 - [x] Harden false-echo detection and turning forecasts, with regression tests.
 - [x] Move real tracking to shared server computation, independent of composite visibility; actual 15 AEMET / 10 OPERA ingest and matching desktop/mobile observations verified.
