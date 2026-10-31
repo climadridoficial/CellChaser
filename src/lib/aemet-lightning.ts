@@ -1,4 +1,5 @@
 import type { Corners } from "./aemet-overlay";
+import { readLightningPeriod, type LightningPeriod } from './lightning-period';
 
 // AEMET lightning map (red/rayos/mapa): 640×480 GIF, plate-carrée projection.
 // The map frame is inset at x 19–619, y 19–422; the legend sits below it.
@@ -20,7 +21,7 @@ export const LIGHTNING_SIZE = { w: CROP.w, h: CROP.h };
  * Black background and magenta coast/province linework are removed; the
  * coloured strike markers (age-coded) stay.
  */
-export async function loadLightningImages(): Promise<{ original: string; echoes: string }> {
+export async function loadLightningImages(): Promise<{ original: string; echoes: string; period: LightningPeriod | null }> {
   const response = await fetch("/api/public/aemet-lightning");
   if (!response.ok) throw new Error("No se pudo cargar el mapa de rayos de AEMET.");
   const blobUrl = URL.createObjectURL(await response.blob());
@@ -36,6 +37,12 @@ export async function loadLightningImages(): Promise<{ original: string; echoes:
     canvas.height = CROP.h;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo procesar la imagen.");
+    const full = document.createElement('canvas');
+    full.width = 640; full.height = 480;
+    const fullCtx = full.getContext('2d');
+    if (!fullCtx) throw new Error('No se pudo leer la fecha del mapa.');
+    fullCtx.drawImage(img, 0, 0);
+    const period = readLightningPeriod(fullCtx.getImageData(0, 0, 640, 480).data, 640, 480, Date.now());
     ctx.drawImage(img, CROP.x, CROP.y, CROP.w, CROP.h, 0, 0, CROP.w, CROP.h);
     const original = canvas.toDataURL("image/png");
     const pixels = ctx.getImageData(0, 0, CROP.w, CROP.h);
@@ -47,7 +54,7 @@ export async function loadLightningImages(): Promise<{ original: string; echoes:
       d[i + 3] = black || magenta ? 0 : 255;
     }
     ctx.putImageData(pixels, 0, 0);
-    return { original, echoes: canvas.toDataURL("image/png") };
+    return { original, echoes: canvas.toDataURL("image/png"), period };
   } finally {
     URL.revokeObjectURL(blobUrl);
   }

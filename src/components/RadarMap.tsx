@@ -13,7 +13,8 @@ import { useStormTracks } from "@/hooks/use-storm-tracks";
 import StormTracks from "./StormTracks";
 import { legendStops, productInfo } from "@/lib/radar-products";
 import { colorToValue, samplePixel } from "@/lib/inspector";
-import { LIGHTNING_AGES, lightningAge, quadFraction } from "@/lib/lightning-inspector";
+import { LIGHTNING_AGES, lightningAge, lightningClock, lightningElapsed, quadFraction } from "@/lib/lightning-inspector";
+import type { LightningPeriod } from '@/lib/lightning-period';
 import { LIGHTNING_SIZE } from "@/lib/aemet-lightning";
 import { cornersFromBounds } from "@/lib/aemet-overlay";
 
@@ -36,6 +37,7 @@ interface Props {
   compositeMode: CompositeMode;
   /** AEMET lightning-strike map (transparent PNG data URL) or null when off. */
   lightning: AemetMapImage | null;
+  lightningPeriod: LightningPeriod | null;
   onLightningBounds: (corners: Corners) => void;
 }
 
@@ -57,6 +59,7 @@ export default function RadarMap({
   at,
   compositeMode,
   lightning,
+  lightningPeriod,
   onLightningBounds,
 }: Props) {
   const { t } = useI18n();
@@ -429,7 +432,8 @@ export default function RadarMap({
           }
         }
       }
-      setLightningReadout(age ? t("inspectLightningAge", { h: age }) : t("inspectNoLightning"));
+      const band = LIGHTNING_AGES.find(b => b.hours === age);
+      setLightningReadout(band ? lightningPeriod ? t("inspectLightningAge", { h: lightningElapsed(lightningPeriod, band.bin, Date.now()) }) : t('lightningTimeUnknown') : t("inspectNoLightning"));
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(read); };
     schedule();
@@ -441,7 +445,7 @@ export default function RadarMap({
       if (frame) cancelAnimationFrame(frame);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspectOn, scan, composite, info.key, lightning, t]);
+  }, [inspectOn, scan, composite, info.key, lightning, lightningPeriod, t]);
 
   const label =
     locMode === "on" ? t("locationOn") : locMode === "heading" ? t("locationHeading") : t("locationOff");
@@ -469,12 +473,12 @@ export default function RadarMap({
             <div key={s.value} className="color-key-row"><i style={{ background: s.css }} />{s.value}</div>
           ))}
           {lightning && <div className="lightning-key" aria-label={t("lightningAgeKey")}>
-            <div className="color-key-unit">{t("lightningShort")}</div>
-            {LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{age.hours} h</div>)}
+            <div className="color-key-unit">{t("lightningShort")} · UTC</div>
+            {LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{lightningPeriod ? lightningClock(lightningPeriod, age.bin) : '—'}</div>)}
           </div>}
         </div>
       )}
-      {keyOn && lightning && !showKey && <div className="color-key" aria-label={t("lightningAgeKey")}><div className="color-key-unit">{t("lightningShort")}</div>{LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{age.hours} h</div>)}</div>}
+      {keyOn && lightning && !showKey && <div className="color-key" aria-label={t("lightningAgeKey")}><div className="color-key-unit">{t("lightningShort")} · UTC</div>{LIGHTNING_AGES.map(age => <div key={age.hours} className="color-key-row"><i className={`lightning-age-${age.token}`} />{lightningPeriod ? lightningClock(lightningPeriod, age.bin) : '—'}</div>)}</div>}
       {inspectOn && (
         <>
           <div className="inspector-cross" aria-hidden="true" />
