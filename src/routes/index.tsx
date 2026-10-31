@@ -218,6 +218,7 @@ function Home() {
               at={at}
               compositeMode={settings.composite}
               lightning={lightningOverlay}
+              lightningPeriod={lightning.data?.period ?? null}
               onLightningBounds={handleLightningBounds}
               aemet={showAemet ? (aemet.data ?? []) : []}
               aemetSelected={aemetSel?.idema ?? null}
