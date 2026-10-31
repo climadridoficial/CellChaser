@@ -16,6 +16,10 @@ const r = (es: string, pt: string, ca: string, gl: string, eu: string, en: strin
 export const MESSAGES = {
   stormTracks: r("Movimiento de células", "Movimento das células", "Moviment de cèl·lules", "Movemento das células", "Zelulen mugimendua", "Cell movement"),
   lightning: r("Rayos (AEMET)", "Raios (AEMET)", "Llamps (AEMET)", "Raíos (AEMET)", "Tximistak (AEMET)", "Lightning (AEMET)"),
+  lightningShort: r("Rayos", "Raios", "Llamps", "Raíos", "Tximistak", "Lightning"),
+  lightningAgeKey: r("Antigüedad de rayos en la imagen", "Idade dos raios na imagem", "Antiguitat dels llamps a la imatge", "Antigüidade dos raios na imaxe", "Tximisten adina irudian", "Lightning age in the image"),
+  inspectLightningAge: r("Rayos · hace {h} h en la imagen", "Raios · há {h} h na imagem", "Llamps · fa {h} h a la imatge", "Raíos · hai {h} h na imaxe", "Tximistak · duela {h} h irudian", "Lightning · {h} h ago in image"),
+  inspectNoLightning: r("Rayos · sin descargas aquí", "Raios · sem descargas aqui", "Llamps · sense descàrregues aquí", "Raíos · sen descargas aquí", "Tximistak · deskargarik ez hemen", "Lightning · no strikes here"),
   alignLightning: r("Alinear mapa de rayos", "Alinhar mapa de raios", "Alinear mapa de llamps", "Aliñar mapa de raios", "Tximisten mapa lerrokatu", "Align lightning map"),
   lightningNote: r("Descargas de las últimas 12 h; el color indica la antigüedad.", "Descargas das últimas 12 h; a cor indica a antiguidade.", "Descàrregues de les darreres 12 h; el color indica l'antiguitat.", "Descargas das últimas 12 h; a cor indica a antigüidade.", "Azken 12 orduko deskargak; koloreak zaharritasuna adierazten du.", "Strikes from the last 12 h; colour shows age."),
   stormForecast: r("Previsión experimental · 60 min", "Previsão experimental · 60 min", "Previsió experimental · 60 min", "Previsión experimental · 60 min", "Iragarpen esperimentala · 60 min", "Experimental forecast · 60 min"),
