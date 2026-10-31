@@ -6,6 +6,7 @@ import type { RenderedScan } from "@/lib/odim";
 import type { AemetObs } from "@/lib/aemet";
 import type { AemetMapImage, Corners } from "@/lib/aemet-overlay";
 import { useAemetMapOverlay } from "@/hooks/use-aemet-map-overlay";
+import { useLightningOverlay } from "@/hooks/use-lightning-overlay";
 import type { CompositeLayer } from "@/hooks/use-radar-composite";
 import type { CompositeMode } from "@/lib/composite";
 import { useStormTracks } from "@/hooks/use-storm-tracks";
@@ -30,6 +31,8 @@ interface Props {
   stormStations: RadarStation[];
   at: number | null;
   compositeMode: CompositeMode;
+  /** AEMET lightning-strike map (transparent PNG data URL) or null when off. */
+  lightning: string | null;
 }
 
 export default function RadarMap({
