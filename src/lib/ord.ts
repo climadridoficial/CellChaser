@@ -73,7 +73,7 @@ interface LocationFeature {
 
 export async function fetchStations(apiKey?: string): Promise<RadarStation[]> {
   const data = await getJson<{ features: LocationFeature[] }>(`${COLLECTION}/locations`, apiKey);
-  return data.features
+  return (data.features ?? [])
     .filter((f) => /^0-\d+-\d+-/.test(f.id))
     .map((f) => {
       const parts = f.id.split("-");
@@ -88,7 +88,7 @@ export async function fetchStations(apiKey?: string): Promise<RadarStation[]> {
         lon: f.geometry.coordinates[0] ?? 0,
         lat: f.geometry.coordinates[1] ?? 0,
         parameters,
-        products: [...new Set(parameters.map((p) => p.split(":")[0]!))].sort(),
+        products: [...new Set(parameters.map((p) => p.split(":")[0] ?? "").filter(Boolean))].sort(),
       };
     })
     .filter((s) => s.products.length > 0);
