@@ -434,13 +434,9 @@
 }
 .aemet-alignment-bar input { accent-color: var(--primary); }
 
-/* Map time slider: under the toolbar on phones, bottom centre on desktop. */
+/* Map time slider: second row of the toolbar on phones, bottom centre on desktop. */
 .time-slider {
-  position: absolute;
-  z-index: 1050;
-  top: calc(4.4rem + env(safe-area-inset-top, 0px));
-  left: calc(0.75rem + env(safe-area-inset-left, 0px));
-  right: calc(0.75rem + env(safe-area-inset-right, 0px));
+  flex: 1 1 100%;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -453,7 +449,9 @@
 }
 @media (min-width: 768px) {
   .time-slider {
-    top: auto;
+    position: absolute;
+    z-index: 1050;
+    flex: none;
     bottom: 1.75rem;
     left: 24.5rem;
     right: 4rem;
