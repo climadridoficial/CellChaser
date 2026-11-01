@@ -13,7 +13,8 @@ export const LIGHTNING_CORNERS: Corners = [
 ];
 
 // Crop just inside the frame lines.
-const CROP = { x: 20, y: 20, w: 598, h: 402 };
+export const LIGHTNING_CROP = { x: 20, y: 20, w: 598, h: 402 };
+const CROP = LIGHTNING_CROP;
 export const LIGHTNING_SIZE = { w: CROP.w, h: CROP.h };
 
 /**

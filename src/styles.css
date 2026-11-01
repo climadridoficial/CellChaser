@@ -489,6 +489,9 @@
 .storm-area, .storm-trace, .storm-dot { stroke: var(--storm-color); fill: var(--storm-color); }
 .storm-trace { fill: none; }
 .storm-area { stroke-dasharray: 7 4; }
+.storm-advisory-popup { max-width: min(280px, calc(100vw - 90px)); font-size: 0.75rem; line-height: 1.45; overflow-wrap: anywhere; }
+.storm-advisory-popup p { margin: 0.4rem 0; }
+.storm-advisory-popup p:first-child { font-weight: 600; }
 .storm-legend {
   position: absolute; z-index: 1040; top: 8.8rem; left: 0.75rem;
   width: min(15rem, calc(100% - 5rem)); padding: 0.35rem 0.5rem;

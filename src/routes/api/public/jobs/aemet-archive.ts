@@ -3,6 +3,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { aemetFetch } from "@/lib/aemet-upstream";
 import { AEMET_RADAR_CODES, OPERA_TO_AEMET } from "@/lib/aemet-radars";
 import { aemetGifTime } from "@/lib/aemet-timestamp";
+import { STORM_VERSION } from '@/lib/storm-version';
 
 // Scheduled every few minutes: AEMET OpenData only serves the newest regional
 // image, so we keep our own short archive for the map time slider.
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { processAemetStormFrame } = await import("@/lib/storm-pipeline.server");
+        const { loadStormLightning } = await import('@/lib/storm-lightning.server');
+        const lightning = await loadStormLightning();
         const cutoff = Date.now() - RETENTION_MS;
         const results: {code:string;status:string;observedAt?:string}[] = [];
         const codes = [...AEMET_RADAR_CODES];
@@ -42,12 +45,12 @@ export const Route = createFileRoute("/api/public/jobs/aemet-archive")({
               if (error) throw error;
               // Reuse archived observations for initial confirmation, then only
               // decode new frames. All devices read the resulting shared tracks.
-              const cached = await supabaseAdmin.from("storm_cell_frames").select("observed_at").eq("radar_id",radarId).eq("source","aemet").eq("algorithm_version",2).gte("observed_at",new Date(Date.parse(observedAt)-3600_000).toISOString());
+              const cached = await supabaseAdmin.from("storm_cell_frames").select("observed_at").eq("radar_id",radarId).eq("source","aemet").eq("algorithm_version",STORM_VERSION).gte("observed_at",new Date(Date.parse(observedAt)-3600_000).toISOString());
               const known = new Set((cached.data??[]).map(f=>Date.parse(f.observed_at)));
               const history = await supabaseAdmin.from("aemet_radar_frames").select("observed_at,image_b64").eq("code",code).gte("observed_at",new Date(Date.parse(observedAt)-3600_000).toISOString()).lte("observed_at",observedAt).order("observed_at");
               for (const frame of history.data??[]) {
                 if (known.has(Date.parse(frame.observed_at)) || !frame.image_b64) continue;
-                await processAemetStormFrame(supabaseAdmin,code,frame.observed_at,Uint8Array.from(atob(frame.image_b64),c=>c.charCodeAt(0)));
+                await processAemetStormFrame(supabaseAdmin,code,frame.observed_at,Uint8Array.from(atob(frame.image_b64),c=>c.charCodeAt(0)),lightning);
               }
               // Update availability even when this observation was cached.
               await supabaseAdmin.from("storm_source_state").upsert({radar_id:radarId,source:"aemet",available:true,checked_at:new Date().toISOString()});
