@@ -59,6 +59,8 @@ function Home() {
   const [showStations, setShowStations] = useState(true);
   const [selected, setSelected] = useState<RadarStation | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
+  const [stationBackup, setStationBackup] = useState<{ id: string; enabled: boolean } | null>(null);
+  const handleBackupChange = useCallback((id: string, enabled: boolean) => setStationBackup({ id, enabled }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
@@ -173,8 +175,9 @@ function Home() {
   const mapComposite = useMemo(() => {
     if (scan || aemetImage) return [];
     if (!selected) return composite.layers;
+    if (!selected.offline && !(stationBackup?.id === selected.id && stationBackup.enabled)) return [];
     return composite.layers.filter((l) => l.radarId === selected.id);
-  }, [scan, aemetImage, selected, composite.layers]);
+  }, [scan, aemetImage, selected, stationBackup, composite.layers]);
 
   const frames = rainviewer.data ?? [];
   const tileFrame =
@@ -282,6 +285,7 @@ function Home() {
           apiKey={settings.meteogateKey}
           onClose={closePanel}
           onScan={handleScan}
+          onBackupChange={handleBackupChange}
           at={at}
           onPreload={setStationPreload}
           onAlignAemet={(code) => {

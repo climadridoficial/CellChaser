@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { fetchScanFiles, fetchStations } from "./ord";
+import { fetchScanFiles, fetchScanHistory, fetchStations } from "./ord";
 
 test("empty OPERA discovery does not crash the radar list", async () => {
   const original = globalThis.fetch;
@@ -9,6 +9,25 @@ test("empty OPERA discovery does not crash the radar list", async () => {
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test("all-elevation discovery preserves angles sharing one ODIM volume", async () => {
+  const original = globalThis.fetch;
+  let requestedUrl = "";
+  globalThis.fetch = async (url) => {
+    requestedUrl = String(url);
+    return Response.json({ coverages: [0.5, 1.3, 2.1].map((level) => ({
+      parameters: { "DBZH:scan": {}, "TH:scan": {} },
+      domain: { axes: { z: { values: [level] } } },
+      links: [{ type: "application/x-odim", href: "https://example.org/radar@20261101T1300@0.5_1.3_2.1@DBZH_TH.h5" }],
+    })) });
+  };
+  try {
+    const history = await fetchScanHistory("0-724-0-essft", "*", 1);
+    expect(new URL(requestedUrl).searchParams.has("level")).toBe(false);
+    expect(history.map((c) => c.level)).toEqual([0.5, 1.3, 2.1]);
+    expect(history.every((c) => c.products.includes("DBZH"))).toBe(true);
+  } finally { globalThis.fetch = original; }
 });
 
 test("velocity selects its own multi-product volume without the broken parameter filter", async () => {

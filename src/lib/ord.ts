@@ -209,6 +209,7 @@ export interface ScanCandidate {
   time: string; // ISO
   level: number;
   doppler: boolean;
+  products?: string[];
 }
 
 /** Every ODIM file publishing `product` in the last `hours` (one request). */
@@ -234,7 +235,7 @@ export async function fetchScanHistory(
   const out = new Map<string, ScanCandidate>();
   for (const cov of data.coverages ?? []) {
     const params = Object.keys(cov.parameters ?? {});
-    if (!params.some((p) => p.split(":")[0] === product)) continue;
+    if (product !== "*" && !params.some((p) => p.split(":")[0] === product)) continue;
     const level = cov.domain?.axes?.z?.values?.[0];
     if (typeof level !== "number") continue;
     const doppler = params.some((p) => p.startsWith("VRAD"));
@@ -243,10 +244,11 @@ export async function fetchScanHistory(
       const m = FILE_TIME.exec(link.href);
       if (!m) continue;
       const time = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`;
-      out.set(link.href, { href: link.href, time, level, doppler });
+      const key = `${link.href}|${level}|${doppler}`;
+      out.set(key, { href: link.href, time, level, doppler, products: params.map((p) => p.split(":")[0] ?? "").filter(Boolean) });
     }
   }
-  return [...out.values()];
+  return [...out.values()].sort((a, b) => b.time.localeCompare(a.time) || a.level - b.level);
 }
 
 /**
