@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [ ] Correct elevation availability using actual product/range/time files; do not treat a missing selected elevation as a radar-wide OPERA outage.
 - [x] Fix single-digit AEMET footer days; real Valencia, Málaga and Gran Canaria 1 Nov images now read 12:10 UTC (test added).
 - [x] Replace priority credentials 1 and 2 individually and save credential 3 securely; implement priority rotation before older backups.
 - [x] Verify priority ordering (3 tests), successful live lightning GIF (200), and radar handling: Valencia/Málaga currently return no fresh/readable observation (204), not credential failure.
