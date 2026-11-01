@@ -35,7 +35,12 @@ export default function StormTracks({ map, tracks }: { map: L.Map | null; tracks
         if(point===last) marker.bindPopup(content.cloneNode(true) as HTMLElement,{maxWidth:300});
       }
     }
-    return () => { group.remove(); };
+    return () => {
+      group.remove();
+      // Removing paths does not remove their explicit renderer from Leaflet.
+      // Release its SVG and zoom/move listeners on every update and unmount.
+      renderer.remove();
+    };
   }, [map, tracks, t, locale, lang]);
   return null;
 }
