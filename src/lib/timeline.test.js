@@ -6,17 +6,17 @@ import { aemetGifTime } from "./aemet-timestamp";
 
 const NOW = Date.parse("2026-10-29T17:18:34Z");
 
-test("slider covers the past 6 hours in 10-minute steps", () => {
-  expect(HISTORY_HOURS).toBe(6);
+test("slider covers the past 3 hours in 10-minute steps", () => {
+  expect(HISTORY_HOURS).toBe(3);
   expect(STEP_MS).toBe(10 * 60_000);
-  expect(STEPS).toBe(36);
-  expect(new Date(slotAt(0, NOW)).toISOString()).toBe("2026-10-29T11:10:00.000Z");
+  expect(STEPS).toBe(18);
+  expect(new Date(slotAt(0, NOW)).toISOString()).toBe("2026-10-29T14:10:00.000Z");
   expect(new Date(slotAt(STEPS - 1, NOW)).toISOString()).toBe("2026-10-29T17:00:00.000Z");
   expect(slotAt(STEPS, NOW)).toBeNull();
 });
 
 test("slider index and time round-trip", () => {
-  for (const i of [0, 7, 35]) expect(slotIndex(slotAt(i, NOW), NOW)).toBe(i);
+  for (const i of [0, 7, 17]) expect(slotIndex(slotAt(i, NOW), NOW)).toBe(i);
   expect(slotIndex(null, NOW)).toBe(STEPS);
 });
 

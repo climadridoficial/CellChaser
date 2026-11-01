@@ -3,7 +3,7 @@
 
 /** All sources (OPERA, AEMET, RainViewer, LibreWXR) publish every 10 minutes. */
 export const STEP_MS = 10 * 60_000;
-export const HISTORY_HOURS = 6;
+export const HISTORY_HOURS = 3;
 /** Historical positions on the slider; index STEPS is "live". */
 export const STEPS = (HISTORY_HOURS * 3600_000) / STEP_MS;
 
