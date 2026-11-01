@@ -26,7 +26,7 @@ export async function saveStormFrame(client: Client, radarId: string, source: "o
 export async function processAemetStormFrame(client: Client, code: string, time: string, bytes: Uint8Array, lightning?: LightningEvidence|null) {
   const opera = Object.entries(OPERA_TO_AEMET).find(([,c])=>c===code)?.[0];
   const id = opera ? `0-724-0-${opera}` : `aemet-${code}`;
-  await saveStormFrame(client,id,"aemet",time,detectCells(aemetStormGrid(code,bytes)),{lightning});
+  await saveStormFrame(client,id,"aemet",time,detectCells(aemetStormGrid(code,bytes)),{lightning:lightning??null});
   await client.from("storm_source_state").upsert({radar_id:id,source:"aemet",available:true,checked_at:new Date().toISOString()});
 }
 
