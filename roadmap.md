@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [ ] Fix Gran Canaria forecasts hidden after transient AEMET failure and the OPERA scheduled tracking error; verify shared real results.
 - [x] Correct elevation availability using actual product/range/time files; missing angles do not trigger AEMET fallback. Sixteen tests pass; real Sierra Fuentes 1.5° short-range and 2.1° long-range scans verified in the browser.
 - [x] Fix single-digit AEMET footer days; real Valencia, Málaga and Gran Canaria 1 Nov images now read 12:10 UTC (test added).
 - [x] Replace priority credentials 1 and 2 individually and save credential 3 securely; implement priority rotation before older backups.
