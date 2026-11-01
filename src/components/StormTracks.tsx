@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import L from "leaflet";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { MIN_RADIUS_KM, cellIntensity, type StormTrack } from "@/lib/storm-tracking";
+import { stormAdvisoryText } from '@/lib/storm-advisory-text';
 
 const LABELS: Record<StormTrack["intensity"], MessageKey> = { light: "stormLight", strong: "stormStrong", veryStrong: "stormVeryStrong", extreme: "stormExtreme" };
 export default function StormTracks({ map, tracks }: { map: L.Map | null; tracks: StormTrack[] }) {
-  const { t, locale } = useI18n();
+  const { t, locale, lang } = useI18n();
   useEffect(() => {
     if (!map) return;
     // Own pane above radar imagery so tracks are never hidden under the echoes.
@@ -16,16 +17,22 @@ export default function StormTracks({ map, tracks }: { map: L.Map | null; tracks
     for (const track of tracks) {
       const last = track.points.at(-1); if (!last || last.radiusKm < MIN_RADIUS_KM) continue;
       const className = `storm-${track.intensity}`;
+      const content=document.createElement('div');
+      content.className='storm-advisory-popup';
+      for(const line of stormAdvisoryText(track,lang)) {
+        const p=document.createElement('p'); p.textContent=line; content.appendChild(p);
+      }
       if (track.forecast) {
         // Preserve the four saved corners: Leaflet clipping can add vertices at map edges.
-        L.polygon(track.forecast, { className: `storm-area ${className}`, weight: 2, fillOpacity: 0.1, noClip: true, smoothFactor: 0, pane, renderer }).bindTooltip(`${t("stormForecast")} · ${t(LABELS[track.intensity])} · ~${Math.round(last.dbz)} dBZ · ${track.speedKmh} km/h · ${clock(last.time)} → ${clock(last.time + 30 * 60_000)} UTC`).addTo(group);
+        L.polygon(track.forecast, { className: `storm-area ${className}`, weight: 2, fillOpacity: 0.1, noClip: true, smoothFactor: 0, pane, renderer }).bindTooltip(`${t("stormForecast")} · ${t(LABELS[track.intensity])} · ~${Math.round(last.dbz)} dBZ · ${track.speedKmh} km/h · ${clock(last.time)} → ${clock(last.time + 60 * 60_000)} UTC`).bindPopup(content,{maxWidth:300}).addTo(group);
       }
       L.polyline(track.points.map(p => [p.lat, p.lon] as [number, number]), { className: `storm-trace ${className}`, weight: 2, interactive: false, pane, renderer }).addTo(group);
       for (const point of track.points) {
-        L.circleMarker([point.lat, point.lon], { radius: point === last ? 5 : 3, className: `storm-dot storm-${cellIntensity(point.dbz)}`, weight: 1, fillOpacity: 1, pane, renderer }).bindTooltip(`${clock(point.time)} UTC · ~${Math.round(point.dbz)} dBZ`).addTo(group);
+        const marker=L.circleMarker([point.lat, point.lon], { radius: point === last ? 7 : 3, className: `storm-dot storm-${cellIntensity(point.dbz)}`, weight: 1, fillOpacity: 1, pane, renderer }).bindTooltip(`${clock(point.time)} UTC · ~${Math.round(point.dbz)} dBZ`).addTo(group);
+        if(point===last) marker.bindPopup(content.cloneNode(true) as HTMLElement,{maxWidth:300});
       }
     }
     return () => { group.remove(); };
-  }, [map, tracks, t, locale]);
+  }, [map, tracks, t, locale, lang]);
   return null;
 }
