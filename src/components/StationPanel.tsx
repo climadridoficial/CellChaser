@@ -1,8 +1,9 @@
 import { useI18n, translatedProduct, translatedCountry } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
-import type { RadarStation, ScanEntry, ScanFile } from "@/lib/ord";
-import { countryLabel, fetchScanFiles, fetchStationScans } from "@/lib/ord";
+import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
+import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
+import { selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -56,14 +57,16 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
   const [hours, setHours] = useState(1);
-  const [allFiles, setFiles] = useState<ScanFile[] | null>(null);
+  const [history, setHistory] = useState<ScanCandidate[] | null>(null);
+  const [historyKey, setHistoryKey] = useState<string | null>(null);
+  const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">("short");
-  const hasBothRanges = !!allFiles?.some((f) => f.range === "short") && !!allFiles?.some((f) => f.range === "long");
-  const files = useMemo(
-    () => (allFiles && hasBothRanges ? allFiles.filter((f) => f.range === rangeMode) : allFiles),
-    [allFiles, hasBothRanges, rangeMode],
-  );
-  const [filesKey, setFilesKey] = useState<string | null>(null);
+  const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
+  const currentHistory = historyKey === availabilityKey ? history : null;
+  const productHistory = currentHistory?.filter((c) => c.products?.includes(product ?? ""));
+  const hasBothRanges = !!productHistory?.some((c) => c.doppler) && !!productHistory?.some((c) => !c.doppler);
+  const candidates = useMemo(() => currentHistory ? selectionCandidates(currentHistory, product, rangeMode) : null, [currentHistory, product, rangeMode]);
+  const files = useMemo<ScanFile[] | null>(() => candidates?.filter((c) => c.level === level).map((c) => ({ href: c.href, time: c.time, bytes: null, range: c.doppler ? "short" : "long" })) ?? null, [candidates, level]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -71,8 +74,6 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const [collapsed, setCollapsed] = useState(false);
   const atRef = useRef(at);
   atRef.current = at;
-  const rangeModeRef = useRef(rangeMode);
-  rangeModeRef.current = rangeMode;
   // Decoded scans by file + product + elevation, so slider steps are instant.
   const cacheRef = useRef(new Map<string, Promise<RenderedScan>>());
   useEffect(() => {
@@ -86,7 +87,11 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
         hit = decodeAndRender({ href: file.href, product, level, time: file.time, size, fallbackStation: { lat: station.lat, lon: station.lon } });
         hit.catch(() => cacheRef.current.delete(key));
         cacheRef.current.set(key, hit);
-        while (cacheRef.current.size > 120) cacheRef.current.delete(cacheRef.current.keys().next().value!);
+        while (cacheRef.current.size > 120) {
+          const oldest = cacheRef.current.keys().next().value;
+          if (oldest === undefined) break;
+          cacheRef.current.delete(oldest);
+        }
       }
       return hit;
     },
@@ -109,7 +114,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     setScans(null);
     setProduct(null);
     setLevel(null);
-    setFiles(null);
+    setHistory(null);
+    setHistoryKey(null);
+    setAvailabilityFailed(false);
     setScan(null);
     onScan(null);
     setError(null);
@@ -145,39 +152,33 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     [scans],
   );
   // Every elevation this radar scans (any product); ones missing for this product are shown disabled.
-  const allLevels = useMemo(() => [...new Set((scans ?? []).map((s) => s.level))].sort((a, b) => a - b), [scans]);
+  const allLevels = useMemo(() => [...new Set([...(scans ?? []).map((s) => s.level), ...(currentHistory ?? []).map((c) => c.level)])].sort((a, b) => a - b), [scans, currentHistory]);
   const levels = useMemo(
-    () => (scans ?? []).filter((s) => s.product === product).map((s) => s.level).sort((a, b) => a - b),
-    [scans, product],
+    () => usableLevels(candidates ?? [], at, OPERA_MAX_AGE_MS, now),
+    [candidates, at, now],
   );
-  const entry = useMemo(
-    () => (scans ?? []).find((s) => s.product === product && s.level === level) ?? null,
-    [scans, product, level],
-  );
-  const selectionKey = JSON.stringify([station.id, product, level, hours, apiKey]);
+  const selectionKey = JSON.stringify([availabilityKey, product, level, rangeMode]);
+  const filesKey = currentHistory === null ? null : selectionKey;
 
-  // File list for product + level + time range
+  // Discover all actual volumes once; catalogue entries alone do not prove availability.
   useEffect(() => {
-    if (!entry) return;
+    if (station.offline) return;
     let cancelled = false;
     setError(null);
+    setAvailabilityFailed(false);
     setStatus("Looking up scans…");
-    fetchScanFiles(
-      { platform: station.id, parameterName: entry.parameterName, level: entry.level, hours },
-      apiKey,
-    )
+    fetchScanHistory(station.id, "*", hours, apiKey)
       .then((list) => {
         if (cancelled) return;
-        setFiles(list);
-        setFilesKey(selectionKey);
-        const both = list.some((f) => f.range === "short") && list.some((f) => f.range === "long");
-        const shown = both ? list.filter((f) => f.range === rangeModeRef.current) : list;
-        setSelectedTime(fileFor(shown, atRef.current));
+        setHistory(list);
+        setHistoryKey(availabilityKey);
         setStatus(list.length ? null : "No scans published in this time range.");
       })
       .catch((e: Error) => {
         if (!cancelled) {
-          setFiles([]);
+          setHistory([]);
+          setHistoryKey(availabilityKey);
+          setAvailabilityFailed(true);
           setStatus(null);
           setError(e.message);
         }
@@ -185,12 +186,16 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     return () => {
       cancelled = true;
     };
-  }, [entry, station.id, hours, apiKey, selectionKey, onScan, refresh]);
+  }, [station.id, station.offline, hours, apiKey, availabilityKey, refresh]);
 
   useEffect(() => {
-    if (files && filesKey === selectionKey) setSelectedTime(fileFor(files, at));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, now, rangeMode]);
+    if (currentHistory === null) return;
+    if (level === null || !levels.includes(level)) setLevel(levels[0] ?? null);
+  }, [currentHistory, levels, level]);
+
+  useEffect(() => {
+    setSelectedTime(files ? fileFor(files, at) : null);
+  }, [files, at, now]);
 
   // Decode + render the selected scan
   useEffect(() => {
@@ -255,10 +260,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
   const info = scan?.info ?? productInfo(product ?? "DBZH");
   const backupCode = aemetCodeFor(station);
   const operaDown =
-    station.offline || noCurrentScan ||
+    station.offline || availabilityFailed ||
     (scans !== null && scans.length === 0) ||
-    (files !== null && files.length === 0 && filesKey === selectionKey) ||
-    (!!error && !scan);
+    (currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
   const showBackup = !!backupCode && operaDown;
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
@@ -386,7 +390,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
           </select>
         </section>
 
-        {noCurrentScan && <p className="hint">{t("noCurrent")}</p>}
+        {(noCurrentScan || (currentHistory !== null && levels.length === 0)) && <p className="hint">{at === null ? t("noCurrent") : t("noScans")}</p>}
         {status && <p className="hint">{status === "Querying available products…" ? t("queryProducts") : status === "Looking up scans…" ? t("queryScans") : status === "Decoding ODIM/HDF5 scan…" ? t("decode") : status === "No scans published in this time range." ? t("noScans") : status}</p>}
         {error && <p className="alert">{t("loadFailed")}</p>}
 
