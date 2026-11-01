@@ -203,7 +203,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
 
   // Decode + render the selected scan
   useEffect(() => {
-    if (filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
+    if (aemetView || filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
       setScan(null);
       onScan(null);
       return;
@@ -238,7 +238,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const historyMode = at !== null;
   useEffect(() => {
     const report = onPreload ?? (() => {});
-    if (!historyMode || !files || filesKey !== selectionKey || !product || level === null) {
+    if (aemetView || !historyMode || !files || filesKey !== selectionKey || !product || level === null) {
       report(NO_PRELOAD);
       return;
     }
@@ -258,7 +258,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     };
   }, [historyMode, at, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
 
-  const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
+  const visibleScan = !aemetView && scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
   useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);
   const noCurrentScan = at === null && filesKey === selectionKey && !!files?.length && !fileFor(files, null);
   const info = scan?.info ?? productInfo(product ?? "DBZH");
