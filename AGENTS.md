@@ -12,7 +12,7 @@
 - Use the public OpenStreetMap standard tiles for the background map; this avoids CARTO's API-key-required placeholder tiles.
 - Normalize ODIM range units by the file's declared convention and render onto a Mercator pixel grid using measured azimuths; this preserves scan geography.
 - Discover ORD multi-product volumes without parameter filtering, filter coverage quantities locally, and key file/decode state by the current selection; this avoids empty provider filters and stale product images.
-- AEMET OpenData is called only server-side via src/lib/aemet-upstream.ts, rotating/retrying across the comma-separated AEMET_API_KEYS secret; AEMET responses are flaky per key and keys must not reach the browser.
+- AEMET calls stay server-side in aemet-upstream.ts; rotate separate priority credentials before comma-separated AEMET_API_KEYS backups. Credentials never reach browsers.
 - Radars missing from OPERA appear as AEMET-only stations and show the regional backup in the panel; AEMET image map placement uses the fixed four-corner calibration in src/lib/aemet-calibration.ts (copied from the owner's saved manual alignments); outlines are removed in source pixels, then images and storm grids are warped via src/lib/aemet-warp.ts into the corners' enclosing box, because the GIF lacks published pixel bounds.
 - Keep a static AEMET location catalog separate from OPERA availability; discovery failures preserve radar markers and fresh OpenData fallbacks, while successful discovery replaces fallback markers without duplicates.
 - The manual alignment UI stays in the codebase behind AEMET_ALIGNMENT_ENABLED instead of being deleted; it may be re-enabled to recalibrate, after which the calibration constants must be re-copied.
