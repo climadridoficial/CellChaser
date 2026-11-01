@@ -31,6 +31,7 @@ interface Props {
   apiKey: string;
   onClose: () => void;
   onScan: (scan: RenderedScan | null) => void;
+  onBackupChange: (stationId: string, enabled: boolean) => void;
   onAlignAemet: (code: string) => void;
   /** Map time slider position (null = live). */
   at: number | null;
@@ -45,7 +46,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
   return pickFrame(list, (f) => Date.parse(f.time), at)?.href ?? null;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan, onAlignAemet, at, onPreload }: Props) {
+export default function StationPanel({ station, apiKey, onClose, onScan, onBackupChange, onAlignAemet, at, onPreload }: Props) {
   const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
@@ -264,6 +265,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onAlign
     (scans !== null && scans.length === 0) ||
     (currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
   const showBackup = !!backupCode && operaDown;
+  useEffect(() => { onBackupChange(station.id, showBackup); }, [station.id, showBackup, onBackupChange]);
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
   return (
