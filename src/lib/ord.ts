@@ -245,7 +245,7 @@ export async function fetchScanHistory(
       if (!m) continue;
       const time = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`;
       const key = `${link.href}|${level}|${doppler}`;
-      out.set(key, { href: link.href, time, level, doppler, products: params.map((p) => p.split(":")[0]) });
+      out.set(key, { href: link.href, time, level, doppler, products: params.map((p) => p.split(":")[0] ?? "").filter(Boolean) });
     }
   }
   return [...out.values()];
