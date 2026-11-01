@@ -57,6 +57,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
+  // Manual OpenData (AEMET) view for this radar, even when OPERA is up.
+  const [aemetView, setAemetView] = useState(false);
+  useEffect(() => { setAemetView(false); }, [station.id]);
   const [hours, setHours] = useState(1);
   const [history, setHistory] = useState<ScanCandidate[] | null>(null);
   const [historyKey, setHistoryKey] = useState<string | null>(null);
