@@ -19,6 +19,9 @@ export default function StormTracks({ map, tracks }: { map: L.Map | null; tracks
       const className = `storm-${track.intensity}`;
       const content=document.createElement('div');
       content.className='storm-advisory-popup';
+      const observed=document.createElement('p');
+      observed.textContent=`${t('observed')} · ${new Date(last.time).toISOString().slice(0,16).replace('T',' ')} UTC`;
+      content.appendChild(observed);
       for(const line of stormAdvisoryText(track,lang)) {
         const p=document.createElement('p'); p.textContent=line; content.appendChild(p);
       }

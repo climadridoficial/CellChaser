@@ -1,6 +1,7 @@
 # Radar scan corrections
 - [x] Restore all fifteen AEMET radar markers during OPERA discovery failure; verified against a real 429 outage and twelve passing tests.
-- [ ] Shared rule-based storm advisories without AI charges, with validated VRAD and lightning context; keep safe multi-scan confirmation.
+- [x] Shared rule-based storm advisories without AI charges, persisted with VRAD coverage and printed lightning intervals; three-scan motion retained. Unit/integration tests passed; map opens without errors.
+- [ ] Verify advisories with fresh real OPERA/VRAD/lightning observations — upstream limits, expired AEMET credentials and unreadable timestamps currently prevent full live verification.
 - [x] Verify lightning age legend below the unchanged radar key and crosshair lightning reading; real strike inspected and age/geometry tests passed.
 - [x] Fix lightning movement during zoom and add original-image four-corner alignment; signed-in corner stretching, rotation, saving and reloading verified.
 - [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.

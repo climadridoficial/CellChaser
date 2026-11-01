@@ -3,6 +3,7 @@ import { buildStormAdvisory,velocityForCell,lightningForCell } from './storm-adv
 import { confirmedStormTracks } from './storm-tracking';
 import { saveStormFrame } from './storm-pipeline.server';
 import { STORM_VERSION } from './storm-version';
+import {stormAdvisoryText} from './storm-advisory-text';
 
 const time=Date.parse('2026-11-01T00:00:00Z');
 const cell={lat:40,lon:-3,dbz:50,radiusKm:4};
@@ -40,6 +41,13 @@ test('VRAD does not bypass three reflectivity scans or alter the forecast',()=>{
   expect(evidence.vrad.status).toBe('available');
   expect(JSON.stringify(track.forecast)).toBe(before);
   expect(buildStormAdvisory(track,'opera',0.5,{...velocity,time:track.points.at(-1).time},lightning)).toEqual(evidence);
+});
+test('all viewers receive identical advisory facts independent of invocation',()=>{
+  const track={id:'test',points:[{...cell,time}],forecast:null,speedKmh:0,intensity:'veryStrong'};
+  const a={...track,advisory:buildStormAdvisory(track,'opera',0.5,velocity,lightning)};
+  const b=JSON.parse(JSON.stringify(a));
+  expect(a.advisory).toEqual(b.advisory);
+  expect(stormAdvisoryText(a,'es')).toEqual(stormAdvisoryText(b,'es'));
 });
 test('scheduled frame saves shared evidence with version and recomputes on new scan',async()=>{
   const rows=[],tracks=[];

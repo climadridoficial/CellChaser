@@ -6,6 +6,11 @@ interface Dataset { shape: number[]; value: ArrayLike<number>; attrs: Record<str
 const num = (v: unknown, fallback = 0) => { const n = Number(Array.isArray(v) ? v[0] : v); return Number.isFinite(n) ? n : fallback; };
 const str = (v: unknown) => String(v ?? "").replace(/\0+$/, "").trim();
 
+export function calibratedGate(raw: number|undefined, gain: number, offset: number, nodata: number, undetect: number): number {
+  if(raw===undefined || !Number.isFinite(raw) || raw===nodata || raw===undetect || !Number.isFinite(gain) || !Number.isFinite(offset)) return NaN;
+  return raw*gain+offset;
+}
+
 /** Canonical numeric raster, independent of each device's image render size. */
 export async function operaStormGrid(buffer: ArrayBuffer, level: number, fallback: {lat:number;lon:number}, quantities: readonly string[] = ['DBZH'], exactLevel = false): Promise<EchoGrid> {
   const { File } = await import("jsfive") as unknown as { File: new (buffer: ArrayBuffer, name: string) => Group };
@@ -48,8 +53,7 @@ export async function operaStormGrid(buffer: ArrayBuffer, level: number, fallbac
       const ray = rays[Math.floor(bearing*10)];
       if (ray===undefined || ray<0) continue;
       const value = raw[ray*nbins+Math.floor((range-rstart)/rscale)];
-      if (value===undefined || value===nodata || value===undetect) continue;
-      values[y*width+x]=value*gain+offset;
+      values[y*width+x]=calibratedGate(value,gain,offset,nodata,undetect);
     }
   }
   return {values,width,height,bounds:[[south,west],[north,east]]};
