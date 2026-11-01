@@ -1,13 +1,14 @@
 import munkres from "munkres-js";
 import { latitudeFromY, mercatorY, polarAt } from "./radar-geometry";
 import type { RadarBounds } from "./aemet-overlay";
+import type { StormAdvisory } from './storm-advisory';
 
 export type Intensity = "light" | "strong" | "veryStrong" | "extreme";
 export interface EchoGrid { values: Float32Array; width: number; height: number; bounds: RadarBounds }
 export interface Cell { lat: number; lon: number; dbz: number; radiusKm: number }
 export interface CellFrame { time: number; cells: Cell[] }
 export interface TrackPoint extends Cell { time: number }
-export interface StormTrack { id: string; points: TrackPoint[]; intensity: Intensity; forecast: [number, number][] | null; speedKmh: number }
+export interface StormTrack { id: string; points: TrackPoint[]; intensity: Intensity; forecast: [number, number][] | null; speedKmh: number; advisory?: StormAdvisory }
 
 // Reflectivity classes, not a severe-weather classification or warning.
 /** Smaller echoes (a few pixels) are treated as probable false echoes. */
