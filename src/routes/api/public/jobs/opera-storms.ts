@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/public/jobs/opera-storms")({
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
         const body = await request.json().catch(() => ({})) as { part?: number };
-        const part = Number.isInteger(body.part) && body.part! >= 0 && body.part! < PARTS ? body.part! : 0;
+        const part = typeof body.part === 'number' && Number.isInteger(body.part) && body.part >= 0 && body.part < PARTS ? body.part : 0;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { refreshOperaStorms } = await import("@/lib/storm-pipeline.server");
         return Response.json({ part, opera: await refreshOperaStorms(supabaseAdmin, part, PARTS) });

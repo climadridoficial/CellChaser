@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Fix Worker-incompatible OPERA downloads and separate AEMET processing failures from source outages; 35 tests pass, authenticated jobs succeed, and Gran Canaria's real 16:20 UTC cone/advisory renders without browser errors. Published schedules still need the corrected code published.
 - [x] Correct elevation availability using actual product/range/time files; missing angles do not trigger AEMET fallback. Sixteen tests pass; real Sierra Fuentes 1.5° short-range and 2.1° long-range scans verified in the browser.
 - [x] Fix single-digit AEMET footer days; real Valencia, Málaga and Gran Canaria 1 Nov images now read 12:10 UTC (test added).
 - [x] Replace priority credentials 1 and 2 individually and save credential 3 securely; implement priority rotation before older backups.
@@ -6,7 +7,7 @@
 - [x] Explain that saved credential values cannot be displayed again; only their configured names can be listed.
 - [x] Restore all fifteen AEMET radar markers during OPERA discovery failure; verified against a real 429 outage and twelve passing tests.
 - [x] Shared rule-based storm advisories without AI charges, persisted with VRAD coverage and printed lightning intervals; three-scan motion retained. 39 tests passed; isolated popup browser-tested; authenticated OPERA run saved real frames for three radars.
-- [ ] Verify advisory popup against a fresh real storm with VRAD/lightning — processed OPERA scans contain no confirmed cells; AEMET credentials/limits and unreadable lightning period prevent full live evidence verification.
+- [ ] Verify positive VRAD/lightning evidence on a fresh real storm — Gran Canaria's real cone and DBZ-only advisory verified; current evidence has no usable VRAD/lightning.
 - [x] Verify lightning age legend below the unchanged radar key and crosshair lightning reading; real strike inspected and age/geometry tests passed.
 - [x] Fix lightning movement during zoom and add original-image four-corner alignment; signed-in corner stretching, rotation, saving and reloading verified.
 - [x] Correct forecast rendering to preserve clean four-corner widening cones; direction tests and map-edge rendering verified.
