@@ -16,10 +16,13 @@ const DIGITS: Record<string, number> = {
   "...#.....|..##.....|...#.....|...#.....|...#.....|...#.....|...#.....|.#####...": 1,
   ".#####...|#.....#..|......#..|.....#...|..###....|.#.......|#........|#######..": 2,
   "#######..|.....#...|....#....|...##....|.....#...|......#..|#.....#..|.#####...": 3,
+  "#######..|#........|#........|######...|......#..|......#..|#.....#..|.#####...": 5,
   "..####...|.#.......|#........|#.####...|##....#..|#.....#..|#.....#..|.#####...": 6,
   "#######..|......#..|.....#...|....#....|...#.....|..#......|.#.......|#........": 7,
   ".#####...|#.....#..|#.....#..|#....##..|.####.#..|......#..|.....#...|.####....": 9,
 };
+
+const ZERO_KEY = Object.keys(DIGITS).find((k) => DIGITS[k] === 0)!;
 
 function cellKey(rgba: ArrayLike<number>, width: number, k: number): string {
   const rows: string[] = [];
@@ -68,6 +71,8 @@ export function readAemetTimestamp(
 ): string | null {
   if (width !== 480 || height !== 530) return null;
   const keys = CELLS.map((k) => cellKey(rgba, width, k));
+  // Single-digit days are printed with a leading space (" 1 NOV").
+  if (!keys[0]!.includes("#")) keys[0] = ZERO_KEY;
   const unknown = [...new Set(keys.filter((k) => DIGITS[k] === undefined))];
   if (unknown.some((k) => !k.includes("#"))) return null;
   const known = new Set(Object.values(DIGITS));
