@@ -16,7 +16,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-export default function AemetBackup({ code, at }: { code: string; at: number | null }) {
+export default function AemetBackup({ code, at, manual = false }: { code: string; at: number | null; manual?: boolean }) {
   const { t, locale } = useI18n();
   const now = useRadarNow();
   const frames = useAemetFrames(at !== null);
@@ -45,8 +45,8 @@ export default function AemetBackup({ code, at }: { code: string; at: number | n
 
   return (
     <section className="space-y-2">
-      <p className="alert">
-        {t("backupWarning")}
+      <p className={manual ? "hint" : "alert"}>
+        {manual ? t("aemetManual") : t("backupWarning")}
       </p>
       {stale && (
         <p className="alert">

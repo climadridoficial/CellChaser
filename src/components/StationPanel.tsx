@@ -308,7 +308,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             {aemetView ? t("viewOpera") : t("viewAemet")}
           </Button>
         )}
-        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} />}
+        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} manual={aemetView && !operaDown} />}
         {!station.offline && !aemetView && (<>
         <section>
           <h3 className="section-title">{t("product")}</h3>
