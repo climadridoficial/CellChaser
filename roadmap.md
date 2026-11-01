@@ -33,6 +33,7 @@
 - [x] OpenData images on the map by default.
 - [x] Modes: only OpenData, OPERA else OpenData, only OPERA, off.
 ## Time slider
+- [ ] Diagnose OpenData composite history failure and verify current archive ingestion and slider playback.
 - [x] 6 h history slider, 10-min steps, play/pause, "En directo"
 - [x] OPERA composite + station panel follow the slider
 - [x] AEMET archive (every 5 min) + footer timestamp reading
