@@ -267,7 +267,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     station.offline || availabilityFailed ||
     (scans !== null && scans.length === 0) ||
     (currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
-  const showBackup = !!backupCode && operaDown;
+  const showBackup = !!backupCode && (operaDown || aemetView);
   useEffect(() => { onBackupChange(station.id, showBackup); }, [station.id, showBackup, onBackupChange]);
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
@@ -303,8 +303,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {AEMET_ALIGNMENT_ENABLED && backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
+        {backupCode && !station.offline && (
+          <Button variant={aemetView ? "default" : "outline"} size="sm" onClick={() => setAemetView((v) => !v)}>
+            {aemetView ? t("viewOpera") : t("viewAemet")}
+          </Button>
+        )}
         {showBackup && backupCode && <AemetBackup code={backupCode} at={at} />}
-        {!station.offline && (<>
+        {!station.offline && !aemetView && (<>
         <section>
           <h3 className="section-title">{t("product")}</h3>
           {scans === null ? (
