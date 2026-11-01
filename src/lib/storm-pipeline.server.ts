@@ -9,6 +9,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { STORM_VERSION } from './storm-version';
 import { buildStormAdvisory, type LightningEvidence, type VelocityEvidence } from './storm-advisory';
 import { loadStormLightning } from './storm-lightning.server';
+import { fetchStormVolume } from './storm-ingest.server';
 
 export { STORM_VERSION } from './storm-version';
 type Client = SupabaseClient<Database>;
@@ -38,6 +39,7 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
   const results: {radarId:string;ok:boolean;error?:string}[] = [];
   for (let i=0;i<stations.length;i+=2) {
     await Promise.all(stations.slice(i,i+2).map(async station=>{
+      let sourceVerified = false;
       try {
         const history = await fetchScanHistory(station.id,"DBZH",1.5);
         const current = pickScan(history,Date.now(),OPERA_MAX_AGE_MS);
@@ -45,16 +47,14 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
         const cached = await client.from("storm_cell_frames").select("observed_at").eq("radar_id",station.id).eq("source","opera").eq("algorithm_version",STORM_VERSION).gte("observed_at",new Date(Date.now()-90*60_000).toISOString());
         if (cached.error) throw cached.error;
         const known = new Set((cached.data??[]).map(f=>Date.parse(f.observed_at)));
+        sourceVerified = known.has(Date.parse(current.time));
         const times = [...new Set(history.map(f=>Date.parse(f.time)))].filter(t=>t<=Date.parse(current.time)&&t>=Date.parse(current.time)-3600_000).sort((a,b)=>a-b).slice(-3);
         for (const t of times) {
           if (known.has(t)) continue;
           const pick = pickScan(history.filter(f=>Date.parse(f.time)===t),t,60_000);
           if (!pick) continue;
-          const url = new URL(pick.href);
-          if (url.protocol!=="https:" || !["s3.waw3-1.cloudferro.com","api.meteogate.eu","radar.meteogate.eu"].includes(url.hostname)) throw new Error("Untrusted radar host");
-          const response = await fetch(url,{redirect:"error",signal:AbortSignal.timeout(25_000)});
-          if (!response.ok) throw new Error("Radar download unavailable");
-          const buffer=await response.arrayBuffer();
+          const buffer = await fetchStormVolume(pick.href);
+          if (t === Date.parse(current.time)) sourceVerified = true;
           const cells=detectCells(await operaStormGrid(buffer,pick.level,station));
           let velocity: VelocityEvidence|null=null;
           if (cells.length) {
@@ -64,11 +64,7 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
             try {
               let velocityBuffer=buffer;
               if (doppler && doppler.href!==pick.href) {
-                const u=new URL(doppler.href);
-                if(u.protocol!=='https:' || !['s3.waw3-1.cloudferro.com','api.meteogate.eu','radar.meteogate.eu'].includes(u.hostname)) throw new Error('Untrusted velocity host');
-                const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(25_000)});
-                if(!r.ok) throw new Error('Velocity unavailable');
-                velocityBuffer=await r.arrayBuffer();
+                velocityBuffer = await fetchStormVolume(doppler.href);
               }
               velocity={grid:await operaStormGrid(velocityBuffer,pick.level,station,['VRADH','VRAD','VRADV'],true),time:t,level:pick.level,quantity:'VRAD'};
             } catch { /* Missing VRAD never suppresses reflectivity forecasts. */ }
@@ -79,7 +75,7 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
         results.push({radarId:station.id,ok:true});
       } catch (e) {
         console.error("OPERA storm refresh failed", station.id, (e as Error).message);
-        await client.from("storm_source_state").upsert({radar_id:station.id,source:"opera",available:false,checked_at:new Date().toISOString()});
+        await client.from("storm_source_state").upsert({radar_id:station.id,source:"opera",available:sourceVerified,checked_at:new Date().toISOString()});
         results.push({radarId:station.id,ok:false,error:(e as Error).message});
       }
     }));
