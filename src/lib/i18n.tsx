@@ -73,6 +73,8 @@ export const MESSAGES = {
   settings: r("Ajustes", "Definições", "Configuració", "Axustes", "Ezarpenak", "Settings"),
   done: r("Hecho", "Concluído", "Fet", "Feito", "Eginda", "Done"),
   inspector: r("Inspector (cruceta)", "Inspetor (mira)", "Inspector (creu)", "Inspector (cruz)", "Ikuskatzailea (gurutzea)", "Inspector (crosshair)"),
+  viewAemet: r("Ver datos OpenData (AEMET)", "Ver dados OpenData (AEMET)", "Veure dades OpenData (AEMET)", "Ver datos OpenData (AEMET)", "OpenData (AEMET) datuak ikusi", "View OpenData (AEMET) data"),
+  viewOpera: r("Volver a datos OPERA", "Voltar aos dados OPERA", "Tornar a dades OPERA", "Volver a datos OPERA", "Itzuli OPERA datuetara", "Back to OPERA data"),
   colorKey: r("Leyenda de colores", "Legenda de cores", "Llegenda de colors", "Lenda de cores", "Koloreen legenda", "Colour key"),
   inspectNoEcho: r("Sin eco", "Sem eco", "Sense eco", "Sen eco", "Oihartzunik ez", "No echo"),
   inspectNoData: r("Sin datos de radar aquí", "Sem dados de radar aqui", "Sense dades de radar aquí", "Sen datos de radar aquí", "Ez dago radar daturik hemen", "No radar data here"),
