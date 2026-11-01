@@ -1,5 +1,6 @@
 # Radar scan corrections
-- [ ] Collect the three new AEMET priority credentials one at a time using separate secure forms, preserve older backups, implement priority rotation and verify OpenData.
+- [ ] Collect AEMET priority credentials individually: first and second saved; third pending. Preserve older backups, implement priority rotation and verify OpenData.
+- [x] Explain that saved credential values cannot be displayed again; only their configured names can be listed.
 - [x] Restore all fifteen AEMET radar markers during OPERA discovery failure; verified against a real 429 outage and twelve passing tests.
 - [x] Shared rule-based storm advisories without AI charges, persisted with VRAD coverage and printed lightning intervals; three-scan motion retained. 39 tests passed; isolated popup browser-tested; authenticated OPERA run saved real frames for three radars.
 - [ ] Verify advisory popup against a fresh real storm with VRAD/lightning — processed OPERA scans contain no confirmed cells; AEMET credentials/limits and unreadable lightning period prevent full live evidence verification.
