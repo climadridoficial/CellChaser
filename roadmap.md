@@ -33,7 +33,8 @@
 - [x] OpenData images on the map by default.
 - [x] Modes: only OpenData, OPERA else OpenData, only OPERA, off.
 ## Time slider
-- [ ] Diagnose OpenData composite history failure and verify current archive ingestion and slider playback.
+- [x] Diagnose OpenData composite slider: UI selects the hour correctly, but all archive rows stop at 31 Oct 23:50 UTC; published day-1 parser still rejects scans (Gran Canaria published 204 vs local 200 at 12:30 UTC); seven timestamp/timeline tests pass.
+- [ ] Resume and verify OpenData archive and real slider playback after publishing the existing single-digit date correction; today's missing images cannot be recovered from the latest-only OpenData feed.
 - [x] 6 h history slider, 10-min steps, play/pause, "En directo"
 - [x] OPERA composite + station panel follow the slider
 - [x] AEMET archive (every 5 min) + footer timestamp reading
