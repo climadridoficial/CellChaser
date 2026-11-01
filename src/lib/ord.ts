@@ -248,7 +248,7 @@ export async function fetchScanHistory(
       out.set(key, { href: link.href, time, level, doppler, products: params.map((p) => p.split(":")[0] ?? "").filter(Boolean) });
     }
   }
-  return [...out.values()];
+  return [...out.values()].sort((a, b) => b.time.localeCompare(a.time) || a.level - b.level);
 }
 
 /**
