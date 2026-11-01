@@ -47,10 +47,10 @@ test("reads the observation time printed on AEMET images", () => {
 test("an AEMET digit without a captured glyph is solved from the publishing lag", async () => {
   const { decodeGif, readAemetTimestamp } = await import("./aemet-timestamp");
   const { width, height, rgba } = decodeGif(new Uint8Array(readFileSync(new URL("./__fixtures__/aemet-ma-1710.gif", import.meta.url))));
-  // Turn the minute-tens "1" into an unseen glyph, as a "4" or "5" would be.
+  // Turn the minute-tens "1" into an unseen glyph; only 4 or 8 remain uncaptured.
   const i = (523 * width + 27 + 9 * 33 + 8) * 4;
   rgba[i] = 200; rgba[i + 1] = 0; rgba[i + 2] = 90;
   expect(readAemetTimestamp(rgba, width, height, Date.parse("2026-10-29T17:52:00Z"))).toBe("2026-10-29T17:40:00Z");
-  expect(readAemetTimestamp(rgba, width, height, Date.parse("2026-10-29T18:01:00Z"))).toBe("2026-10-29T17:50:00Z");
+  expect(readAemetTimestamp(rgba, width, height, Date.parse("2026-10-29T16:40:00Z"))).toBeNull();
   expect(readAemetTimestamp(rgba, width, height)).toBeNull();
 });
