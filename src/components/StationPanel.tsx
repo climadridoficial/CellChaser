@@ -57,6 +57,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
   const [product, setProduct] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
+  // Manual OpenData (AEMET) view for this radar, even when OPERA is up.
+  const [aemetView, setAemetView] = useState(false);
+  useEffect(() => { setAemetView(false); }, [station.id]);
   const [hours, setHours] = useState(1);
   const [history, setHistory] = useState<ScanCandidate[] | null>(null);
   const [historyKey, setHistoryKey] = useState<string | null>(null);
@@ -200,7 +203,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
 
   // Decode + render the selected scan
   useEffect(() => {
-    if (filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
+    if (aemetView || filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
       setScan(null);
       onScan(null);
       return;
@@ -235,7 +238,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const historyMode = at !== null;
   useEffect(() => {
     const report = onPreload ?? (() => {});
-    if (!historyMode || !files || filesKey !== selectionKey || !product || level === null) {
+    if (aemetView || !historyMode || !files || filesKey !== selectionKey || !product || level === null) {
       report(NO_PRELOAD);
       return;
     }
@@ -255,7 +258,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     };
   }, [historyMode, at, files, filesKey, selectionKey, product, level, decodeCached, onPreload]);
 
-  const visibleScan = scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
+  const visibleScan = !aemetView && scan && radarFrameVisible(scan.time, at, OPERA_MAX_AGE_MS, now) ? scan : null;
   useEffect(() => { onScan(visibleScan); }, [visibleScan, onScan]);
   const noCurrentScan = at === null && filesKey === selectionKey && !!files?.length && !fileFor(files, null);
   const info = scan?.info ?? productInfo(product ?? "DBZH");
@@ -264,7 +267,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     station.offline || availabilityFailed ||
     (scans !== null && scans.length === 0) ||
     (currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
-  const showBackup = !!backupCode && operaDown;
+  const showBackup = !!backupCode && (operaDown || aemetView);
   useEffect(() => { onBackupChange(station.id, showBackup); }, [station.id, showBackup, onBackupChange]);
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
 
@@ -300,8 +303,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
       {!collapsed && (
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {AEMET_ALIGNMENT_ENABLED && backupCode && <Button variant="outline" size="sm" onClick={() => onAlignAemet(backupCode)}><Move />Alinear imagen AEMET en el mapa</Button>}
-        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} />}
-        {!station.offline && (<>
+        {backupCode && !station.offline && (
+          <Button variant={aemetView ? "default" : "outline"} size="sm" onClick={() => setAemetView((v) => !v)}>
+            {aemetView ? t("viewOpera") : t("viewAemet")}
+          </Button>
+        )}
+        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} manual={aemetView && !operaDown} />}
+        {!station.offline && !aemetView && (<>
         <section>
           <h3 className="section-title">{t("product")}</h3>
           {scans === null ? (
