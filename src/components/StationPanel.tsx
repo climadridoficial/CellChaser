@@ -357,7 +357,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             <h3 className="section-title">{t("rangeTitle")}</h3>
             <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label={t("rangeTitle")}>
               {rangeOptions.map(range => (
-                <Button key={range} variant={rangeMode === range ? "default" : "outline"} size="sm" aria-pressed={rangeMode === range} onClick={() => { initialSelectionDone.current = true; setRangeMode(range); }}>
+                <Button key={range} className="h-auto min-h-16 whitespace-normal leading-tight" variant={rangeMode === range ? "default" : "outline"} size="sm" aria-pressed={rangeMode === range} onClick={() => { initialSelectionDone.current = true; setRangeMode(range); }}>
                   {t(range === "short" ? "rangeShort" : "rangeLong")}
                 </Button>
               ))}
