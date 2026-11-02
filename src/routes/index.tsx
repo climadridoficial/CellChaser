@@ -171,15 +171,13 @@ function Home() {
       ? t("loadingRadars")
       : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? ` · ${t("updating")}` : ""}`;
 
-  // With a radar open, its own composite image is replaced by the station view,
-  // but overlapping neighbouring radars stay visible so no echoes disappear.
+  // With a radar open, only that radar is shown: other radars are hidden, and its
+  // own composite image is kept only until the station view has rendered.
   const mapComposite = useMemo(() => {
     if (!selected) return composite.layers;
-    const others = composite.layers.filter((l) => l.radarId !== selected.id);
-    if (scan || aemetImage) return others;
-    if (!selected.offline && !(stationBackup?.id === selected.id && stationBackup.enabled)) return others;
-    return composite.layers;
-  }, [scan, aemetImage, selected, stationBackup, composite.layers]);
+    if (scan || aemetImage) return [];
+    return composite.layers.filter((l) => l.radarId === selected.id);
+  }, [scan, aemetImage, selected, composite.layers]);
 
   const frames = rainviewer.data ?? [];
   const tileFrame =
