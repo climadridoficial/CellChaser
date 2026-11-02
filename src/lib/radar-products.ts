@@ -65,6 +65,7 @@ const AEMET_STEPS: [number, [number, number, number]][] = [
 ];
 
 const WEAK_STOPS: Stop[] = [
+  [-32, [105, 115, 130]],
   [-15, [70, 90, 140]],
   [0, [60, 100, 190]],
   [12, [0, 0, 252]],
@@ -113,9 +114,9 @@ function interp(stops: Stop[], v: number): [number, number, number] {
 }
 
 export function colorFor(info: ProductInfo, value: number): [number, number, number, number] {
+  if (!Number.isFinite(value)) return [0, 0, 0, 0];
   if (info.scale === "reflectivity") {
-    // Same stepped categories as AEMET OpenData images, so both read alike.
-    if (value < -15) return [0, 0, 0, 0];
+    // Preserve every valid measured echo; ODIM nodata/undetect are skipped by the decoder.
     // Weak echoes below AEMET's 12 dBZ floor stay visible in muted blues,
     // keeping full OPERA detail (drizzle, clutter rings) like the old scheme.
     if (value < AEMET_STEPS[0]![0]) {
