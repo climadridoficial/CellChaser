@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Rebuild Valladolid/San Sebastián opening around the exact composite image/candidate and shared discovery. Seventeen tests and controlled mobile checks confirm identical image URLs on opening, other radars hidden, and both manual ranges working. Live upstream parity not checked.
 - [x] Correct Valladolid/San Sebastián range selection using measured ODIM distance, not velocity-product presence; 15 tests and controlled mobile checks verify long=240 km and short=120 km for both. Live upstream files not re-requested.
 - [x] Replace misleading total-load warnings with source-specific and partial-update warnings; 18 tests pass and controlled browser check confirms five loaded radar layers plus partial warning. Vercel deployment not directly verified.
 - [x] Enable individual long-range selection for San Sebastián and Valladolid; 13 tests pass and controlled desktop/mobile checks confirm enabled selection without relabelling short scans. Current upstream long-range availability is not verified.

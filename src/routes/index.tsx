@@ -286,7 +286,11 @@ function Home() {
 
       {selected && (
         <StationPanel
+          key={selected.id}
           station={selected}
+          sharedScan={composite.layers.find(l => l.radarId === selected.id)?.scan ?? null}
+          sharedCandidate={composite.layers.find(l => l.radarId === selected.id)?.candidate ?? null}
+          sharedHistory={composite.stationHistories.get(selected.id) ?? null}
           apiKey={settings.meteogateKey}
           onClose={closePanel}
           onScan={handleScan}
