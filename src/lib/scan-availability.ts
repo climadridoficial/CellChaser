@@ -13,11 +13,16 @@ export async function measureRadarRanges(stationId: string, candidates: ScanCand
   const representatives = new Map<string, ScanCandidate>();
   for (const c of candidates) if (!representatives.has(familyKey(c))) representatives.set(familyKey(c), c);
   const measured = new Map<string, number>();
+  let failure: unknown;
   await runPool([...representatives].map(([key, c]) => async () => {
     const product = c.products?.includes("DBZH") ? "DBZH" : c.products?.[0];
     if (c.rangeKm !== undefined) measured.set(key, c.rangeKm);
-    else if (product) measured.set(key, await read(c.href, product, c.level));
-  }), 2, () => {});
+    else if (product) {
+      try { measured.set(key, await read(c.href, product, c.level)); }
+      catch (error) { failure = error; }
+    }
+  }), 2, () => {}, () => false);
+  if (failure) throw failure;
   return candidates.map(c => {
     const rangeKm = measured.get(familyKey(c));
     return rangeKm === undefined ? c : { ...c, rangeKm };
