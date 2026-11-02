@@ -33,6 +33,17 @@ for (const id of ["0-724-0-eslid", "0-724-0-essse"]) {
   });
 }
 
+for (const id of ["0-724-0-esmad", "0-724-0-esnjr", "0-724-0-esatn", "0-724-0-esbar"]) {
+  test(`${id} reuses its own composite scan without new discovery, but manual changes and expired frames never reuse it`, () => {
+    const scan = { time: candidates[0].time, dataUrl: `blob:${id}`, rangeKm: 240 };
+    expect(sharedIndividualScan(id, scan, false, null, maxAge, now)).toBe(scan);
+    expect(sharedIndividualScan(id, scan, true, null, maxAge, now)).toBeNull();
+    expect(sharedIndividualScan(id, scan, false, null, maxAge, now + 3600_000)).toBeNull();
+    expect(sharedIndividualScan(id, scan, false, Date.parse("2026-11-01T12:30:00Z"), maxAge, now)).toBeNull();
+    expect(sharedIndividualScan(id, null, false, null, maxAge, now)).toBeNull();
+  });
+}
+
 test("San Sebastián exposes long range even when discovery only returns short range", () => {
   expect(individualRangeOptions("0-724-0-essse", [candidates[0]], "DBZH")).toEqual(["short", "long"]);
 });

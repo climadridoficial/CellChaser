@@ -73,7 +73,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       queryKey: ["opera-history", s.id, apiKey],
       enabled: mode !== "off" && !s.offline && (wantOpera || !aemetCodeFor(s)),
       ...OPERA_POLL_OPTIONS,
-      queryFn: async () => measureRadarRanges(s.id, await fetchScanHistory(s.id, ["eslid", "essse"].includes(s.code) ? "*" : "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined), readScanRange),
+      queryFn: async () => measureRadarRanges(s.id, await fetchScanHistory(s.id, "*", HISTORY_HOURS + 0.5, apiKey || undefined), readScanRange),
     })),
   });
 

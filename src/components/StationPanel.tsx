@@ -72,7 +72,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   const [historyKey, setHistoryKey] = useState<string | null>(null);
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">(defaultsToLongRange(station.id) ? "long" : "short");
-  const sharedStation = ["eslid", "essse"].includes(station.code);
+  const sharedStation = !station.offline;
   const [manualSelection, setManualSelection] = useState(false);
   const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
@@ -244,6 +244,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
       setScan(shared);
       onScan(shared);
       setStatus(null);
+      setError(null);
       return;
     }
     if (aemetView || filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
