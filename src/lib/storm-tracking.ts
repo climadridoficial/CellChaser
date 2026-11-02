@@ -148,10 +148,19 @@ export function mergeCells(cells: Cell[]): Cell[] {
   return groups.map(g => {
     if (g.length === 1) return g[0]!;
     const area = g.reduce((s, c) => s + c.radiusKm ** 2, 0);
+    // Match the detector's upper-decile statistic, weighted by fragment area.
+    // Taking the maximum lets a tiny intense fragment colour the entire storm.
+    let cumulativeArea = 0;
+    let dbz = g[0]?.dbz ?? 25;
+    for (const fragment of [...g].sort((a, b) => a.dbz - b.dbz)) {
+      cumulativeArea += fragment.radiusKm ** 2;
+      dbz = fragment.dbz;
+      if (cumulativeArea >= area * 0.9) break;
+    }
     return {
       lat: g.reduce((s, c) => s + c.lat * c.radiusKm ** 2, 0) / area,
       lon: g.reduce((s, c) => s + c.lon * c.radiusKm ** 2, 0) / area,
-      dbz: Math.max(...g.map(c => c.dbz)),
+      dbz,
       radiusKm: Math.sqrt(area),
     };
   });

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cellIntensity, detectCells, trackCells, confirmedStormTracks } from "./storm-tracking";
+import { cellIntensity, detectCells, trackCells, confirmedStormTracks, mergeCells } from "./storm-tracking";
 import { aemetDbz } from "./storm-images";
 
 const t0 = Date.parse("2026-10-29T17:00:00Z");
@@ -105,6 +105,45 @@ test("fragments of one storm merge into a single cell", async () => {
   const { mergeCells } = await import("./storm-tracking.ts");
   const merged = mergeCells([{ lat: 40, lon: -3, dbz: 45, radiusKm: 5 }, { lat: 40.1, lon: -3, dbz: 40, radiusKm: 4 }, { lat: 41, lon: -3, dbz: 40, radiusKm: 4 }]);
   expect(merged.length).toBe(2);
+});
+test("a small red fragment does not turn a predominantly green storm red", () => {
+  const merged = mergeCells([
+    { lat: 40, lon: -3, dbz: 35, radiusKm: 12 },
+    { lat: 40, lon: -2.98, dbz: 55, radiusKm: 3.5 },
+  ]);
+  expect(merged).toHaveLength(1);
+  expect(merged[0].dbz).toBe(35);
+  expect(cellIntensity(merged[0].dbz)).toBe("light");
+});
+test("a small red fragment does not turn a predominantly yellow storm red", () => {
+  const merged = mergeCells([
+    { lat: 40, lon: -3, dbz: 45, radiusKm: 12 },
+    { lat: 40, lon: -2.98, dbz: 55, radiusKm: 3.5 },
+  ]);
+  expect(merged[0].dbz).toBe(45);
+  expect(cellIntensity(merged[0].dbz)).toBe("strong");
+});
+test("a substantial intense fragment still gives a red storm", () => {
+  const merged = mergeCells([
+    { lat: 40, lon: -3, dbz: 35, radiusKm: 12 },
+    { lat: 40, lon: -2.98, dbz: 55, radiusKm: 5 },
+  ]);
+  expect(merged[0].dbz).toBe(55);
+  expect(cellIntensity(merged[0].dbz)).toBe("veryStrong");
+});
+test("merged forecast weakens from red to green with the newest scan", () => {
+  const frames = [0, 10, 20, 30].map((minutes, i) => ({
+    time: t0 + minutes * 60_000,
+    cells: [
+      { lat: 40, lon: -3 + i * 0.08, dbz: i < 3 ? 55 : 35, radiusKm: 12 },
+      { lat: 40, lon: -2.98 + i * 0.08, dbz: 55, radiusKm: 3.5 },
+    ],
+  }));
+  expect(confirmedStormTracks(frames.slice(0, 3), "radar")[0].intensity).toBe("veryStrong");
+  const track = confirmedStormTracks(frames, "radar")[0];
+  expect(track.intensity).toBe("light");
+  expect(track.points.at(-1).dbz).toBe(35);
+  expect(track.forecast).toHaveLength(4);
 });
 test("a repeated stale AEMET frame does not remove the forecast cone", () => {
   const big = (m, lon) => ({ time: t0 + m * 60_000, cells: [{ lat: 40, lon, dbz: 45, radiusKm: 8 }] });
