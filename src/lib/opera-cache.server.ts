@@ -53,7 +53,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     } });
   }
   let status = 502, contentType = 'application/octet-stream', body: string | null = null, ttl = 0, cooldown = 0;
-  let bytes: Uint8Array | undefined;
+  let bytes: Uint8Array<ArrayBuffer> | undefined;
   try {
     const response = await fetch(target.href, { redirect: 'manual', signal: AbortSignal.timeout(25_000), headers: authorization ? { Authorization: authorization } : {} });
     status = response.status;
