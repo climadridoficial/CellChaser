@@ -7,7 +7,7 @@ function table(info: ProductInfo) {
   const key = `${info.key}:${info.scale}`;
   let t = tables.get(key);
   if (!t) {
-    const [lo, hi] = info.scale === "reflectivity" ? [-15, 75] : [info.min, info.max];
+    const [lo, hi] = [info.min, info.max];
     const n = 400;
     t = [];
     for (let i = 0; i <= n; i++) {

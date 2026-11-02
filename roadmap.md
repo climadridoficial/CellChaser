@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Remove the OPERA display cutoff below -15 dBZ and extend inspector/legend; 36 tests and controlled mobile checks through the real renderer preserve -25 dBZ echoes and no-data transparency for both stations. Matched live scans from other apps remain unverified.
 - [x] Default Valladolid/San Sebastián to measured long-range scans in composite/history and individual views; 27 tests and controlled mobile checks verify long selected and manual short available. Current upstream availability and Vercel deployment not verified.
 - [x] Rebuild Valladolid/San Sebastián opening around the exact composite image/candidate and shared discovery. Seventeen tests and controlled mobile checks confirm identical image URLs on opening, other radars hidden, and both manual ranges working. Live upstream parity not checked.
 - [x] Correct Valladolid/San Sebastián range selection using measured ODIM distance, not velocity-product presence; 15 tests and controlled mobile checks verify long=240 km and short=120 km for both. Live upstream files not re-requested.
