@@ -16,6 +16,17 @@ test("San Sebastián exposes long range even when discovery only returns short r
 test("Valladolid exposes long range even when scan discovery is empty", () => {
   expect(individualRangeOptions("0-724-0-eslid", [], "DBZH")).toEqual(["short", "long"]);
 });
+for (const station of ["Valladolid", "San Sebastián"]) {
+  test(`${station} measured long range wins over inverted velocity classification`, () => {
+    const volumes = [
+      { ...candidates[0], href: "physical-long", rangeKm: 240 },
+      { ...candidates[2], href: "physical-short", rangeKm: 120 },
+    ];
+    expect(selectionCandidates(volumes, "DBZH", "long", true).map(c => c.href)).toEqual(["physical-long"]);
+    expect(selectionCandidates(volumes, "DBZH", "short", true).map(c => c.href)).toEqual(["physical-short"]);
+    expect(initialRadarSelection(volumes, "DBZH", null, maxAge, now)?.range).toBe("long");
+  });
+}
 test("explicit long range never silently displays a short-range volume", () => {
   expect(selectionCandidates([candidates[0]], "DBZH", "long", true)).toEqual([]);
   expect(selectionCandidates(candidates, "DBZH", "long", true).map(c => c.href)).toEqual(["long"]);

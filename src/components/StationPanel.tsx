@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { initialRadarSelection, individualRangeOptions, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
-import { decodeAndRender, type RenderedScan } from "@/lib/odim";
+import { initialRadarSelection, individualRangeOptions, scanRange, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { legendStops, productInfo } from "@/lib/radar-products";
@@ -75,7 +75,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const rangeOptions = useMemo(() => individualRangeOptions(station.id, currentHistory ?? [], product), [station.id, currentHistory, product]);
   const hasBothRanges = rangeOptions.length > 1;
   const candidates = useMemo(() => currentHistory ? selectionCandidates(currentHistory, product, rangeMode, hasBothRanges) : null, [currentHistory, product, rangeMode, hasBothRanges]);
-  const files = useMemo<ScanFile[] | null>(() => candidates?.filter((c) => c.level === level).map((c) => ({ href: c.href, time: c.time, bytes: null, range: c.doppler ? "short" : "long" })) ?? null, [candidates, level]);
+  const files = useMemo<ScanFile[] | null>(() => candidates?.filter((c) => c.level === level).map((c) => ({ href: c.href, time: c.time, bytes: null, range: scanRange(c) })) ?? null, [candidates, level]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -178,7 +178,21 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     setAvailabilityFailed(false);
     setStatus("Looking up scans…");
     fetchScanHistory(station.id, "*", hours, apiKey)
-      .then((list) => {
+      .then(async (list) => {
+        if (["0-724-0-eslid", "0-724-0-essse"].includes(station.id)) {
+          // Inspect newest representative per volume family/elevation. Downloads
+          // share the renderer cache; historical frames reuse that scan geometry.
+          const representatives = new Map<string, ScanCandidate>();
+          const familyKey = (c: ScanCandidate) => `${c.doppler}|${c.level}|${c.products?.join(",")}`;
+          for (const c of list) if (!representatives.has(familyKey(c))) representatives.set(familyKey(c), c);
+          const measured = new Map<string, number>();
+          await runPool([...representatives].map(([key, c]) => async () => {
+            if (cancelled) return;
+            const quantity = c.products?.includes("DBZH") ? "DBZH" : c.products?.[0];
+            if (quantity) measured.set(key, await readScanRange(c.href, quantity, c.level));
+          }), 2);
+          list = list.map(c => ({ ...c, rangeKm: measured.get(familyKey(c)) }));
+        }
         if (cancelled) return;
         setHistory(list);
         setHistoryKey(availabilityKey);

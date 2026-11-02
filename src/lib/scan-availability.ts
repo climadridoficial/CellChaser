@@ -1,11 +1,16 @@
 import { pickScan, type ScanCandidate } from "./ord";
 import { radarFrameVisible } from "./radar-freshness";
 
+export function scanRange(candidate: ScanCandidate): "short" | "long" {
+  // The two AEMET scan modes are ~120–150 km and ~240–250 km.
+  return candidate.rangeKm !== undefined ? (candidate.rangeKm >= 200 ? "long" : "short") : candidate.doppler ? "short" : "long";
+}
+
 /** Opening a radar uses the composite's volume policy, without suppressing weak echoes. */
 export function initialRadarSelection(candidates: ScanCandidate[], product: string, at: number | null, maxAge: number, now: number) {
   const visible = candidates.filter(c => c.products?.includes(product) && radarFrameVisible(c.time, at, maxAge, now));
   const scan = pickScan(visible, at ?? now, maxAge);
-  return scan ? { level: scan.level, range: scan.doppler ? "short" as const : "long" as const } : null;
+  return scan ? { level: scan.level, range: scanRange(scan) } : null;
 }
 
 /** Known station capability remains selectable when the latest catalogue is incomplete. */
@@ -13,13 +18,13 @@ export function individualRangeOptions(stationId: string, candidates: ScanCandid
   const knownDualRange = ["0-724-0-essse", "0-724-0-eslid"].includes(stationId)
     && ["DBZH", "DBZV", "TH", "TV"].includes(product ?? "");
   const matching = candidates.filter(c => c.products?.includes(product ?? ""));
-  return (["short", "long"] as const).filter(range => knownDualRange || matching.some(c => c.doppler === (range === "short")));
+  return (["short", "long"] as const).filter(range => knownDualRange || matching.some(c => scanRange(c) === range));
 }
 
 export function selectionCandidates(candidates: ScanCandidate[], product: string | null, range: "short" | "long", strictRange = false) {
   const matching = candidates.filter((c) => c.products?.includes(product ?? ""));
-  const both = matching.some((c) => c.doppler) && matching.some((c) => !c.doppler);
-  return both || strictRange ? matching.filter((c) => c.doppler === (range === "short")) : matching;
+  const both = matching.some((c) => scanRange(c) === "short") && matching.some((c) => scanRange(c) === "long");
+  return both || strictRange ? matching.filter((c) => scanRange(c) === range) : matching;
 }
 
 export function usableLevels(candidates: ScanCandidate[], at: number | null, maxAge: number, now: number) {
