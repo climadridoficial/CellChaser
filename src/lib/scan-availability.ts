@@ -38,7 +38,7 @@ export function pickDefaultRadarScan(stationId: string, candidates: ScanCandidat
 
 /** Keep the exact composite render until the user explicitly changes the scan. */
 export function sharedIndividualScan<T extends { time: string }>(stationId: string, scan: T | null, manual: boolean, at: number | null, maxAge: number, now: number): T | null {
-  return ["0-724-0-eslid", "0-724-0-essse"].includes(stationId) && !manual && scan && radarFrameVisible(scan.time, at, maxAge, now) ? scan : null;
+  return stationId && !manual && scan && radarFrameVisible(scan.time, at, maxAge, now) ? scan : null;
 }
 
 export function scanRange(candidate: ScanCandidate): "short" | "long" {
