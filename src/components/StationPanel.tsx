@@ -17,6 +17,7 @@ import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
 import { OPERA_REFRESH_MS } from "@/lib/opera-refresh";
 import type { AemetMapImage } from "@/lib/aemet-overlay";
+import { loadFailureState } from "@/lib/load-status";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 /** History frames are lighter than the live full-detail scan, so 6 h load fast. */
@@ -418,7 +419,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
 
         {(noCurrentScan || (currentHistory !== null && levels.length === 0)) && <p className="hint">{at === null ? t("noCurrent") : t("noScans")}</p>}
         {status && <p className="hint">{status === "Querying available products…" ? t("queryProducts") : status === "Looking up scans…" ? t("queryScans") : status === "Decoding ODIM/HDF5 scan…" ? t("decode") : status === "No scans published in this time range." ? t("noScans") : status}</p>}
-        {error && <p className="alert">{t("loadFailed")}</p>}
+        {error && <p className="alert">{t(loadFailureState(true, visibleScan ? 1 : 0) === "partial" ? "scanUpdateFailed" : "operaFailed")}</p>}
 
 
         {scan && visibleScan && (
