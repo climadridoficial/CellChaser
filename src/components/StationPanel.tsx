@@ -31,6 +31,9 @@ const TIME_RANGES = [
 
 interface Props {
   station: RadarStation;
+  sharedScan: RenderedScan | null;
+  sharedCandidate: ScanCandidate | null;
+  sharedHistory: ScanCandidate[] | null;
   apiKey: string;
   onClose: () => void;
   onScan: (scan: RenderedScan | null) => void;
@@ -50,7 +53,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
   return pickFrame(list, (f) => Date.parse(f.time), at)?.href ?? null;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan, onBackupChange, onBackupImage, onAlignAemet, at, onPreload }: Props) {
+export default function StationPanel({ station, sharedScan, sharedCandidate, sharedHistory, apiKey, onClose, onScan, onBackupChange, onBackupImage, onAlignAemet, at, onPreload }: Props) {
   const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
@@ -69,6 +72,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const [historyKey, setHistoryKey] = useState<string | null>(null);
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">("short");
+  const sharedStation = ["eslid", "essse"].includes(station.code);
+  const [manualSelection, setManualSelection] = useState(false);
   const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
   const currentHistory = historyKey === availabilityKey ? history : null;
@@ -136,6 +141,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
       return;
     }
     setStatus("Querying available products…");
+    if (sharedStation) {
+      setScans([]);
+      setProduct("DBZH");
+      setLevel(sharedCandidate?.level ?? 0.5);
+      setStatus(null);
+      return;
+    }
     fetchStationScans(station.id, apiKey)
       .then((entries) => {
         if (cancelled) return;
@@ -158,8 +170,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   }, [station.id, station.offline, apiKey, onScan]);
 
   const availableProducts = useMemo(
-    () => [...new Set((scans ?? []).map((s) => s.product))].sort(),
-    [scans],
+    () => [...new Set([...(scans ?? []).map(s => s.product), ...(currentHistory ?? []).flatMap(c => c.products ?? [])])].sort(),
+    [scans, currentHistory],
   );
   // Every elevation this radar scans (any product); ones missing for this product are shown disabled.
   const allLevels = useMemo(() => [...new Set([...(scans ?? []).map((s) => s.level), ...(currentHistory ?? []).map((c) => c.level)])].sort((a, b) => a - b), [scans, currentHistory]);
@@ -177,7 +189,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     setError(null);
     setAvailabilityFailed(false);
     setStatus("Looking up scans…");
-    fetchScanHistory(station.id, "*", hours, apiKey)
+    (sharedStation && sharedHistory && hours <= HISTORY_HOURS ? Promise.resolve(sharedHistory) : fetchScanHistory(station.id, "*", hours, apiKey))
       .then(async (list) => {
         if (["0-724-0-eslid", "0-724-0-essse"].includes(station.id)) {
           // Inspect newest representative per volume family/elevation. Downloads
@@ -194,8 +206,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
           if (cancelled) return;
           list = list.map(c => {
             const rangeKm = measured.get(familyKey(c));
-            if (rangeKm === undefined) throw new Error("Could not verify radar scan range");
-            return { ...c, rangeKm };
+            return rangeKm === undefined ? c : { ...c, rangeKm };
           });
         }
         if (cancelled) return;
@@ -215,10 +226,16 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     return () => {
       cancelled = true;
     };
-  }, [station.id, station.offline, hours, apiKey, availabilityKey, refresh]);
+  }, [station.id, station.offline, hours, apiKey, availabilityKey, refresh, sharedHistory, sharedStation]);
 
   useEffect(() => {
     if (currentHistory === null) return;
+    if (sharedStation && !manualSelection && sharedCandidate) {
+      setRangeMode(scanRange({ ...sharedCandidate, ...(sharedScan ? { rangeKm: sharedScan.rangeKm } : {}) }));
+      setLevel(sharedCandidate.level);
+      initialSelectionDone.current = true;
+      return;
+    }
     if (!initialSelectionDone.current && product) {
       const initial = initialRadarSelection(currentHistory, product, at, OPERA_MAX_AGE_MS, now);
       if (initial) {
@@ -229,7 +246,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
       }
     }
     if (level === null || !levels.includes(level)) setLevel(levels[0] ?? null);
-  }, [currentHistory, levels, level, product, at, now]);
+  }, [currentHistory, levels, level, product, at, now, sharedStation, manualSelection, sharedCandidate, sharedScan]);
 
   useEffect(() => {
     setSelectedTime(files ? fileFor(files, at) : null);
@@ -237,6 +254,12 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
 
   // Decode + render the selected scan
   useEffect(() => {
+    if (sharedStation && !manualSelection && !aemetView && sharedScan) {
+      setScan(sharedScan);
+      onScan(sharedScan);
+      setStatus(null);
+      return;
+    }
     if (aemetView || filesKey !== selectionKey || !files || !selectedTime || !product || level === null) {
       setScan(null);
       onScan(null);
@@ -266,7 +289,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
     return () => {
       cancelled = true;
     };
-  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan]);
+  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan, sharedStation, manualSelection, sharedScan, aemetView]);
 
   // History mode: decode every scan in the slider window once.
   const historyMode = at !== null;
@@ -353,6 +376,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             <select
               value={product ?? ""}
               onChange={(e) => {
+                setManualSelection(true);
                 const p = e.target.value;
                 setProduct(p);
                 const next = (scans ?? []).filter((s) => s.product === p).map((s) => s.level);
@@ -377,7 +401,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             <h3 className="section-title">{t("rangeTitle")}</h3>
             <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label={t("rangeTitle")}>
               {rangeOptions.map(range => (
-                <Button key={range} className="h-auto min-h-16 whitespace-normal leading-tight" variant={rangeMode === range ? "default" : "outline"} size="sm" aria-pressed={rangeMode === range} onClick={() => { initialSelectionDone.current = true; setRangeMode(range); }}>
+                <Button key={range} className="h-auto min-h-16 whitespace-normal leading-tight" variant={rangeMode === range ? "default" : "outline"} size="sm" aria-pressed={rangeMode === range} onClick={() => { setManualSelection(true); initialSelectionDone.current = true; setRangeMode(range); }}>
                   {t(range === "short" ? "rangeShort" : "rangeLong")}
                 </Button>
               ))}
@@ -390,7 +414,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             <h3 className="section-title">{t("elevation")}</h3>
             <select
               value={level ?? ""}
-              onChange={(e) => setLevel(Number(e.target.value))}
+              onChange={(e) => { setManualSelection(true); setLevel(Number(e.target.value)); }}
               className="select mt-2"
               disabled={levels.length === 0}
             >
@@ -423,7 +447,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
           <h3 className="section-title">{t("scanTime")}</h3>
           <select
             value={selectedTime ?? ""}
-            onChange={(e) => setSelectedTime(e.target.value)}
+            onChange={(e) => { setManualSelection(true); setSelectedTime(e.target.value); }}
             className="select mt-2"
             disabled={at === null || !files || files.length === 0}
           >

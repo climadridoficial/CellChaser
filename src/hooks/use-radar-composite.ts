@@ -1,9 +1,9 @@
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
-import type { RadarStation } from "@/lib/ord";
+import type { RadarStation, ScanCandidate } from "@/lib/ord";
 import { fetchScanHistory, pickScan } from "@/lib/ord";
-import { decodeAndRender } from "@/lib/odim";
+import { decodeAndRender, type RenderedScan } from "@/lib/odim";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds } from "@/lib/aemet-overlay";
 import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
@@ -22,6 +22,8 @@ export interface CompositeLayer {
   image: string;
   bounds: RadarBounds;
   observedAt: string;
+  scan?: RenderedScan;
+  candidate?: ScanCandidate;
 }
 
 // Lighter than the station panel's full-detail render: 10 radars at once.
@@ -43,7 +45,7 @@ function operaScanQuery(s: RadarStation, pick: Pick) {
         fallbackStation: { lat: s.lat, lon: s.lon },
         size: COMPOSITE_SIZE,
       });
-      return { image: scan.dataUrl, bounds: scan.bounds as RadarBounds, time: pick.time };
+      return { image: scan.dataUrl, bounds: scan.bounds as RadarBounds, time: pick.time, scan, candidate: pick };
     },
   };
 }
@@ -72,12 +74,12 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       queryKey: ["opera-history", s.id, apiKey],
       enabled: mode !== "off" && !s.offline && (wantOpera || !aemetCodeFor(s)),
       ...OPERA_POLL_OPTIONS,
-      queryFn: () => fetchScanHistory(s.id, "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined),
+      queryFn: () => fetchScanHistory(s.id, ["eslid", "essse"].includes(s.code) ? "*" : "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined),
     })),
   });
 
   const picks = radars.map((_, i) => {
-    const list = history[i]?.data;
+    const list = history[i]?.data?.filter(c => c.products?.includes("DBZH"));
     if (!list) return undefined;
     return at === null ? pickScan(list, now, OPERA_MAX_AGE_MS) : pickScan(list, at, STEP_MS);
   });
@@ -173,7 +175,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const source = compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null);
       if (source === "opera") {
         const d = scans[i]?.data;
-        if (d && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time });
+        if (d && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time, scan: d.scan, candidate: d.candidate });
       } else if (source === "aemet") {
         const d = aemet[i]?.data;
         const code = aemetCodes[i];
@@ -263,5 +265,6 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     opera: layers.filter((l) => l.source === "opera").length,
     aemet: layers.filter((l) => l.source === "aemet").length,
   };
-  return { layers, loading, counts, preload, accessError: wantOpera && operaStates.includes("error") };
+  const stationHistories = new Map(radars.map((s, i) => [s.id, history[i]?.data]));
+  return { layers, stationHistories, loading, counts, preload, accessError: wantOpera && operaStates.includes("error") };
 }
