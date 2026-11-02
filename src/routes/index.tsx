@@ -276,7 +276,7 @@ function Home() {
         <LanguageMenu />
       </div>
 
-      {(stations.isLoading || stations.isError) && (
+      {(stations.isLoading || (stations.isError && composite.layers.length === 0)) && (
         <div className="statusbar">
           {stations.isError
             ? t("catalogueFailed")
