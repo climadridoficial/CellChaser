@@ -239,16 +239,26 @@ export async function fetchScanHistory(
   for (const cov of data.coverages ?? []) {
     const params = Object.keys(cov.parameters ?? {});
     if (product !== "*" && !params.some((p) => p.split(":")[0] === product)) continue;
-    const level = cov.domain?.axes?.z?.values?.[0];
-    if (typeof level !== "number") continue;
+    // A CoverageJSON volume can publish several elevations in one z axis.
+    // Keeping only values[0] hides the remaining measured tilts from both views.
+    const levels = [...new Set(cov.domain?.axes?.z?.values ?? [])].filter(
+      (level) => typeof level === "number" && Number.isFinite(level),
+    );
+    if (!levels.length) continue;
     const doppler = params.some((p) => p.startsWith("VRAD"));
     for (const link of cov.links ?? []) {
       if (link.type !== "application/x-odim") continue;
       const m = FILE_TIME.exec(link.href);
       if (!m) continue;
       const time = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`;
-      const key = `${link.href}|${level}|${doppler}`;
-      out.set(key, { href: link.href, time, level, doppler, products: params.map((p) => p.split(":")[0] ?? "").filter(Boolean) });
+      for (const level of levels) {
+        const key = `${link.href}|${level}|${doppler}`;
+        const products = [...new Set([
+          ...(out.get(key)?.products ?? []),
+          ...params.map((p) => p.split(":")[0] ?? "").filter(Boolean),
+        ])];
+        out.set(key, { href: link.href, time, level, doppler, products });
+      }
     }
   }
   return [...out.values()].sort((a, b) => b.time.localeCompare(a.time) || a.level - b.level);
