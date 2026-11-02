@@ -8,10 +8,18 @@ export function initialRadarSelection(candidates: ScanCandidate[], product: stri
   return scan ? { level: scan.level, range: scan.doppler ? "short" as const : "long" as const } : null;
 }
 
-export function selectionCandidates(candidates: ScanCandidate[], product: string | null, range: "short" | "long") {
+/** Known station capability remains selectable when the latest catalogue is incomplete. */
+export function individualRangeOptions(stationId: string, candidates: ScanCandidate[], product: string | null): ("short" | "long")[] {
+  const knownDualRange = ["0-724-0-essse", "0-724-0-eslid"].includes(stationId)
+    && ["DBZH", "DBZV", "TH", "TV"].includes(product ?? "");
+  const matching = candidates.filter(c => c.products?.includes(product ?? ""));
+  return (["short", "long"] as const).filter(range => knownDualRange || matching.some(c => c.doppler === (range === "short")));
+}
+
+export function selectionCandidates(candidates: ScanCandidate[], product: string | null, range: "short" | "long", strictRange = false) {
   const matching = candidates.filter((c) => c.products?.includes(product ?? ""));
   const both = matching.some((c) => c.doppler) && matching.some((c) => !c.doppler);
-  return both ? matching.filter((c) => c.doppler === (range === "short")) : matching;
+  return both || strictRange ? matching.filter((c) => c.doppler === (range === "short")) : matching;
 }
 
 export function usableLevels(candidates: ScanCandidate[], at: number | null, maxAge: number, now: number) {
