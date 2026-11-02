@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { initialRadarSelection, individualRangeOptions, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
+import { initialRadarSelection, individualRangeOptions, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;
@@ -9,6 +9,15 @@ const candidates = [
   { href: "long", time: "2026-11-01T13:00:00Z", level: 2.1, doppler: false, products: ["DBZH"] },
   { href: "old", time: "2026-11-01T12:00:00Z", level: 4.5, doppler: true, products: ["DBZH"] },
 ];
+
+for (const id of ["0-724-0-eslid", "0-724-0-essse"]) {
+  test(`${id} opens the identical composite scan, not a newly selected/rendered file`, () => {
+    const scan = { time: candidates[0].time, dataUrl: "blob:shared-radar", rangeKm: 120 };
+    expect(sharedIndividualScan(id, scan, false, null, maxAge, now)).toBe(scan);
+    expect(sharedIndividualScan(id, scan, true, null, maxAge, now)).toBeNull();
+    expect(sharedIndividualScan(id, scan, false, null, maxAge, now + 3600_000)).toBeNull();
+  });
+}
 
 test("San Sebastián exposes long range even when discovery only returns short range", () => {
   expect(individualRangeOptions("0-724-0-essse", [candidates[0]], "DBZH")).toEqual(["short", "long"]);

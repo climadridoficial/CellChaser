@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { initialRadarSelection, individualRangeOptions, scanRange, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { initialRadarSelection, individualRangeOptions, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -254,9 +254,10 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
 
   // Decode + render the selected scan
   useEffect(() => {
-    if (sharedStation && !manualSelection && !aemetView && sharedScan) {
-      setScan(sharedScan);
-      onScan(sharedScan);
+    const shared = sharedIndividualScan(station.id, sharedScan, manualSelection || aemetView, at, OPERA_MAX_AGE_MS, now);
+    if (shared) {
+      setScan(shared);
+      onScan(shared);
       setStatus(null);
       return;
     }
@@ -289,7 +290,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
     return () => {
       cancelled = true;
     };
-  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan, sharedStation, manualSelection, sharedScan, aemetView]);
+  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan, sharedStation, manualSelection, sharedScan, aemetView, at, now, station.id]);
 
   // History mode: decode every scan in the slider window once.
   const historyMode = at !== null;
@@ -322,7 +323,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   const backupCode = aemetCodeFor(station);
   const operaDown =
     station.offline ||
-    (!availabilityFailed && currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
+    (!visibleScan && !availabilityFailed && currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
   const showBackup = !!backupCode && (operaDown || aemetView);
   useEffect(() => { onBackupChange(station.id, showBackup); }, [station.id, showBackup, onBackupChange]);
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));
