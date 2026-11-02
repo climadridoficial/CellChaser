@@ -1,6 +1,6 @@
 # Radar scan corrections
-- [ ] Diagnose and fix missing lightning/UTC intervals and shared storm results across preview and external deployments; verify real source data and report deployment blockers.
-- [ ] Investigate VRAD-unavailable advisories for storms inside radar range; distinguish actual measured coverage from geographic range and fix incorrect availability.
+- [x] Fix single-digit lightning period days and explicit NOV glyphs; real 2 Nov GIF and both preview/CellChaser.com show the overlay and six UTC intervals. Prediction legend renders on both; current shared frames can be empty/incomplete, not a missing control.
+- [x] Investigate Gran Canaria VRAD: stored 13:57 OPERA advisory has 95% coverage, while 14:00 DBZH has no exact-time VRAD (short/long scans differ by three minutes). Preserve exact-time/elevation policy; additionally fix DBZH-filtered discovery excluding velocity-only files. 29 tests pass; scheduled ingest change still needs publishing on its existing host.
 - [x] Fix Worker-incompatible OPERA downloads and separate AEMET processing failures from source outages; 35 tests pass, authenticated jobs succeed, and Gran Canaria's real 16:20 UTC cone/advisory renders without browser errors. Published schedules still need the corrected code published.
 - [x] Correct elevation availability using actual product/range/time files; missing angles do not trigger AEMET fallback. Sixteen tests pass; real Sierra Fuentes 1.5° short-range and 2.1° long-range scans verified in the browser.
 - [x] Fix single-digit AEMET footer days; real Valencia, Málaga and Gran Canaria 1 Nov images now read 12:10 UTC (test added).
