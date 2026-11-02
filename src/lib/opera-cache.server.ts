@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { operaTarget, operaCacheTtl, operaRetrySeconds } from './opera-cache-policy';
 
-type Claim = { kind: 'hit' | 'fetch' | 'wait' | 'blocked'; body?: string; contentType?: string; status?: number; retryAt?: string };
+type Claim = { kind: 'hit' | 'fetch' | 'wait' | 'blocked'; body?: string; contentType?: string; status?: number; retryAt?: string; ttl?: number };
 const bytesToBase64 = (bytes: Uint8Array) => {
   let text = '';
   for (let i = 0; i < bytes.length; i += 8192) text += String.fromCharCode(...bytes.subarray(i, i + 8192));
@@ -38,7 +38,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
   let claim: Claim;
   while (true) {
     const result = await client.rpc('claim_opera_cache', { p_key: cacheKey, p_host: host, p_token: token });
-    if (result.error) return new Response('Shared radar cache unavailable', { status: 503 });
+    if (result.error || !result.data) return new Response('Shared radar cache unavailable', { status: 503 });
     claim = result.data as unknown as Claim;
     if (claim.kind !== 'wait') break;
     if (Date.now() >= deadline) return retry(2);
@@ -49,7 +49,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     const bytes = Uint8Array.from(atob(claim.body), c => c.charCodeAt(0));
     return new Response(claim.status === 204 ? null : bytes, { status: claim.status ?? 200, headers: {
       'Content-Type': claim.contentType ?? 'application/octet-stream',
-      'Cache-Control': authorization ? 'private, max-age=60' : 'public, max-age=60', 'X-OPERA-Cache': 'hit',
+      'Cache-Control': `${authorization ? 'private' : 'public'}, max-age=${Math.min(claim.ttl ?? 0, 300)}`, 'X-OPERA-Cache': 'hit',
     } });
   }
   let status = 502, contentType = 'application/octet-stream', body: string | null = null, ttl = 0, cooldown = 0;

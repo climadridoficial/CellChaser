@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { ingestStormSource, fetchStormVolume } from './storm-ingest.server';
+import { withCacheRpc } from './opera-cache-test-helper';
 
 function stateClient() {
   const states = [];
@@ -22,11 +23,11 @@ test('OPERA and VRAD downloads use Worker-compatible redirects and refuse redire
   const original = globalThis.fetch;
   const modes = [];
   try {
-    globalThis.fetch = async (_url, init) => { modes.push(init.redirect); return new Response(new Uint8Array([1,2,3])); };
+    globalThis.fetch = withCacheRpc(async (_url, init) => { modes.push(init.redirect); return new Response(new Uint8Array([1,2,3])); });
     expect(new Uint8Array(await fetchStormVolume('https://s3.waw3-1.cloudferro.com/dbzh.h5'))).toEqual(new Uint8Array([1,2,3]));
     expect(new Uint8Array(await fetchStormVolume('https://api.meteogate.eu/vrad.h5'))).toHaveLength(3);
     expect(modes).toEqual(['manual','manual']);
-    globalThis.fetch = async () => new Response(null, { status: 302, headers: { Location: 'https://untrusted.example/scan' } });
+    globalThis.fetch = withCacheRpc(async () => new Response(null, { status: 302, headers: { Location: 'https://untrusted.example/scan' } }));
     await expect(fetchStormVolume('https://radar.meteogate.eu/scan.h5')).rejects.toThrow('Radar download unavailable');
     await expect(fetchStormVolume('https://untrusted.example/scan.h5')).rejects.toThrow('Untrusted radar host');
   } finally { globalThis.fetch = original; }
