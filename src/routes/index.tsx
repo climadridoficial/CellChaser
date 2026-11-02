@@ -26,6 +26,7 @@ import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
 import { LIGHTNING_ALIGNMENT_ENABLED, LIGHTNING_CORNERS, loadLightningImages } from "@/lib/aemet-lightning";
 import { supabase } from "@/integrations/supabase/client";
 import { OPERA_POLL_OPTIONS } from "@/lib/opera-refresh";
+import { loadFailureState } from "@/lib/load-status";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -170,7 +171,7 @@ function Home() {
     ? t("off")
     : composite.loading && composite.layers.length === 0
       ? t("loadingRadars")
-      : composite.accessError ? t("loadFailed")
+      : composite.accessError ? `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET · ${t(loadFailureState(true, composite.layers.length) === "partial" ? "radarPartial" : "operaFailed")}`
       : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? ` · ${t("updating")}` : ""}`;
 
   // With a radar open, only that radar is shown: other radars are hidden, and its
@@ -278,7 +279,7 @@ function Home() {
       {(stations.isLoading || stations.isError) && (
         <div className="statusbar">
           {stations.isError
-            ? t("loadFailed")
+            ? t("catalogueFailed")
             : t("loadStations")}
         </div>
       )}
