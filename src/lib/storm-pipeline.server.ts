@@ -10,7 +10,7 @@ import { STORM_VERSION } from './storm-version';
 import { buildStormAdvisory, type LightningEvidence, type VelocityEvidence } from './storm-advisory';
 import { loadStormLightning } from './storm-lightning.server';
 import { fetchStormVolume } from './storm-ingest.server';
-import { matchingVelocityScan } from './scan-availability';
+import { stormVelocityScan } from './storm-velocity';
 
 export { STORM_VERSION } from './storm-version';
 type Client = SupabaseClient<Database>;
@@ -62,15 +62,15 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
           const cells=detectCells(await operaStormGrid(buffer,pick.level,station));
           let velocity: VelocityEvidence|null=null;
           if (cells.length) {
-            // Reuse same-time DBZH volume; Doppler short-range volume if separate.
+            // Doppler can precede long-range DBZH within the same scan cycle.
             // One extra download per scan, NEVER one per cell; don't query ORD again.
-            const doppler=matchingVelocityScan(allHistory,pick);
+            const doppler=stormVelocityScan(allHistory,pick);
             try {
               let velocityBuffer=buffer;
               if (doppler && doppler.href!==pick.href) {
                 velocityBuffer = await fetchStormVolume(doppler.href);
               }
-              velocity={grid:await operaStormGrid(velocityBuffer,pick.level,station,['VRADH','VRAD','VRADV'],true),time:t,level:pick.level,quantity:'VRAD'};
+              if (doppler) velocity={grid:await operaStormGrid(velocityBuffer,doppler.level,station,['VRADH','VRAD','VRADV'],true),time:Date.parse(doppler.time),level:doppler.level,quantity:doppler.products?.find(p=>['VRADH','VRAD','VRADV'].includes(p)) ?? 'VRAD'};
             } catch { /* Missing VRAD never suppresses reflectivity forecasts. */ }
           }
           await saveStormFrame(client,station.id,"opera",pick.time,cells,{level:pick.level,velocity,lightning});

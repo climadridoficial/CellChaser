@@ -3,6 +3,7 @@ import { quadFraction } from './lightning-inspector';
 import type { LightningPeriod } from './lightning-period';
 import type { Cell, EchoGrid, StormTrack } from './storm-tracking';
 import type { Corners } from './aemet-overlay';
+import { recentStormVelocity } from './storm-velocity';
 
 export interface VelocityEvidence {
   grid: EchoGrid;
@@ -22,13 +23,13 @@ export interface StormAdvisory {
   version: 1;
   observedAt: number;
   source: 'opera' | 'aemet';
-  vrad: { status: 'available' | 'unavailable' | 'outOfRange' | 'insufficient'; coverage: number; medianMs?: number; quantity?: string };
+  vrad: { status: 'available' | 'unavailable' | 'outOfRange' | 'insufficient'; coverage: number; medianMs?: number; quantity?: string; observedAt?: number; level?: number };
   lightning: { status: 'nearby' | 'notDetected' | 'unknown'; interval?: LightningPeriod };
 }
 
 /** Coverage within the observed cell; radial air motion NEVER replaces cell translation. */
 export function velocityForCell(cell: Cell, time: number, level: number, velocity?: VelocityEvidence | null): StormAdvisory['vrad'] {
-  if (!velocity || velocity.time !== time || Math.abs(velocity.level - level) > 0.01) return { status: 'unavailable', coverage: 0 };
+  if (!velocity || !recentStormVelocity(time, level, velocity.time, velocity.level)) return { status: 'unavailable', coverage: 0 };
   const { grid } = velocity;
   const [[south, west], [north, east]] = grid.bounds;
   const inside = cell.lat >= south && cell.lat <= north && cell.lon >= west && cell.lon <= east;
@@ -54,7 +55,8 @@ export function velocityForCell(cell: Cell, time: number, level: number, velocit
   values.sort((a,b)=>a-b);
   const mid = Math.floor(values.length / 2);
   const median = values.length % 2 ? values[mid] : ((values[mid-1] ?? 0) + (values[mid] ?? 0)) / 2;
-  return { status: 'available', coverage, medianMs: Math.round((median ?? 0)*10)/10, quantity: velocity.quantity };
+  return { status: 'available', coverage, medianMs: Math.round((median ?? 0)*10)/10, quantity: velocity.quantity,
+    ...(velocity.time !== time ? { observedAt: velocity.time, level: velocity.level } : {}) };
 }
 
 /** Coarse image evidence only: no counts, polarity or minute-level strike times. */
