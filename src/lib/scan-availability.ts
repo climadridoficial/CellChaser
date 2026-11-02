@@ -1,5 +1,35 @@
 import { pickScan, type ScanCandidate } from "./ord";
 import { radarFrameVisible } from "./radar-freshness";
+import { runPool } from "./preload";
+
+export function defaultsToLongRange(stationId: string): boolean {
+  return ["0-724-0-eslid", "0-724-0-essse"].includes(stationId);
+}
+
+/** Read each volume family's physical range once, shared by both views. */
+export async function measureRadarRanges(stationId: string, candidates: ScanCandidate[], read: (href: string, product: string, level: number) => Promise<number>): Promise<ScanCandidate[]> {
+  if (!defaultsToLongRange(stationId)) return candidates;
+  const familyKey = (c: ScanCandidate) => `${c.doppler}|${c.level}|${c.products?.join(",")}`;
+  const representatives = new Map<string, ScanCandidate>();
+  for (const c of candidates) if (!representatives.has(familyKey(c))) representatives.set(familyKey(c), c);
+  const measured = new Map<string, number>();
+  await runPool([...representatives].map(([key, c]) => async () => {
+    const product = c.products?.includes("DBZH") ? "DBZH" : c.products?.[0];
+    if (c.rangeKm !== undefined) measured.set(key, c.rangeKm);
+    else if (product) measured.set(key, await read(c.href, product, c.level));
+  }), 2, () => {});
+  return candidates.map(c => {
+    const rangeKm = measured.get(familyKey(c));
+    return rangeKm === undefined ? c : { ...c, rangeKm };
+  });
+}
+
+/** These two radars use actual long range before ranking elevation/time. */
+export function pickDefaultRadarScan(stationId: string, candidates: ScanCandidate[], product: string, at: number, maxAge: number): ScanCandidate | null {
+  const matching = candidates.filter(c => c.products?.includes(product));
+  const longDefault = defaultsToLongRange(stationId) && ["DBZH", "DBZV", "TH", "TV"].includes(product);
+  return pickScan(longDefault ? matching.filter(c => c.rangeKm !== undefined && scanRange(c) === "long") : matching, at, maxAge);
+}
 
 /** Keep the exact composite render until the user explicitly changes the scan. */
 export function sharedIndividualScan<T extends { time: string }>(stationId: string, scan: T | null, manual: boolean, at: number | null, maxAge: number, now: number): T | null {
@@ -12,9 +42,9 @@ export function scanRange(candidate: ScanCandidate): "short" | "long" {
 }
 
 /** Opening a radar uses the composite's volume policy, without suppressing weak echoes. */
-export function initialRadarSelection(candidates: ScanCandidate[], product: string, at: number | null, maxAge: number, now: number) {
+export function initialRadarSelection(candidates: ScanCandidate[], product: string, at: number | null, maxAge: number, now: number, stationId = "") {
   const visible = candidates.filter(c => c.products?.includes(product) && radarFrameVisible(c.time, at, maxAge, now));
-  const scan = pickScan(visible, at ?? now, maxAge);
+  const scan = pickDefaultRadarScan(stationId, visible, product, at ?? now, maxAge);
   return scan ? { level: scan.level, range: scanRange(scan) } : null;
 }
 
