@@ -50,9 +50,12 @@ export function aemetCodeFor(station: RadarStation): string | null {
 export function aemetOnlyStations(opera: RadarStation[]): RadarStation[] {
   return AEMET_ONLY.filter(
     (r) => !opera.some((s) => aemetCodeFor(s) === r.code),
-  ).map((r) => ({
-    id: `aemet-${r.code}`,
-    code: r.code,
+  ).map((r) => {
+    // A failed station catalogue is not evidence that a known OPERA radar is offline.
+    const operaCode = Object.keys(OPERA_TO_AEMET).find(code => OPERA_TO_AEMET[code] === r.code);
+    return {
+    id: operaCode ? `0-724-0-${operaCode}` : `aemet-${r.code}`,
+    code: operaCode ?? r.code,
     name: r.name,
     country: "724",
     lat: r.lat,
@@ -60,6 +63,7 @@ export function aemetOnlyStations(opera: RadarStation[]): RadarStation[] {
     parameters: [],
     products: [],
     aemetCode: r.code,
-    offline: true,
-  }));
+    offline: !operaCode,
+  };
+  });
 }

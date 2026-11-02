@@ -104,11 +104,11 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const operaStates: OperaState[] = radars.map((s, i) => {
     if (s.offline) return null;
     const h = history[i];
-    if (!h || h.isPending) return h?.isError ? "missing" : "loading";
-    if (h.isError || picks[i] === null) return "missing";
     const q = scans[i];
-    if (q?.isError) return "missing";
     if (q?.data && radarFrameVisible(q.data.time, at, OPERA_MAX_AGE_MS, now)) return "ok";
+    if (h?.isError || q?.isError) return "error";
+    if (!h || h.isPending) return "loading";
+    if (picks[i] === null) return "missing";
     return "loading";
   });
 
@@ -162,8 +162,11 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const before = out.length;
       layerFor(s, i);
       const last = lastRef.current.get(s.id);
-      if (out.length > before) lastRef.current.set(s.id, out[out.length - 1]!);
-      else if (last && pendingFor(i, compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null))) out.push(last);
+      const added = out[out.length - 1];
+      if (out.length > before && added) lastRef.current.set(s.id, added);
+      else if (last && radarFrameVisible(last.observedAt, at, last.source === "opera" ? OPERA_MAX_AGE_MS : AEMET_LIVE_MAX_AGE_MS, now)
+        && (pendingFor(i, compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null))
+          || (last.source === "opera" && wantOpera && operaStates[i] === "error"))) out.push(last);
       else lastRef.current.delete(s.id);
     });
     return out;
@@ -172,7 +175,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const source = compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null);
       if (source === "opera") {
         const d = scans[i]?.data;
-        if (d && picks[i] && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now, scans[i]?.isError || history[i]?.isError)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time });
+        if (d && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time });
       } else if (source === "aemet") {
         const d = aemet[i]?.data;
         const code = aemetCodes[i];
@@ -211,7 +214,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
         const list = history[i]?.data;
         const pick = list ? pickScan(list, t, STEP_MS) : null;
         const code = aemetCodes[i];
-        const useAemet = !!code && (mode === "opendata" || (mode === "opera-fallback" && !pick));
+        const useAemet = !!code && (mode === "opendata" || (mode === "opera-fallback" && (s.offline || (!!list && !history[i]?.isError && !pick))));
         const useOpera = !useAemet && mode !== "opendata" ? true : !code && mode === "opendata";
         if (useAemet && code) {
           const frame = aemetFrameFor(frames.data, code, t);
@@ -262,5 +265,5 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     opera: layers.filter((l) => l.source === "opera").length,
     aemet: layers.filter((l) => l.source === "aemet").length,
   };
-  return { layers, loading, counts, preload };
+  return { layers, loading, counts, preload, accessError: wantOpera && operaStates.includes("error") };
 }

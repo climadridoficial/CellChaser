@@ -19,6 +19,10 @@ test("OPERA-only mode never shows AEMET images", () => {
   expect(compositeSource("opera", true, null)).toBe(null);
 });
 
+test("OPERA access failures never activate OpenData fallback", () => {
+  expect(compositeSource("opera-fallback", true, "error")).toBeNull();
+});
+
 test("off shows nothing", () => {
   expect(compositeSource("off", true, "ok")).toBe(null);
 });

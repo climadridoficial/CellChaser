@@ -169,6 +169,7 @@ function Home() {
     ? t("off")
     : composite.loading && composite.layers.length === 0
       ? t("loadingRadars")
+      : composite.accessError ? t("loadFailed")
       : `${composite.counts.opera} OPERA · ${composite.counts.aemet} AEMET${composite.loading ? ` · ${t("updating")}` : ""}`;
 
   // With a radar open, only that radar is shown: other radars are hidden, and its

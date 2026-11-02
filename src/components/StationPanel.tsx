@@ -275,9 +275,8 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const info = scan?.info ?? productInfo(product ?? "DBZH");
   const backupCode = aemetCodeFor(station);
   const operaDown =
-    station.offline || availabilityFailed ||
-    (scans !== null && scans.length === 0) ||
-    (currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
+    station.offline ||
+    (!availabilityFailed && currentHistory !== null && !stationHasScans(currentHistory, at, OPERA_MAX_AGE_MS, now));
   const showBackup = !!backupCode && (operaDown || aemetView);
   useEffect(() => { onBackupChange(station.id, showBackup); }, [station.id, showBackup, onBackupChange]);
   const missing = ALL_PRODUCTS.filter((p) => !availableProducts.includes(p));

@@ -3,7 +3,7 @@
 
 export type CompositeMode = "off" | "opendata" | "opera-fallback" | "opera";
 /** OPERA status for one radar: no OPERA station at all is `null`. */
-export type OperaState = "loading" | "ok" | "missing" | null;
+export type OperaState = "loading" | "ok" | "missing" | "error" | null;
 
 export const COMPOSITE_MODES: { id: CompositeMode; label: string; note: string }[] = [
   { id: "opendata", label: "Solo AEMET OpenData", note: "Los 15 radares de AEMET, cada 10 min." },
@@ -19,7 +19,7 @@ export function compositeSource(mode: CompositeMode, hasAemet: boolean, opera: O
   if (opera === "ok") return "opera";
   if (mode === "opera") return null;
   // Fallback mode: wait for OPERA before falling back, so radars don't flicker.
-  if (opera === "loading") return null;
+  if (opera === "loading" || opera === "error") return null;
   return hasAemet ? "aemet" : null;
 }
 
