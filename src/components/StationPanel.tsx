@@ -190,8 +190,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             if (cancelled) return;
             const quantity = c.products?.includes("DBZH") ? "DBZH" : c.products?.[0];
             if (quantity) measured.set(key, await readScanRange(c.href, quantity, c.level));
-          }), 2);
-          list = list.map(c => ({ ...c, rangeKm: measured.get(familyKey(c)) }));
+          }), 2, () => {}, () => cancelled);
+          if (cancelled) return;
+          list = list.map(c => {
+            const rangeKm = measured.get(familyKey(c));
+            if (rangeKm === undefined) throw new Error("Could not verify radar scan range");
+            return { ...c, rangeKm };
+          });
         }
         if (cancelled) return;
         setHistory(list);
