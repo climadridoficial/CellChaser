@@ -55,12 +55,43 @@ function downloadScan(href: string): Promise<ArrayBuffer> {
     });
     hit.catch(() => fileCache.delete(href));
     fileCache.set(href, hit);
-    while (fileCache.size > 24) fileCache.delete(fileCache.keys().next().value!);
+    while (fileCache.size > 24) {
+      const oldest = fileCache.keys().next().value;
+      if (oldest === undefined) break;
+      fileCache.delete(oldest);
+    }
   } else {
     fileCache.delete(href);
     fileCache.set(href, hit);
   }
   return hit;
+}
+
+/** Read physical coverage without rendering or decompressing echo values; reuse downloaded volumes. */
+export async function readScanRange(href: string, product: string, level: number): Promise<number> {
+  const buffer = await downloadScan(href);
+  const { File } = await import("jsfive") as unknown as { File: new (b: ArrayBuffer, n?: string) => H5Group };
+  const file = new File(buffer, "scan.h5");
+  let best: { level: number; km: number } | null = null;
+  for (const key of file.keys.filter(k => /^dataset\d+$/.test(k))) {
+    const ds = file.get(key) as H5Group | null;
+    const where = ds?.get("where") as H5Group | null;
+    if (!ds || !where) continue;
+    for (const dataKey of ds.keys.filter(k => /^data\d+$/.test(k))) {
+      const dg = ds.get(dataKey) as H5Group | null;
+      const what = dg?.get("what") as H5Group | null;
+      const data = dg?.get("data") as H5Dataset | null;
+      if (str(what?.attrs["quantity"]) !== product || !data || data.shape.length !== 2) continue;
+      const bins = data.shape[1];
+      const scale = num(where.attrs["rscale"]);
+      const angle = num(where.attrs["elangle"], NaN);
+      if (!bins || scale <= 0 || !Number.isFinite(angle)) continue;
+      const km = (rangeStartMetres(num(where.attrs["rstart"]), str(file.attrs["Conventions"])) + bins * scale) / 1000;
+      if (!best || Math.abs(angle - level) < Math.abs(best.level - level)) best = { level: angle, km };
+    }
+  }
+  if (!best) throw new Error("No measured radar range available");
+  return best.km;
 }
 
 /** Blob URLs skip slow PNG→base64 encoding. */

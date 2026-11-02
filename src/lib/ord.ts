@@ -210,6 +210,8 @@ export interface ScanCandidate {
   time: string; // ISO
   level: number;
   doppler: boolean;
+  /** Distance read from ODIM range gates; independent of velocity availability. */
+  rangeKm?: number;
   products?: string[];
 }
 
