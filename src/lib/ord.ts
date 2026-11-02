@@ -1,5 +1,11 @@
 // EUMETNET OPERA / OpenRadarData (ORD) EDR API client — browser safe.
 // Metadata and volumes share the server cache across users and scheduled jobs.
+import { createServerOnlyFn } from '@tanstack/react-start';
+
+const serverOperaRead = createServerOnlyFn(async (url: string, authorization?: string) => {
+  const { sharedOperaResponse } = await import('./opera-cache.server');
+  return sharedOperaResponse(url, authorization);
+});
 
 export const ORD_BASE = "https://api.meteogate.eu/eu-eumetnet-weather-radar";
 const COLLECTION = `${ORD_BASE}/collections/observations`;
@@ -44,8 +50,7 @@ function authHeaders(apiKey?: string): HeadersInit {
 async function getJson<T>(url: string, apiKey?: string): Promise<T> {
   let res: Response;
   if (typeof window === 'undefined') {
-    const { sharedOperaResponse } = await import('./opera-cache.server');
-    res = await sharedOperaResponse(url, apiKey ? `Bearer ${apiKey}` : undefined);
+    res = await serverOperaRead(url, apiKey ? `Bearer ${apiKey}` : undefined);
   } else {
     res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json', ...authHeaders(apiKey) } });
   }
