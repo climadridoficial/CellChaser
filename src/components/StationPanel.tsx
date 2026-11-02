@@ -249,8 +249,8 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   }, [currentHistory, levels, level, product, at, now, sharedStation, manualSelection, sharedCandidate, sharedScan]);
 
   useEffect(() => {
-    setSelectedTime(files ? fileFor(files, at) : null);
-  }, [files, at, now]);
+    setSelectedTime(sharedStation && !manualSelection && sharedCandidate ? sharedCandidate.href : files ? fileFor(files, at) : null);
+  }, [files, at, now, sharedStation, manualSelection, sharedCandidate]);
 
   // Decode + render the selected scan
   useEffect(() => {
@@ -432,7 +432,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
             <h3 className="section-title">{t("timeRange")}</h3>
             <select
               value={hours}
-              onChange={(e) => setHours(Number(e.target.value))}
+              onChange={(e) => { setManualSelection(true); setHours(Number(e.target.value)); }}
               className="select mt-2"
             >
               {TIME_RANGES.map((r) => (
