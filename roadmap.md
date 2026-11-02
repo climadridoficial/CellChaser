@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [ ] Correct Valladolid/San Sebastián range selection using measured ODIM distance, not velocity-product presence.
 - [x] Replace misleading total-load warnings with source-specific and partial-update warnings; 18 tests pass and controlled browser check confirms five loaded radar layers plus partial warning. Vercel deployment not directly verified.
 - [x] Enable individual long-range selection for San Sebastián and Valladolid; 13 tests pass and controlled desktop/mobile checks confirm enabled selection without relabelling short scans. Current upstream long-range availability is not verified.
 - [x] Place individual OpenData backup/manual image on map with saved calibration; intercepted real GIF confirms one loaded overlay and cleanup on close. Cached metadata proves essse/eslid long-range links exist; current availability remains unverified without upstream requests.
