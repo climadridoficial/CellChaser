@@ -15,3 +15,10 @@ export function usableLevels(candidates: ScanCandidate[], at: number | null, max
 export function stationHasScans(candidates: ScanCandidate[], at: number | null, maxAge: number, now: number) {
   return candidates.some((c) => radarFrameVisible(c.time, at, maxAge, now));
 }
+
+/** Only measured velocity at the reflectivity observation's exact time/tilt is evidence. */
+export function matchingVelocityScan(candidates: ScanCandidate[], reflectivity: ScanCandidate) {
+  return candidates.find(c => c.doppler && Date.parse(c.time) === Date.parse(reflectivity.time)
+    && Math.abs(c.level - reflectivity.level) <= 0.01
+    && c.products?.some(p => ['VRADH', 'VRAD', 'VRADV'].includes(p))) ?? null;
+}

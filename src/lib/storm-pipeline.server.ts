@@ -10,6 +10,7 @@ import { STORM_VERSION } from './storm-version';
 import { buildStormAdvisory, type LightningEvidence, type VelocityEvidence } from './storm-advisory';
 import { loadStormLightning } from './storm-lightning.server';
 import { fetchStormVolume } from './storm-ingest.server';
+import { matchingVelocityScan } from './scan-availability';
 
 export { STORM_VERSION } from './storm-version';
 type Client = SupabaseClient<Database>;
@@ -41,7 +42,10 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
     await Promise.all(stations.slice(i,i+2).map(async station=>{
       let sourceVerified = false;
       try {
-        const history = await fetchScanHistory(station.id,"DBZH",1.5);
+        // Discover every quantity once: separate velocity-only files must not
+        // be discarded by a DBZH filter before enrichment.
+        const allHistory = await fetchScanHistory(station.id,"*",1.5);
+        const history = allHistory.filter(f => f.products?.includes('DBZH'));
         const current = pickScan(history,Date.now(),OPERA_MAX_AGE_MS);
         if (!current) throw new Error("No fresh radar scan");
         const cached = await client.from("storm_cell_frames").select("observed_at").eq("radar_id",station.id).eq("source","opera").eq("algorithm_version",STORM_VERSION).gte("observed_at",new Date(Date.now()-90*60_000).toISOString());
@@ -60,7 +64,7 @@ export async function refreshOperaStorms(client: Client, part = 0, parts = 1) {
           if (cells.length) {
             // Reuse same-time DBZH volume; Doppler short-range volume if separate.
             // One extra download per scan, NEVER one per cell; don't query ORD again.
-            const doppler=history.find(f=>f.doppler && f.time===pick.time && Math.abs(f.level-pick.level)<=0.01);
+            const doppler=matchingVelocityScan(allHistory,pick);
             try {
               let velocityBuffer=buffer;
               if (doppler && doppler.href!==pick.href) {

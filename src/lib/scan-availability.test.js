@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { selectionCandidates, usableLevels, stationHasScans } from "./scan-availability";
+import { selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;
@@ -28,4 +28,15 @@ test("a real station-wide absence allows fallback, and live angles expire", () =
   expect(stationHasScans([], null, maxAge, now)).toBe(false);
   expect(stationHasScans(candidates, null, maxAge, now + 60 * 60_000)).toBe(false);
   expect(usableLevels(candidates, null, maxAge, now + 60 * 60_000)).toEqual([]);
+});
+test('VRAD-only volumes support matching DBZH observations without requiring DBZH in the velocity file', () => {
+  const dbz = {...candidates[0], href:'dbz', doppler:false, products:['DBZH']};
+  const vrad = {...dbz, href:'velocity-only', doppler:true, products:['VRADH']};
+  expect(matchingVelocityScan([dbz,vrad],dbz)?.href).toBe('velocity-only');
+});
+test('nearby but different observation times and elevations are not relabelled as matching VRAD', () => {
+  const dbz = candidates[0];
+  expect(matchingVelocityScan([{...dbz,time:'2026-11-01T12:57:00Z'}],dbz)).toBeNull();
+  expect(matchingVelocityScan([{...dbz,level:1.5}],dbz)).toBeNull();
+  expect(matchingVelocityScan([dbz],dbz)?.href).toBe('volume');
 });
