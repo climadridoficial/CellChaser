@@ -38,6 +38,54 @@ export type Database = {
         }
         Relationships: []
       }
+      opera_response_cache: {
+        Row: {
+          body_base64: string | null
+          cache_key: string
+          content_type: string
+          expires_at: string
+          lease_token: string | null
+          lease_until: string
+          status: number
+        }
+        Insert: {
+          body_base64?: string | null
+          cache_key: string
+          content_type?: string
+          expires_at?: string
+          lease_token?: string | null
+          lease_until?: string
+          status?: number
+        }
+        Update: {
+          body_base64?: string | null
+          cache_key?: string
+          content_type?: string
+          expires_at?: string
+          lease_token?: string | null
+          lease_until?: string
+          status?: number
+        }
+        Relationships: []
+      }
+      opera_upstream_gate: {
+        Row: {
+          blocked_until: string
+          host: string
+          next_request_at: string
+        }
+        Insert: {
+          blocked_until?: string
+          host: string
+          next_request_at?: string
+        }
+        Update: {
+          blocked_until?: string
+          host?: string
+          next_request_at?: string
+        }
+        Relationships: []
+      }
       radar_alignments: {
         Row: {
           corners: Json | null
@@ -145,7 +193,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_opera_cache: {
+        Args: { p_host: string; p_key: string; p_token: string }
+        Returns: Json
+      }
+      finish_opera_cache: {
+        Args: {
+          p_body: string
+          p_host: string
+          p_key: string
+          p_retry?: number
+          p_status: number
+          p_token: string
+          p_ttl: number
+          p_type: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
