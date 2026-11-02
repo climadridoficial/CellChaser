@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanCandidate } from "@/lib/ord";
 import { fetchScanHistory, pickScan } from "@/lib/ord";
-import { decodeAndRender, type RenderedScan } from "@/lib/odim";
+import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
+import { measureRadarRanges, pickDefaultRadarScan, stationHasScans } from "@/lib/scan-availability";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds } from "@/lib/aemet-overlay";
 import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
@@ -74,14 +75,14 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       queryKey: ["opera-history", s.id, apiKey],
       enabled: mode !== "off" && !s.offline && (wantOpera || !aemetCodeFor(s)),
       ...OPERA_POLL_OPTIONS,
-      queryFn: () => fetchScanHistory(s.id, ["eslid", "essse"].includes(s.code) ? "*" : "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined),
+      queryFn: async () => measureRadarRanges(s.id, await fetchScanHistory(s.id, ["eslid", "essse"].includes(s.code) ? "*" : "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined), readScanRange),
     })),
   });
 
-  const picks = radars.map((_, i) => {
+  const picks = radars.map((s, i) => {
     const list = history[i]?.data?.filter(c => c.products?.includes("DBZH"));
     if (!list) return undefined;
-    return at === null ? pickScan(list, now, OPERA_MAX_AGE_MS) : pickScan(list, at, STEP_MS);
+    return pickDefaultRadarScan(s.id, list, "DBZH", at ?? now, at === null ? OPERA_MAX_AGE_MS : STEP_MS);
   });
 
   const scans = useQueries({
@@ -108,7 +109,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     if (q?.data && radarFrameVisible(q.data.time, at, OPERA_MAX_AGE_MS, now)) return "ok";
     if (h?.isError || q?.isError) return "error";
     if (!h || h.isPending) return "loading";
-    if (picks[i] === null) return "missing";
+    if (picks[i] === null) return stationHasScans(h.data ?? [], at, OPERA_MAX_AGE_MS, now) ? "error" : "missing";
     return "loading";
   });
 
@@ -212,9 +213,9 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const t = slotAt(slot, base)!;
       radars.forEach((s, i) => {
         const list = history[i]?.data;
-        const pick = list ? pickScan(list, t, STEP_MS) : null;
+        const pick = list ? pickDefaultRadarScan(s.id, list, "DBZH", t, STEP_MS) : null;
         const code = aemetCodes[i];
-        const useAemet = !!code && (mode === "opendata" || (mode === "opera-fallback" && (s.offline || (!!list && !history[i]?.isError && !pick))));
+        const useAemet = !!code && (mode === "opendata" || (mode === "opera-fallback" && (s.offline || (!!list && !history[i]?.isError && !stationHasScans(list, t, OPERA_MAX_AGE_MS, base)))));
         const useOpera = !useAemet && mode !== "opendata" ? true : !code && mode === "opendata";
         if (useAemet && code) {
           const frame = aemetFrameFor(frames.data, code, t);

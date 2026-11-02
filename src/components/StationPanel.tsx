@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { initialRadarSelection, individualRangeOptions, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { defaultsToLongRange, measureRadarRanges, initialRadarSelection, individualRangeOptions, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -71,7 +71,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   const [history, setHistory] = useState<ScanCandidate[] | null>(null);
   const [historyKey, setHistoryKey] = useState<string | null>(null);
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
-  const [rangeMode, setRangeMode] = useState<"short" | "long">("short");
+  const [rangeMode, setRangeMode] = useState<"short" | "long">(defaultsToLongRange(station.id) ? "long" : "short");
   const sharedStation = ["eslid", "essse"].includes(station.code);
   const [manualSelection, setManualSelection] = useState(false);
   const initialSelectionDone = useRef(false);
@@ -127,6 +127,8 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
     let cancelled = false;
     setScans(null);
     initialSelectionDone.current = false;
+    setManualSelection(false);
+    setRangeMode(defaultsToLongRange(station.id) ? "long" : "short");
     setProduct(null);
     setLevel(null);
     setHistory(null);
@@ -191,24 +193,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
     setStatus("Looking up scans…");
     (sharedStation && sharedHistory && hours <= HISTORY_HOURS ? Promise.resolve(sharedHistory) : fetchScanHistory(station.id, "*", hours, apiKey))
       .then(async (list) => {
-        if (["0-724-0-eslid", "0-724-0-essse"].includes(station.id)) {
-          // Inspect newest representative per volume family/elevation. Downloads
-          // share the renderer cache; historical frames reuse that scan geometry.
-          const representatives = new Map<string, ScanCandidate>();
-          const familyKey = (c: ScanCandidate) => `${c.doppler}|${c.level}|${c.products?.join(",")}`;
-          for (const c of list) if (!representatives.has(familyKey(c))) representatives.set(familyKey(c), c);
-          const measured = new Map<string, number>();
-          await runPool([...representatives].map(([key, c]) => async () => {
-            if (cancelled) return;
-            const quantity = c.products?.includes("DBZH") ? "DBZH" : c.products?.[0];
-            if (quantity) measured.set(key, await readScanRange(c.href, quantity, c.level));
-          }), 2, () => {}, () => cancelled);
-          if (cancelled) return;
-          list = list.map(c => {
-            const rangeKm = measured.get(familyKey(c));
-            return rangeKm === undefined ? c : { ...c, rangeKm };
-          });
-        }
+        list = await measureRadarRanges(station.id, list, readScanRange);
         if (cancelled) return;
         setHistory(list);
         setHistoryKey(availabilityKey);
@@ -237,7 +222,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
       return;
     }
     if (!initialSelectionDone.current && product) {
-      const initial = initialRadarSelection(currentHistory, product, at, OPERA_MAX_AGE_MS, now);
+      const initial = initialRadarSelection(currentHistory, product, at, OPERA_MAX_AGE_MS, now, station.id);
       if (initial) {
         initialSelectionDone.current = true;
         setRangeMode(initial.range);

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { initialRadarSelection, individualRangeOptions, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
+import { measureRadarRanges, pickDefaultRadarScan, initialRadarSelection, individualRangeOptions, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;
@@ -11,6 +11,20 @@ const candidates = [
 ];
 
 for (const id of ["0-724-0-eslid", "0-724-0-essse"]) {
+  test(`${id} defaults composite and individual to measured 240 km even above the 120 km tilt`, async () => {
+    const volumes = await measureRadarRanges(id, [
+      { ...candidates[0], href: "short", doppler: false },
+      { ...candidates[2], href: "long", doppler: true },
+    ], async href => href === "long" ? 240 : 120);
+    expect(pickDefaultRadarScan(id, volumes, "DBZH", now, maxAge)?.href).toBe("long");
+    expect(initialRadarSelection(volumes, "DBZH", null, maxAge, now, id)).toEqual({ level: 2.1, range: "long" });
+    expect(selectionCandidates(volumes, "DBZH", "short", true)[0]?.href).toBe("short");
+    expect(pickDefaultRadarScan(id, volumes, "DBZH", Date.parse(candidates[0].time), 600_000)?.href).toBe("long");
+  });
+  test(`${id} missing or expired long range never defaults to short`, () => {
+    expect(pickDefaultRadarScan(id, [{...candidates[0], rangeKm: 120}], "DBZH", now, maxAge)).toBeNull();
+    expect(pickDefaultRadarScan(id, [{...candidates[0], rangeKm: 240}], "DBZH", now + 3600_000, maxAge)).toBeNull();
+  });
   test(`${id} opens the identical composite scan, not a newly selected/rendered file`, () => {
     const scan = { time: candidates[0].time, dataUrl: "blob:shared-radar", rangeKm: 120 };
     expect(sharedIndividualScan(id, scan, false, null, maxAge, now)).toBe(scan);
