@@ -17,7 +17,7 @@
 - Keep a static AEMET location catalog separate from OPERA availability; discovery failures preserve radar markers and fresh OpenData fallbacks, while successful discovery replaces fallback markers without duplicates.
 - Keep manual alignment behind AEMET_ALIGNMENT_ENABLED for recalibration; re-copy confirmed calibration constants afterward.
 - Composite source uses compositeSource() and hides tiles; OPERA renders reduced canvases. Browser discovery shares opera-refresh polling options to enforce ten-minute checks without focus/reconnect retries.
-- AEMET alignment and echo display share the same validated image crop and Leaflet bounds; this preserves manual registration across image refreshes without inventing geographic precision.
+- AEMET alignment, composite and individual backup overlays share the validated crop, warp and saved bounds; panel images publish cleaned echoes to the map without altering calibration.
 - Store radar alignments per authenticated user and radar code in Cloud with owner-scoped RLS; no anonymous writes or browser-only durable calibration storage.
 - Reuse the quadrilateral AEMET renderer and alignment editor for lightning with its own source dimensions and the owner-scoped `lightning` calibration key; this keeps corner editing, source cropping and zoom registration consistent without changing radar calibrations.
 - Keep lightning calibration tools behind LIGHTNING_ALIGNMENT_ENABLED after calibration and copy the confirmed saved corners into the shared default; strip background and outlines before the same quadrilateral transform so normal viewing retains registration.
