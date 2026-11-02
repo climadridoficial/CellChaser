@@ -34,14 +34,15 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
   const cacheKey = await digest(`${scope}:${target.href}`);
   const host = `${target.hostname}:${scope}`;
   const token = crypto.randomUUID();
-  const deadline = Date.now() + 4000;
+  const deadline = Date.now() + 25_000;
   let claim: Claim;
   while (true) {
     const result = await client.rpc('claim_opera_cache', { p_key: cacheKey, p_host: host, p_token: token });
     if (result.error || !result.data) return new Response('Shared radar cache unavailable', { status: 503 });
     claim = result.data as unknown as Claim;
     if (claim.kind !== 'wait') break;
-    if (Date.now() >= deadline) return retry(2);
+    // Our own queue being busy is not an OPERA rate limit; never report it as 429.
+    if (Date.now() >= deadline) return new Response('Shared radar queue busy', { status: 503, headers: { 'Retry-After': '2', 'Cache-Control': 'no-store' } });
     await new Promise(resolve => setTimeout(resolve, 350));
   }
   if (claim.kind === 'blocked') return retry(operaRetrySeconds(claim.retryAt ?? null));
@@ -59,7 +60,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     status = response.status;
     contentType = response.headers.get('content-type') ?? contentType;
     if (status === 429) cooldown = operaRetrySeconds(response.headers.get('retry-after'));
-    else if (status >= 500) cooldown = 15;
+    else if (status >= 500) cooldown = 3;
     if (status === 200 || status === 204) {
       if (Number(response.headers.get('content-length')) > 16 * 1024 * 1024) throw new Error('Radar response too large');
       bytes = new Uint8Array(await response.arrayBuffer());
@@ -68,7 +69,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
       body = bytesToBase64(bytes);
       ttl = operaCacheTtl(target, status);
     }
-  } catch { status = 502; body = null; bytes = undefined; cooldown = 15; }
+  } catch { status = 502; body = null; bytes = undefined; cooldown = 0; }
   const saved = await client.rpc('finish_opera_cache', { p_key: cacheKey, p_token: token, p_body: body ?? '', p_type: contentType, p_status: status, p_ttl: ttl, p_host: host, p_retry: cooldown });
   if (saved.error) return new Response('Shared radar cache unavailable', { status: 503 });
   if (status === 429) return retry(cooldown);
