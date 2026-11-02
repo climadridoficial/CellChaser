@@ -1,7 +1,7 @@
 // Server-only helper: calls AEMET OpenData rotating across the configured keys.
 // AEMET answers inconsistently per key/request (quota, spurious "renew" errors),
 // so requests rotate within priority tiers, never ahead of the preferred keys.
-import { aemetKeyOrder } from './aemet-key-order';
+import { aemetKeyOrder, aemetPriorityKeys } from './aemet-key-order';
 
 const BASE = "https://opendata.aemet.es/opendata/api/";
 let turn = 0;
@@ -11,7 +11,7 @@ function keys(override?: string | null): string[] {
     .split(",")
     .map((k) => k.trim())
     .filter(Boolean);
-  const priority=[process.env['AEMET_PRIORITY_KEY_1']??'',process.env['AEMET_PRIORITY_KEY_2']??'',process.env['AEMET_PRIORITY_KEY_3']??''];
+  const priority = aemetPriorityKeys(process.env);
   return aemetKeyOrder(priority,backup,turn++,override);
 }
 
