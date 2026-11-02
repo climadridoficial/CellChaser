@@ -16,6 +16,7 @@ import { radarFrameVisible } from "@/lib/radar-freshness";
 import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
 import { OPERA_REFRESH_MS } from "@/lib/opera-refresh";
+import type { AemetMapImage } from "@/lib/aemet-overlay";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 /** History frames are lighter than the live full-detail scan, so 6 h load fast. */
@@ -33,6 +34,7 @@ interface Props {
   onClose: () => void;
   onScan: (scan: RenderedScan | null) => void;
   onBackupChange: (stationId: string, enabled: boolean) => void;
+  onBackupImage: (image: AemetMapImage | null) => void;
   onAlignAemet: (code: string) => void;
   /** Map time slider position (null = live). */
   at: number | null;
@@ -47,7 +49,7 @@ function fileFor(list: ScanFile[], at: number | null): string | null {
   return pickFrame(list, (f) => Date.parse(f.time), at)?.href ?? null;
 }
 
-export default function StationPanel({ station, apiKey, onClose, onScan, onBackupChange, onAlignAemet, at, onPreload }: Props) {
+export default function StationPanel({ station, apiKey, onClose, onScan, onBackupChange, onBackupImage, onAlignAemet, at, onPreload }: Props) {
   const { t, locale, lang } = useI18n();
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
@@ -319,7 +321,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
             {aemetView ? t("viewOpera") : t("viewAemet")}
           </Button>
         )}
-        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} manual={aemetView && !operaDown} />}
+        {showBackup && backupCode && <AemetBackup code={backupCode} at={at} manual={aemetView && !operaDown} onMapImage={onBackupImage} />}
         {!station.offline && !aemetView && (<>
         <section>
           <h3 className="section-title">{t("product")}</h3>

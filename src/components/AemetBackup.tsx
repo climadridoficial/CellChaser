@@ -4,6 +4,9 @@ import { aemetFrameFor, fetchAemetFrameUrl, useAemetFrames } from "@/lib/aemet-h
 import { AEMET_LIVE_MAX_AGE_MS } from "@/lib/composite";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
+import { useEffect } from "react";
+import { processAemetImage, type AemetMapImage } from "@/lib/aemet-overlay";
+import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";
 
 const TEN_MIN = 10 * 60_000;
 
@@ -16,7 +19,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-export default function AemetBackup({ code, at, manual = false }: { code: string; at: number | null; manual?: boolean }) {
+export default function AemetBackup({ code, at, manual = false, onMapImage }: { code: string; at: number | null; manual?: boolean; onMapImage?: (image: AemetMapImage | null) => void }) {
   const { t, locale } = useI18n();
   const now = useRadarNow();
   const frames = useAemetFrames(at !== null);
@@ -42,6 +45,22 @@ export default function AemetBackup({ code, at, manual = false }: { code: string
   const observed = image.data?.observedAt ? Date.parse(image.data.observedAt) : null;
   const visible = !!image.data && radarFrameVisible(image.data.observedAt, at, AEMET_LIVE_MAX_AGE_MS, now, image.isError);
   const stale = at === null && !!image.data && !visible;
+  const overlay = useQuery({
+    queryKey: ["individual-aemet-echoes", code, image.data?.src],
+    enabled: visible && !!image.data,
+    staleTime: Infinity,
+    queryFn: async () => {
+      if (!image.data) throw new Error("No AEMET image");
+      return processAemetImage(code, image.data.src, AEMET_CORNERS[code]);
+    },
+  });
+  useEffect(() => {
+    const bounds = AEMET_CALIBRATION[code];
+    onMapImage?.(visible && overlay.data && bounds ? {
+      code, image: overlay.data.echoes, bounds, editing: false, opacity: 1,
+    } : null);
+    return () => onMapImage?.(null);
+  }, [code, visible, overlay.data, onMapImage]);
 
   return (
     <section className="space-y-2">

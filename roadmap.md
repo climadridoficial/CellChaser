@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Place individual OpenData backup/manual image on map with saved calibration; intercepted real GIF confirms one loaded overlay and cleanup on close. Cached metadata proves essse/eslid long-range links exist; current availability remains unverified without upstream requests.
 - [x] Reduce automatic OPERA browser polling to once per ten minutes; disable immediate retries/focus/reconnect refetches. Eleven tests pass; intercepted browser clock verifies no additional calls at one minute and the next cycle at ten minutes, without upstream traffic.
 - [x] Separate OPERA access errors from absent radar transmission in composite, individual panel and static catalogue; preserve only fresh OPERA images and never trigger automatic OpenData for access errors.
 - [x] Share OPERA metadata and volume downloads across users, radar views and storm jobs; database leases, credential-isolated cache and provider cooldowns applied. Twelve tests pass; real preview has no direct browser ORD requests, honors current 429 cooldown, and renders map without errors. Successful live OPERA reuse remains blocked by upstream 429; published hosts need updated code.

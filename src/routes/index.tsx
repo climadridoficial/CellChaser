@@ -62,6 +62,8 @@ function Home() {
   const [scan, setScan] = useState<RenderedScan | null>(null);
   const [stationBackup, setStationBackup] = useState<{ id: string; enabled: boolean } | null>(null);
   const handleBackupChange = useCallback((id: string, enabled: boolean) => setStationBackup({ id, enabled }), []);
+  const [backupImage, setBackupImage] = useState<AemetMapImage | null>(null);
+  const handleBackupImage = useCallback((image: AemetMapImage | null) => setBackupImage(image), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAemet, setShowAemet] = useState(false);
   const [aemetSel, setAemetSel] = useState<AemetObs | null>(null);
@@ -175,9 +177,9 @@ function Home() {
   // own composite image is kept only until the station view has rendered.
   const mapComposite = useMemo(() => {
     if (!selected) return composite.layers;
-    if (scan || aemetImage) return [];
+    if (scan || aemetImage || backupImage) return [];
     return composite.layers.filter((l) => l.radarId === selected.id);
-  }, [scan, aemetImage, selected, composite.layers]);
+  }, [scan, aemetImage, backupImage, selected, composite.layers]);
 
   const frames = rainviewer.data ?? [];
   const tileFrame =
@@ -194,6 +196,7 @@ function Home() {
   const closePanel = useCallback(() => {
     setSelected(null);
     setScan(null);
+    setBackupImage(null);
   }, []);
 
   return (
@@ -212,10 +215,11 @@ function Home() {
               onSelect={(st) => {
                 closeAlignment();
                 setAemetSel(null);
+                setBackupImage(null);
                 setSelected(st);
               }}
               scan={scan}
-              aemetImage={aemetImage}
+              aemetImage={aemetImage ?? (selected ? backupImage : null)}
               onAemetBounds={handleAemetBounds}
               composite={mapComposite}
               showStorms={showStorms}
@@ -286,6 +290,7 @@ function Home() {
           onClose={closePanel}
           onScan={handleScan}
           onBackupChange={handleBackupChange}
+          onBackupImage={handleBackupImage}
           at={at}
           onPreload={setStationPreload}
           onAlignAemet={(code) => {
