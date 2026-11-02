@@ -25,6 +25,7 @@ import { pickFrame } from "@/lib/timeline";
 import { NO_PRELOAD, sumProgress, type PreloadProgress } from "@/lib/preload";
 import { LIGHTNING_ALIGNMENT_ENABLED, LIGHTNING_CORNERS, loadLightningImages } from "@/lib/aemet-lightning";
 import { supabase } from "@/integrations/supabase/client";
+import { OPERA_POLL_OPTIONS } from "@/lib/opera-refresh";
 
 const RadarMap = lazy(() => import("@/components/RadarMap"));
 
@@ -110,9 +111,7 @@ function Home() {
   const stations = useQuery({
     queryKey: ["ord-stations", settings.meteogateKey],
     enabled: loaded,
-    staleTime: 30 * 60_000,
-    refetchInterval: 5 * 60_000,
-    retry: (failureCount, error) => !error.message.includes("rate limit") && failureCount < 1,
+    ...OPERA_POLL_OPTIONS,
     queryFn: () => fetchStations(settings.meteogateKey || undefined),
   });
 

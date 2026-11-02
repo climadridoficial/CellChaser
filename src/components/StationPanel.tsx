@@ -15,6 +15,7 @@ import { HISTORY_HOURS, pickFrame, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { OPERA_MAX_AGE_MS } from "@/lib/composite";
 import { useRadarNow } from "@/hooks/use-radar-now";
+import { OPERA_REFRESH_MS } from "@/lib/opera-refresh";
 
 const ALL_PRODUCTS = ["DBZH", "DBZV", "TH", "TV", "VRADH", "VRAD", "WRADH", "WRAD", "ZDR", "UZDR", "RHOHV", "URHOHV", "PHIDP", "UPHIDP", "KDP", "LDR", "SQIH", "CCORH", "HGHT"];
 /** History frames are lighter than the live full-detail scan, so 6 h load fast. */
@@ -51,7 +52,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const now = useRadarNow();
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setRefresh((v) => v + 1), 10 * 60_000);
+    const timer = setInterval(() => setRefresh((v) => v + 1), OPERA_REFRESH_MS);
     return () => clearInterval(timer);
   }, []);
   const [scans, setScans] = useState<ScanEntry[] | null>(null);
