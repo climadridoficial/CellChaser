@@ -12,6 +12,7 @@ import { AEMET_LIVE_MAX_AGE_MS, compositeSource, OPERA_MAX_AGE_MS, type Composit
 import { HISTORY_HOURS, slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline";
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
+import { OPERA_POLL_OPTIONS } from "@/lib/opera-refresh";
 
 export interface CompositeLayer {
   key: string;
@@ -23,7 +24,6 @@ export interface CompositeLayer {
   observedAt: string;
 }
 
-const REFRESH_MS = 60_000;
 // Lighter than the station panel's full-detail render: 10 radars at once.
 const COMPOSITE_SIZE = 800;
 
@@ -70,10 +70,8 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const history = useQueries({
     queries: radars.map((s) => ({
       queryKey: ["opera-history", s.id, apiKey],
-      enabled: !s.offline && (wantOpera || !aemetCodeFor(s)),
-      staleTime: REFRESH_MS,
-      refetchInterval: REFRESH_MS,
-      retry: 1,
+      enabled: mode !== "off" && !s.offline && (wantOpera || !aemetCodeFor(s)),
+      ...OPERA_POLL_OPTIONS,
       queryFn: () => fetchScanHistory(s.id, "DBZH", HISTORY_HOURS + 0.5, apiKey || undefined),
     })),
   });
