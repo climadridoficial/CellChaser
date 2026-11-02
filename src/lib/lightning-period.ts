@@ -25,6 +25,8 @@ const FONT: Record<string, string> = {
   "7": "######.|.....#.|....#..|....#..|...#...|...#...|..#....|..#....",
   "8": ".####..|#....#.|#....#.|#...#..|.####..|#....#.|#....#.|.####..",
   "9": ".####..|#....#.|#....#.|#....#.|.#####.|.....#.|.....#.|.####.."
+  ,"N": "#....#.|##...#.|##...#.|#.#..#.|#..#.#.|#...##.|#...##.|#....#.",
+  "V": "#....#.|#....#.|.#..#..|.#..#..|.#.#...|.#.#...|..#....|..#...."
 };
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 export function readLightningPeriod(rgba: ArrayLike<number>, width: number, height: number, reference: number): LightningPeriod | null {
@@ -34,8 +36,8 @@ export function readLightningPeriod(rgba: ArrayLike<number>, width: number, heig
     return (rgba[i] ?? 0) > 180 && (rgba[i + 1] ?? 0) > 180 && (rgba[i + 2] ?? 255) < 40 ? '#' : '.';
   }).join('')).join('|');
   const digit = (cell: number) => Object.entries(FONT).find(([c, bitmap]) => /^\d$/.test(c) && bitmap === key(cell))?.[0];
-  const number = (cell: number) => { const a = digit(cell), b = digit(cell + 1); return a === undefined || b === undefined ? NaN : Number(a + b); };
-  const endpoint = (offset: number) => ({ day: number(offset), hour: number(offset + 7), minute: number(offset + 10), second: number(offset + 13), month: [key(offset + 3), key(offset + 4), key(offset + 5)] });
+  const number = (cell: number, paddedDay = false) => { const a = digit(cell) ?? (paddedDay && !key(cell).includes('#') ? '0' : undefined), b = digit(cell + 1); return a === undefined || b === undefined ? NaN : Number(a + b); };
+  const endpoint = (offset: number) => ({ day: number(offset, true), hour: number(offset + 7), minute: number(offset + 10), second: number(offset + 13), month: [key(offset + 3), key(offset + 4), key(offset + 5)] });
   const start = endpoint(21), end = endpoint(40);
   const months = (keys: string[]) => MONTHS.map((name, index) => ({ name, index })).filter(({ name }) => [...name].every((c, i) => {
     const bitmap = keys[i]; if (!bitmap?.includes('#')) return false;

@@ -32,5 +32,5 @@
 - Render saved storm forecast polygons with Leaflet clipping and simplification disabled so viewport edges cannot add or collapse forecast corners.
 - OPERA storm jobs stay separate and staggered to respect outbound-call limits. Storm downloads use manual redirects with an HTTPS host allowlist; validated fresh upstream observations set source health independently of archive/decoder failures.
 - Persist deterministic advisory facts inside versioned storm-track JSON during scheduled ingest; browsers translate these shared facts rather than generating independent messages, and all cache readers use storm-version.ts.
-- VRAD enrichment samples exact-time/elevation numerical gates with explicit cell coverage and reports radial air velocity only; retain three reflectivity motion scans because radial air motion is not storm translation.
+- Discover all OPERA quantities before selecting DBZH and exact-time/elevation VRAD, preserving velocity-only files; sample measured coverage and report radial air motion, never replacing three reflectivity motion scans.
 - Lightning advisories use calibrated newest-bin source-image pixels and printed UTC intervals, reject future/stale periods, and never report pixel counts as strike counts or infer polarity.

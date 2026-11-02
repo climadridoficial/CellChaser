@@ -24,7 +24,7 @@ export const LIGHTNING_SIZE = { w: CROP.w, h: CROP.h };
  */
 export async function loadLightningImages(): Promise<{ original: string; echoes: string; period: LightningPeriod | null }> {
   const response = await fetch("/api/public/aemet-lightning");
-  if (!response.ok) throw new Error("No se pudo cargar el mapa de rayos de AEMET.");
+  if (!response.ok || response.status === 204) throw new Error("No se pudo cargar el mapa de rayos de AEMET.");
   const blobUrl = URL.createObjectURL(await response.blob());
   try {
     const img = new Image();
