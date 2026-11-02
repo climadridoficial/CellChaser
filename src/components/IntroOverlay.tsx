@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import introImage from "@/assets/cellchaser-intro-30.webp.asset.json";
+
+// Served from public/ so it works on any host (Lovable or Vercel).
+const introImage = { url: "/cellchaser-intro.webp" };
 
 const SEEN_KEY = "cellchaser.introSeen";
 const FADE_MS = 700;
