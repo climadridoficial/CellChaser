@@ -1,5 +1,12 @@
-import type { ScanCandidate } from "./ord";
+import { pickScan, type ScanCandidate } from "./ord";
 import { radarFrameVisible } from "./radar-freshness";
+
+/** Opening a radar uses the composite's volume policy, without suppressing weak echoes. */
+export function initialRadarSelection(candidates: ScanCandidate[], product: string, at: number | null, maxAge: number, now: number) {
+  const visible = candidates.filter(c => c.products?.includes(product) && radarFrameVisible(c.time, at, maxAge, now));
+  const scan = pickScan(visible, at ?? now, maxAge);
+  return scan ? { level: scan.level, range: scan.doppler ? "short" as const : "long" as const } : null;
+}
 
 export function selectionCandidates(candidates: ScanCandidate[], product: string | null, range: "short" | "long") {
   const matching = candidates.filter((c) => c.products?.includes(product ?? ""));

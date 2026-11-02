@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
+import { initialRadarSelection, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;
@@ -9,6 +9,20 @@ const candidates = [
   { href: "long", time: "2026-11-01T13:00:00Z", level: 2.1, doppler: false, products: ["DBZH"] },
   { href: "old", time: "2026-11-01T12:00:00Z", level: 4.5, doppler: true, products: ["DBZH"] },
 ];
+
+test("opening individual reflectivity preserves the composite's long-range volume at the same lowest elevation", () => {
+  const volumes = [candidates[0], {...candidates[2], level: 0.5}];
+  const initial = initialRadarSelection(volumes, "DBZH", null, maxAge, now);
+  expect(initial).toEqual({level: 0.5, range: "long"});
+  expect(selectionCandidates(volumes, "DBZH", initial.range)[0].href).toBe("long");
+});
+test("opening a radar still prioritizes the lowest elevation over a higher long-range scan", () => {
+  expect(initialRadarSelection(candidates, "DBZH", null, maxAge, now)).toEqual({level: 0.5, range: "short"});
+});
+test("initial volume selection cannot revive expired scans or use another historical slot", () => {
+  expect(initialRadarSelection(candidates, "DBZH", null, maxAge, now + 3600_000)).toBeNull();
+  expect(initialRadarSelection(candidates, "DBZH", Date.parse("2026-11-01T12:30:00Z"), maxAge, now)).toBeNull();
+});
 
 test("angles match the selected product and range, not just the catalogue", () => {
   expect(usableLevels(selectionCandidates(candidates, "DBZH", "short"), null, maxAge, now)).toEqual([0.5, 1.5]);
