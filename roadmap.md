@@ -1,5 +1,5 @@
 # Radar scan corrections
-- [ ] Correct missing Valladolid/San Sebastián elevations without changing measured long-range defaults; verify discovery and individual selection.
+- [x] Preserve every advertised z-axis elevation in Valladolid/San Sebastián discovery; 26 tests pass and controlled browser selectors expose five enabled angles with manual selection. Long-range defaults unchanged. Current upstream angles and rendered-image switching remain unverified.
 - [x] Increase Valladolid/San Sebastián shared images from 800 to 1600 pixels and distinguish cached elevations; 38 tests and mobile checks pass. Matched 18:10 long-range files are byte-identical to RadarSpain; its decoder maps undetect to -32 dBZ, ours keeps it transparent. Resolution alone does not prove screenshot parity; Vercel deployment unverified.
 - [x] Remove the OPERA display cutoff below -15 dBZ and extend inspector/legend; 36 tests and controlled mobile checks through the real renderer preserve -25 dBZ echoes and no-data transparency for both stations. Matched live scans from other apps remain unverified.
 - [x] Default Valladolid/San Sebastián to measured long-range scans in composite/history and individual views; 27 tests and controlled mobile checks verify long selected and manual short available. Current upstream availability and Vercel deployment not verified.
