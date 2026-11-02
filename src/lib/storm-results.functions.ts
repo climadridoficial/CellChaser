@@ -10,7 +10,8 @@ import { STORM_VERSION } from './storm-version';
 export const getSharedStormTracks = createServerFn({method:"GET"})
   .inputValidator(z.object({radarIds:z.array(z.string().regex(/^(?:0-\d+-\d+-[a-z0-9]+|aemet-[a-z]{2})$/)).max(80),at:z.number().finite().nullable(),source:z.enum(["auto","opera","aemet"])}))
   .handler(async ({data})=>{
-    const key = process.env["SUPABASE_PUBLISHABLE_KEY"], url = process.env["SUPABASE_URL"];
+    // Fall back to the public build-time values so other hosts (e.g. Vercel) work without extra setup.
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"] || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, url = process.env["SUPABASE_URL"] || import.meta.env.VITE_SUPABASE_URL;
     if (!key || !url || !data.radarIds.length) return {tracks:[] as StormTrack[],incomplete:true};
     const client = createClient<Database>(url,key,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:(input,init)=>{
       const headers = new Headers(init?.headers);
