@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { initialRadarSelection, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -65,6 +65,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const [historyKey, setHistoryKey] = useState<string | null>(null);
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">("short");
+  const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
   const currentHistory = historyKey === availabilityKey ? history : null;
   const productHistory = currentHistory?.filter((c) => c.products?.includes(product ?? ""));
@@ -116,6 +117,7 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   useEffect(() => {
     let cancelled = false;
     setScans(null);
+    initialSelectionDone.current = false;
     setProduct(null);
     setLevel(null);
     setHistory(null);
@@ -194,8 +196,17 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
 
   useEffect(() => {
     if (currentHistory === null) return;
+    if (!initialSelectionDone.current && product) {
+      const initial = initialRadarSelection(currentHistory, product, at, OPERA_MAX_AGE_MS, now);
+      if (initial) {
+        initialSelectionDone.current = true;
+        setRangeMode(initial.range);
+        setLevel(initial.level);
+        return;
+      }
+    }
     if (level === null || !levels.includes(level)) setLevel(levels[0] ?? null);
-  }, [currentHistory, levels, level]);
+  }, [currentHistory, levels, level, product, at, now]);
 
   useEffect(() => {
     setSelectedTime(files ? fileFor(files, at) : null);
