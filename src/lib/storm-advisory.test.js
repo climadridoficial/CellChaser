@@ -16,6 +16,15 @@ test('mismatched times/elevations do not support a DBZ cell',()=>{
   expect(velocityForCell(cell,time+60_000,0.5,velocity).status).toBe('unavailable');
   expect(velocityForCell(cell,time,1.5,velocity).status).toBe('unavailable');
 });
+test('Barcelona 21:17 VRAD supports its own observation, not the 21:20 long-range scan',()=>{
+  // Real OPERA schedule observed on 2 November: Doppler :17, long-range DBZH :20.
+  const dopplerTime=Date.parse('2026-11-02T21:17:00Z');
+  const reflectivityTime=Date.parse('2026-11-02T21:20:00Z');
+  const barcelonaCell={lat:41.17036043318346,lon:2.0395651213022035,dbz:44,radiusKm:5.630838901372195};
+  const evidence={time:dopplerTime,level:0.5,quantity:'VRADH',grid:{width:20,height:20,values:new Float32Array(400).fill(-2.2),bounds:[[40.5,1.5],[41.8,2.8]]}};
+  expect(velocityForCell(barcelonaCell,dopplerTime,0.5,evidence)).toEqual({status:'available',coverage:100,medianMs:-2.2,quantity:'VRADH'});
+  expect(velocityForCell(barcelonaCell,reflectivityTime,0.5,evidence)).toEqual({status:'unavailable',coverage:0});
+});
 test('out of range and missing gates have different evidence states',()=>{
   expect(velocityForCell({...cell,lon:0},time,0.5,velocity).status).toBe('outOfRange');
   expect(velocityForCell(cell,time,0.5,{...velocity,grid:{...grid,values:new Float32Array(400).fill(NaN)}})).toEqual({status:'insufficient',coverage:0});
