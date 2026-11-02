@@ -1,7 +1,5 @@
 // EUMETNET OPERA / OpenRadarData (ORD) EDR API client — browser safe.
-// The API allows anonymous, rate-limited access and sends permissive CORS
-// headers, so it is queried directly from the browser. Only the ODIM/HDF5
-// binaries (hosted on an S3 bucket without CORS) go through our proxy route.
+// Metadata and volumes share the server cache across users and scheduled jobs.
 
 export const ORD_BASE = "https://api.meteogate.eu/eu-eumetnet-weather-radar";
 const COLLECTION = `${ORD_BASE}/collections/observations`;
@@ -44,14 +42,12 @@ function authHeaders(apiKey?: string): HeadersInit {
 }
 
 async function getJson<T>(url: string, apiKey?: string): Promise<T> {
-  const init = { headers: { Accept: "application/json", ...authHeaders(apiKey) } };
   let res: Response;
-  try {
-    res = await fetch(url, init);
-  } catch (err) {
-    // Some networks/browsers can't reach Meteogate directly; retry through our proxy.
-    if (typeof window === "undefined") throw err;
-    res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, init);
+  if (typeof window === 'undefined') {
+    const { sharedOperaResponse } = await import('./opera-cache.server');
+    res = await sharedOperaResponse(url, apiKey ? `Bearer ${apiKey}` : undefined);
+  } else {
+    res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json', ...authHeaders(apiKey) } });
   }
   if (!res.ok) {
     throw new Error(

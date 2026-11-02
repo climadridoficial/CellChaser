@@ -20,7 +20,8 @@ export async function ingestStormSource<T, R>(client: SupabaseClient<Database>, 
 export async function fetchStormVolume(href: string): Promise<ArrayBuffer> {
   const url = new URL(href);
   if (url.protocol !== 'https:' || !['s3.waw3-1.cloudferro.com', 'api.meteogate.eu', 'radar.meteogate.eu'].includes(url.hostname)) throw new Error('Untrusted radar host');
-  const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(25_000) });
+  const { sharedOperaResponse } = await import('./opera-cache.server');
+  const response = await sharedOperaResponse(url.href);
   if (!response.ok) throw new Error('Radar download unavailable');
   return response.arrayBuffer();
 }
