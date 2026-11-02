@@ -1,5 +1,5 @@
 # Radar scan corrections
-- [ ] Replace misleading total-load warnings with catalogue/OPERA-specific and partial-update warnings; verify visible data remains acknowledged.
+- [x] Replace misleading total-load warnings with source-specific and partial-update warnings; 18 tests pass and controlled browser check confirms five loaded radar layers plus partial warning. Vercel deployment not directly verified.
 - [x] Enable individual long-range selection for San Sebastián and Valladolid; 13 tests pass and controlled desktop/mobile checks confirm enabled selection without relabelling short scans. Current upstream long-range availability is not verified.
 - [x] Place individual OpenData backup/manual image on map with saved calibration; intercepted real GIF confirms one loaded overlay and cleanup on close. Cached metadata proves essse/eslid long-range links exist; current availability remains unverified without upstream requests.
 - [x] Reduce automatic OPERA browser polling to once per ten minutes; disable immediate retries/focus/reconnect refetches. Eleven tests pass; intercepted browser clock verifies no additional calls at one minute and the next cycle at ten minutes, without upstream traffic.

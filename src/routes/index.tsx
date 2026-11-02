@@ -141,7 +141,7 @@ function Home() {
   }, [showLightning, alignLightning, lightningEdit, lightning.data, lightningCorners]);
 
   const aemetNote = aemet.isError
-      ? t("loadFailed")
+      ? t("weatherUpdateFailed")
       : aemet.data
         ? t("aemetCount", { n: aemet.data.length })
         : showAemet
