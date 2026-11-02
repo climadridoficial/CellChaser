@@ -14,6 +14,7 @@ import { HISTORY_HOURS, slotAt, slotIndex, STEPS, STEP_MS } from "@/lib/timeline
 import { radarFrameVisible } from "@/lib/radar-freshness";
 import { useRadarNow } from "@/hooks/use-radar-now";
 import { OPERA_POLL_OPTIONS } from "@/lib/opera-refresh";
+import { compositeRenderKey, compositeRenderSize } from "@/lib/radar-render-policy";
 
 export interface CompositeLayer {
   key: string;
@@ -27,16 +28,13 @@ export interface CompositeLayer {
   candidate?: ScanCandidate;
 }
 
-// Lighter than the station panel's full-detail render: 10 radars at once.
-const COMPOSITE_SIZE = 800;
-
 const KEEP_MS = 2 * 3600_000;
 
 type Pick = NonNullable<ReturnType<typeof pickScan>>;
 
 function operaScanQuery(s: RadarStation, pick: Pick) {
   return {
-    queryKey: ["composite-opera-scan", pick.href] as const,
+    queryKey: compositeRenderKey(s, pick),
     queryFn: async () => {
       const scan = await decodeAndRender({
         href: pick.href,
@@ -44,7 +42,7 @@ function operaScanQuery(s: RadarStation, pick: Pick) {
         level: pick.level,
         time: pick.time,
         fallbackStation: { lat: s.lat, lon: s.lon },
-        size: COMPOSITE_SIZE,
+        size: compositeRenderSize(s.id),
       });
       return { image: scan.dataUrl, bounds: scan.bounds as RadarBounds, time: pick.time, scan, candidate: pick };
     },
@@ -89,7 +87,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
     queries: radars.map((s, i) => {
       const pick = picks[i];
       return {
-        queryKey: ["composite-opera-scan", pick?.href ?? null],
+        queryKey: compositeRenderKey(s, pick),
         enabled: !!pick,
         staleTime: Infinity,
         gcTime: KEEP_MS,
@@ -176,7 +174,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const source = compositeSource(mode, !!aemetCodes[i], operaStates[i] ?? null);
       if (source === "opera") {
         const d = scans[i]?.data;
-        if (d && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now)) out.push({ key: `opera-${s.id}-${d.time}`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time, scan: d.scan, candidate: d.candidate });
+        if (d && radarFrameVisible(d.time, at, OPERA_MAX_AGE_MS, now)) out.push({ key: `opera-${s.id}-${d.time}-${d.candidate.href}-${d.candidate.level}-detail-v2`, radarId: s.id, source, image: d.image, bounds: d.bounds, observedAt: d.time, scan: d.scan, candidate: d.candidate });
       } else if (source === "aemet") {
         const d = aemet[i]?.data;
         const code = aemetCodes[i];
