@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { initialRadarSelection, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
+import { initialRadarSelection, individualRangeOptions, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;
@@ -9,6 +9,20 @@ const candidates = [
   { href: "long", time: "2026-11-01T13:00:00Z", level: 2.1, doppler: false, products: ["DBZH"] },
   { href: "old", time: "2026-11-01T12:00:00Z", level: 4.5, doppler: true, products: ["DBZH"] },
 ];
+
+test("San Sebastián exposes long range even when discovery only returns short range", () => {
+  expect(individualRangeOptions("0-724-0-essse", [candidates[0]], "DBZH")).toEqual(["short", "long"]);
+});
+test("Valladolid exposes long range even when scan discovery is empty", () => {
+  expect(individualRangeOptions("0-724-0-eslid", [], "DBZH")).toEqual(["short", "long"]);
+});
+test("explicit long range never silently displays a short-range volume", () => {
+  expect(selectionCandidates([candidates[0]], "DBZH", "long", true)).toEqual([]);
+  expect(selectionCandidates(candidates, "DBZH", "long", true).map(c => c.href)).toEqual(["long"]);
+});
+test("known reflectivity range capability does not invent long-range velocity", () => {
+  expect(individualRangeOptions("0-724-0-eslid", [candidates[0]], "VRADH")).toEqual(["short"]);
+});
 
 test("opening individual reflectivity preserves the composite's long-range volume at the same lowest elevation", () => {
   const volumes = [candidates[0], {...candidates[2], level: 0.5}];

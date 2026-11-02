@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { initialRadarSelection, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { initialRadarSelection, individualRangeOptions, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -71,9 +71,9 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
   const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
   const currentHistory = historyKey === availabilityKey ? history : null;
-  const productHistory = currentHistory?.filter((c) => c.products?.includes(product ?? ""));
-  const hasBothRanges = !!productHistory?.some((c) => c.doppler) && !!productHistory?.some((c) => !c.doppler);
-  const candidates = useMemo(() => currentHistory ? selectionCandidates(currentHistory, product, rangeMode) : null, [currentHistory, product, rangeMode]);
+  const rangeOptions = useMemo(() => individualRangeOptions(station.id, currentHistory ?? [], product), [station.id, currentHistory, product]);
+  const hasBothRanges = rangeOptions.length > 1;
+  const candidates = useMemo(() => currentHistory ? selectionCandidates(currentHistory, product, rangeMode, hasBothRanges) : null, [currentHistory, product, rangeMode, hasBothRanges]);
   const files = useMemo<ScanFile[] | null>(() => candidates?.filter((c) => c.level === level).map((c) => ({ href: c.href, time: c.time, bytes: null, range: c.doppler ? "short" : "long" })) ?? null, [candidates, level]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [scan, setScan] = useState<RenderedScan | null>(null);
@@ -355,10 +355,13 @@ export default function StationPanel({ station, apiKey, onClose, onScan, onBacku
         {hasBothRanges && (
           <section>
             <h3 className="section-title">{t("rangeTitle")}</h3>
-            <select value={rangeMode} onChange={(e) => setRangeMode(e.target.value as "short" | "long")} className="select mt-2">
-              <option value="short">{t("rangeShort")}</option>
-              <option value="long">{t("rangeLong")}</option>
-            </select>
+            <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label={t("rangeTitle")}>
+              {rangeOptions.map(range => (
+                <Button key={range} className="h-auto min-h-16 whitespace-normal leading-tight" variant={rangeMode === range ? "default" : "outline"} size="sm" aria-pressed={rangeMode === range} onClick={() => { initialSelectionDone.current = true; setRangeMode(range); }}>
+                  {t(range === "short" ? "rangeShort" : "rangeLong")}
+                </Button>
+              ))}
+            </div>
           </section>
         )}
 
