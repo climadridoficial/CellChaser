@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Separate OPERA access errors from absent radar transmission in composite, individual panel and static catalogue; preserve only fresh OPERA images and never trigger automatic OpenData for access errors.
 - [x] Share OPERA metadata and volume downloads across users, radar views and storm jobs; database leases, credential-isolated cache and provider cooldowns applied. Twelve tests pass; real preview has no direct browser ORD requests, honors current 429 cooldown, and renders map without errors. Successful live OPERA reuse remains blocked by upstream 429; published hosts need updated code.
 - [x] Keep neighbouring radars' composite echoes visible when a station is opened (applies to every radar); verified San Sebastián keeps all 14 overlays.
 - [x] Fix single-digit lightning period days and explicit NOV glyphs; real 2 Nov GIF and both preview/CellChaser.com show the overlay and six UTC intervals. Prediction legend renders on both; current shared frames can be empty/incomplete, not a missing control.
