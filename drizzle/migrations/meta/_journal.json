@@ -57,6 +57,13 @@
       "when": 1793630280070,
       "tag": "0007_shared_opera_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793630373079,
+      "tag": "0008_fence_opera_cache_claims",
+      "breakpoints": true
     }
   ]
 }
