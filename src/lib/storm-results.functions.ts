@@ -3,9 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { dedupeTracks, type StormTrack } from "./storm-tracking";
-import { radarFrameVisible } from "./radar-freshness";
 import { OPERA_MAX_AGE_MS, AEMET_LIVE_MAX_AGE_MS } from "./composite";
-import { STORM_VERSION } from './storm-version';
+import { STORM_READ_VERSIONS } from './storm-version';
+import { selectStormFrame } from './storm-frame-selection';
 
 export const getSharedStormTracks = createServerFn({method:"GET"})
   .inputValidator(z.object({radarIds:z.array(z.string().regex(/^(?:0-\d+-\d+-[a-z0-9]+|aemet-[a-z]{2})$/)).max(80),at:z.number().finite().nullable(),source:z.enum(["auto","opera","aemet"])}))
@@ -20,7 +20,7 @@ export const getSharedStormTracks = createServerFn({method:"GET"})
     }}});
     const now = Date.now(), end = data.at??now, start = end-60*60_000;
     const [frames,states] = await Promise.all([
-      client.from("storm_track_frames").select("radar_id,source,observed_at,tracks").eq("algorithm_version",STORM_VERSION).in("radar_id",data.radarIds).gte("observed_at",new Date(start).toISOString()).lte("observed_at",new Date(end+60_000).toISOString()).order("observed_at",{ascending:false}).limit(1000),
+      client.from("storm_track_frames").select("radar_id,source,observed_at,tracks,algorithm_version").in("algorithm_version",STORM_READ_VERSIONS).in("radar_id",data.radarIds).gte("observed_at",new Date(start).toISOString()).lte("observed_at",new Date(end+60_000).toISOString()).order("observed_at",{ascending:false}).limit(1000),
       client.from("storm_source_state").select("radar_id,source,available,checked_at").in("radar_id",data.radarIds),
     ]);
     if (frames.error || states.error) return {tracks:[] as StormTrack[],incomplete:true};
@@ -29,7 +29,7 @@ export const getSharedStormTracks = createServerFn({method:"GET"})
       const row = (data.source==="auto" ? ["opera","aemet"] : [data.source]).map(source=>{
         const state = states.data?.find(s=>s.radar_id===id && s.source===source);
         const unavailable = !state?.available || now-Date.parse(state.checked_at)>15*60_000;
-        return frames.data?.find(f=>f.radar_id===id&&f.source===source&&radarFrameVisible(f.observed_at,data.at,source==="opera"?OPERA_MAX_AGE_MS:AEMET_LIVE_MAX_AGE_MS,now,unavailable));
+        return selectStormFrame(frames.data??[],id,source,data.at,source==="opera"?OPERA_MAX_AGE_MS:AEMET_LIVE_MAX_AGE_MS,now,unavailable);
       }).find(Boolean);
       if (row) tracks.push(...row.tracks as unknown as StormTrack[]); else missing++;
     }
