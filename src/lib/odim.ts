@@ -49,10 +49,16 @@ const fileCache = new Map<string, Promise<ArrayBuffer>>();
 function downloadScan(href: string): Promise<ArrayBuffer> {
   let hit = fileCache.get(href);
   if (!hit) {
-    hit = fetch(proxiedFileUrl(href)).then((res) => {
-      if (!res.ok) throw new Error(`Could not download the radar scan (${res.status})`);
-      return res.arrayBuffer();
-    });
+    hit = (async () => {
+      // 503 = our shared queue is momentarily busy (not an OPERA limit): retry briefly.
+      for (let attempt = 0; ; attempt++) {
+        const res = await fetch(proxiedFileUrl(href));
+        if (res.ok) return res.arrayBuffer();
+        if (res.status !== 503 || attempt >= 2) throw new Error(`Could not download the radar scan (${res.status})`);
+        const wait = Math.min(Number(res.headers.get('retry-after')) || 2, 10) * 1000;
+        await new Promise(resolve => setTimeout(resolve, wait * (attempt + 1)));
+      }
+    })();
     hit.catch(() => fileCache.delete(href));
     fileCache.set(href, hit);
     while (fileCache.size > 24) {
