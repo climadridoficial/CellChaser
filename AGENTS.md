@@ -32,5 +32,5 @@
 - Render saved storm forecast polygons with Leaflet clipping and simplification disabled so viewport edges cannot add or collapse forecast corners.
 - Share OPERA metadata/volumes through persisted leases and host/credential cooldowns; external hosts without server credentials delegate to the managed cache. Keep staggered storm jobs, validated manual redirects, and source health independent of processing failures.
 - Persist deterministic advisory facts inside versioned storm-track JSON during scheduled ingest; browsers translate these shared facts rather than generating independent messages, and all cache readers use storm-version.ts.
-- Discover all OPERA quantities before selecting DBZH and exact-time/elevation VRAD, preserving velocity-only files; sample measured coverage and report radial air motion, never replacing three reflectivity motion scans.
+- Preserve OPERA quantities; storm VRAD uses the newest same-elevation scan 0–5 minutes before DBZH, with real time and coverage. Other matching stays exact; radial velocity never replaces reflectivity motion.
 - Lightning advisories use calibrated newest-bin source-image pixels and printed UTC intervals, reject future/stale periods, and never report pixel counts as strike counts or infer polarity.
