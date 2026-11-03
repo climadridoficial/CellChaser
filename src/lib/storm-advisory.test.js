@@ -69,11 +69,13 @@ test('scheduled frame saves shared evidence with version and recomputes on new s
     if(table==='storm_cell_frames') return {async upsert(row){rows.push(row);return {error:null}},select(){const q={eq(){return q},gte(){return q},lte(){return q},async order(){return {data:rows,error:null}}};return q}};
     return {async upsert(row){tracks.push(row);return {error:null}}};
   }};
-  for(const m of [0,10,20]) await saveStormFrame(client,'test','opera',new Date(time+m*60_000).toISOString(),[{...cell,lon:-3+m*0.008}],{level:0.5,velocity:{...velocity,time:time+m*60_000},lightning});
+  for(const m of [0,10,20]) await saveStormFrame(client,'test','opera',new Date(time+m*60_000).toISOString(),[{...cell,lon:-3+m*0.008}],{level:0.5,velocity:{...velocity,time:time+(m-3)*60_000},lightning});
   expect(tracks[0].tracks).toEqual([]);
   const saved=tracks.at(-1);
   expect(saved.algorithm_version).toBe(STORM_VERSION);
   expect(saved.tracks).toHaveLength(1);
   expect(saved.tracks[0].advisory.vrad.status).toBe('available');
+  expect(saved.tracks[0].advisory.vrad.observedAt).toBe(time+17*60_000);
+  expect(saved.tracks[0].advisory.observedAt).toBe(time+20*60_000);
   expect(saved.tracks[0].forecast).toHaveLength(4);
 });
