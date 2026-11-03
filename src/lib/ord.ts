@@ -52,7 +52,13 @@ async function getJson<T>(url: string, apiKey?: string): Promise<T> {
   if (typeof window === 'undefined') {
     res = await serverOperaRead(url, apiKey ? `Bearer ${apiKey}` : undefined);
   } else {
-    res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json', ...authHeaders(apiKey) } });
+    // 503 = our shared queue briefly busy (not an OPERA limit): retry a couple of times.
+    for (let attempt = 0; ; attempt++) {
+      res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json', ...authHeaders(apiKey) } });
+      if (res.status !== 503 || attempt >= 2) break;
+      const wait = Math.min(Number(res.headers.get('retry-after')) || 2, 10) * 1000;
+      await new Promise(resolve => setTimeout(resolve, wait * (attempt + 1)));
+    }
   }
   if (!res.ok) {
     throw new Error(
