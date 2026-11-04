@@ -166,6 +166,8 @@
   --storm-strong: oklch(0.87 0.18 95);
   --storm-very-strong: oklch(0.64 0.24 25);
   --storm-extreme: oklch(0.68 0.27 335);
+  --storm-outline-dark: oklch(0.18 0.01 250);
+  --storm-outline-light: oklch(0.99 0 0);
   --background: oklch(0.16 0.021 250);
   --foreground: oklch(0.95 0.008 240);
   --card: oklch(0.21 0.024 252);
@@ -488,7 +490,10 @@
 .storm-extreme { --storm-color: var(--storm-extreme); }
 .storm-area, .storm-trace, .storm-dot { stroke: var(--storm-color); fill: var(--storm-color); }
 .storm-trace { fill: none; }
-.storm-area { stroke-dasharray: 7 4; }
+.storm-forecast-casing, .storm-trace-casing { stroke: var(--storm-outline-dark); fill: none; }
+.storm-forecast-halo { stroke: var(--storm-outline-light); fill: none; }
+.storm-area { stroke-dasharray: 10 6; }
+.storm-dot { stroke: var(--storm-outline-dark); }
 .storm-advisory-popup { max-width: min(280px, calc(100vw - 90px)); font-size: 0.75rem; line-height: 1.45; overflow-wrap: anywhere; }
 .storm-advisory-popup p { margin: 0.4rem 0; }
 .storm-advisory-popup p:first-child { font-weight: 600; }
