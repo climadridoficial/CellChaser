@@ -26,3 +26,7 @@ test("OPERA access failures never activate OpenData fallback", () => {
 test("off shows nothing", () => {
   expect(compositeSource("off", true, "ok")).toBe(null);
 });
+
+test("OpenData-only mode never shows OPERA for radars without OpenData imagery", () => {
+  expect(compositeSource("opendata", false, "ok")).toBe(null);
+});

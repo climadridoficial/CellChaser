@@ -14,8 +14,8 @@ export const COMPOSITE_MODES: { id: CompositeMode; label: string; note: string }
 
 export function compositeSource(mode: CompositeMode, hasAemet: boolean, opera: OperaState): "opera" | "aemet" | null {
   if (mode === "off") return null;
-  // Radars without AEMET imagery (Portugal) use OPERA in every mode.
-  if (mode === "opendata") return hasAemet ? "aemet" : opera === "ok" ? "opera" : null;
+  // OpenData-only mode never mixes in OPERA, even for radars without AEMET imagery.
+  if (mode === "opendata") return hasAemet ? "aemet" : null;
   if (opera === "ok") return "opera";
   if (mode === "opera") return null;
   // Fallback mode: wait for OPERA before falling back, so radars don't flicker.
