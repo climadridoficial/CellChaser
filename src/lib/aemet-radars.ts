@@ -46,6 +46,17 @@ export function aemetCodeFor(station: RadarStation): string | null {
   return station.aemetCode ?? OPERA_TO_AEMET[station.code] ?? null;
 }
 
+/** Verified ORD location; catalogue failures must not erase Tenerife's marker.
+ * No AEMET mapping or live availability is inferred from this location. */
+export function knownOperaStations(opera: RadarStation[]): RadarStation[] {
+  if (opera.some(s => s.id === '0-724-0-esbnv' || s.code === 'esbnv')) return [];
+  return [{
+    id: '0-724-0-esbnv', code: 'esbnv', name: 'Tenerife (Buenavista del Norte)',
+    country: '724', lat: 28.3109300583601, lon: -16.823839880526066,
+    parameters: [], products: [], offline: false,
+  }];
+}
+
 /** Undiscovered AEMET radars as backup stations, replaced by OPERA on recovery. */
 export function aemetOnlyStations(opera: RadarStation[]): RadarStation[] {
   return AEMET_ONLY.filter(

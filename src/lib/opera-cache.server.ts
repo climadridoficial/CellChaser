@@ -19,9 +19,17 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     // External deployments share the managed cache, not a new anonymous ORD quota.
     const origin = process.env['OPERA_CACHE_ORIGIN'] || 'https://cellchaser.lovable.app';
     if (requestOrigin === new URL(origin).origin) return new Response('Shared radar cache unavailable', { status: 503 });
-    return fetch(`${origin}/api/public/odim?url=${encodeURIComponent(target.href)}`, {
+    const response = await fetch(`${origin}/api/public/odim?url=${encodeURIComponent(target.href)}`, {
       headers: authorization ? { authorization } : {}, redirect: 'manual', signal: AbortSignal.timeout(30_000),
     });
+    // Fetch decodes the upstream body on Node/Vercel. Forwarding its gzip
+    // header makes the browser try to decode the already decoded bytes again.
+    const headers = new Headers();
+    for (const name of ['content-type', 'cache-control', 'retry-after', 'x-opera-cache', 'location']) {
+      const value = response.headers.get(name);
+      if (value !== null) headers.set(name, value);
+    }
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
   const client = createClient<Database>(backend, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (input, init) => {
     const headers = new Headers(init?.headers);
