@@ -1,5 +1,16 @@
 import { expect, test } from "bun:test";
-import { aemetOnlyStations, OPERA_TO_AEMET } from "./aemet-radars";
+import { aemetOnlyStations, knownOperaStations, aemetCodeFor, OPERA_TO_AEMET } from "./aemet-radars";
+
+test('Tenerife remains selectable during catalogue failure without invented OpenData or scans', () => {
+  const stations = knownOperaStations([]);
+  expect(stations).toHaveLength(1);
+  expect(stations[0]).toMatchObject({ id: '0-724-0-esbnv', lat: 28.3109300583601, lon: -16.823839880526066, offline: false, products: [] });
+  expect(aemetCodeFor(stations[0])).toBeNull();
+});
+
+test('discovered Tenerife replaces its static location without duplicates', () => {
+  expect(knownOperaStations([{ id: '0-724-0-esbnv', code: 'esbnv' }])).toEqual([]);
+});
 
 test("OPERA discovery outage preserves all fifteen AEMET radar locations without inventing live scans", () => {
   const stations = aemetOnlyStations([]);

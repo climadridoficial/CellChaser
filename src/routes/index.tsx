@@ -12,7 +12,7 @@ import StationPanel from "@/components/StationPanel";
 import SettingsSheet from "@/components/SettingsSheet";
 import LayerMenu from "@/components/LayerMenu";
 import AemetPanel from "@/components/AemetPanel";
-import { aemetOnlyStations } from "@/lib/aemet-radars";
+import { aemetOnlyStations, knownOperaStations } from "@/lib/aemet-radars";
 import { fetchAemetStations, type AemetObs } from "@/lib/aemet";
 import AemetAlignment, { type AlignmentTarget } from "@/components/AemetAlignment";
 import IntroOverlay from "@/components/IntroOverlay";
@@ -149,10 +149,10 @@ function Home() {
           : t("aemetDefault");
 
   const visibleStations = useMemo(() => {
-    const fixNames: Record<string, string> = { SanSebastian: "San Sebastián" };
+    const fixNames: Record<string, string> = { SanSebastian: "San Sebastián", "Buenavista Norte": "Tenerife (Buenavista del Norte)" };
     const opera: RadarStation[] = (stations.data ?? []).map((s) => ({ ...s, name: fixNames[s.name] ?? s.name }));
     // AEMET radars stay available even when OPERA can't be reached.
-    const all = [...opera, ...aemetOnlyStations(opera)];
+    const all = [...opera, ...aemetOnlyStations(opera), ...knownOperaStations(opera)];
     if (settings.country === "all") return all;
     if (settings.country === "iberia") return all.filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
     const code = settings.country.replace(/^0+/, "");
@@ -162,7 +162,7 @@ function Home() {
   // Iberian radars (Spain + Portugal) for the composite, independent of the station country filter.
   const spainRadars = useMemo(() => {
     const opera = (stations.data ?? []).filter((s) => IBERIA.includes(s.country.replace(/^0+/, "")));
-    return [...opera, ...aemetOnlyStations(opera)];
+    return [...opera, ...aemetOnlyStations(opera), ...knownOperaStations(opera)];
   }, [stations.data]);
   const [stationPreload, setStationPreload] = useState<PreloadProgress>(NO_PRELOAD);
   const composite = useRadarComposite(settings.composite, spainRadars, settings.meteogateKey, at);
