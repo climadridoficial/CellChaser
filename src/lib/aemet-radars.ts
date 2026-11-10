@@ -12,6 +12,7 @@ export const OPERA_TO_AEMET: Record<string, string> = {
   esgld: "ba",
   esftn: "mu", // Murcia (Fortuna), verified ORD feed
   esllm: "pm", // Illes Balears (Llucmajor), verified ORD feed
+  escll: "va", // Valencia (Cullera); retain the existing regional calibration key
   eslid: "vd",
   esnjr: "am",
   espdg: "za",
