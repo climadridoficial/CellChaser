@@ -492,7 +492,11 @@
 .storm-trace { fill: none; }
 .storm-forecast-casing, .storm-trace-casing { stroke: var(--storm-outline-dark); fill: none; }
 .storm-forecast-halo { stroke: var(--storm-outline-light); fill: none; }
-.storm-area { stroke-dasharray: 10 6; }
+.storm-area, .storm-forecast-casing, .storm-forecast-halo {
+  stroke-dasharray: 8 5;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+}
 .storm-dot { stroke: var(--storm-outline-dark); }
 .storm-advisory-popup { max-width: min(280px, calc(100vw - 90px)); font-size: 0.75rem; line-height: 1.45; overflow-wrap: anywhere; }
 .storm-advisory-popup p { margin: 0.4rem 0; }
