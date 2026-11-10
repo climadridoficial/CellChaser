@@ -10,6 +10,8 @@ export const OPERA_TO_AEMET: Record<string, string> = {
   esatn: "ca", // Gran Canaria (Artenara)
   esclg: "se",
   esgld: "ba",
+  esftn: "mu", // Murcia (Fortuna), verified ORD feed
+  esllm: "pm", // Illes Balears (Llucmajor), verified ORD feed
   eslid: "vd",
   esnjr: "am",
   espdg: "za",
