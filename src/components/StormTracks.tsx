@@ -28,15 +28,15 @@ export default function StormTracks({ map, tracks }: { map: L.Map | null; tracks
       if (track.forecast) {
         // Preserve the four saved corners: Leaflet clipping can add vertices at map edges.
         // Dual contrast casing stays visible on light maps and intense radar echoes.
-        L.polygon(track.forecast, { className: "storm-forecast-casing", weight: 8, fill: false, interactive: false, noClip: true, smoothFactor: 0, pane, renderer }).addTo(group);
-        L.polygon(track.forecast, { className: "storm-forecast-halo", weight: 5, fill: false, interactive: false, noClip: true, smoothFactor: 0, pane, renderer }).addTo(group);
-        L.polygon(track.forecast, { className: `storm-area ${className}`, weight: 3, fillOpacity: 0.04, noClip: true, smoothFactor: 0, pane, renderer }).bindTooltip(`${t("stormForecast")} · ${t(LABELS[track.intensity])} · ~${Math.round(last.dbz)} dBZ · ${track.speedKmh} km/h · ${clock(last.time)} → ${clock(last.time + 60 * 60_000)} UTC`).bindPopup(content,{maxWidth:300}).addTo(group);
+        L.polygon(track.forecast, { className: "storm-forecast-casing", weight: 5, fill: false, interactive: false, noClip: true, smoothFactor: 0, pane, renderer }).addTo(group);
+        L.polygon(track.forecast, { className: "storm-forecast-halo", weight: 3.5, fill: false, interactive: false, noClip: true, smoothFactor: 0, pane, renderer }).addTo(group);
+        L.polygon(track.forecast, { className: `storm-area ${className}`, weight: 2, fillOpacity: 0.025, noClip: true, smoothFactor: 0, pane, renderer }).bindTooltip(`${t("stormForecast")} · ${t(LABELS[track.intensity])} · ~${Math.round(last.dbz)} dBZ · ${track.speedKmh} km/h · ${clock(last.time)} → ${clock(last.time + 60 * 60_000)} UTC`).bindPopup(content,{maxWidth:300}).addTo(group);
       }
       const positions = track.points.map(p => [p.lat, p.lon] as [number, number]);
-      L.polyline(positions, { className: "storm-trace-casing", weight: 5, interactive: false, pane, renderer }).addTo(group);
+      L.polyline(positions, { className: "storm-trace-casing", weight: 3.5, interactive: false, pane, renderer }).addTo(group);
       L.polyline(positions, { className: `storm-trace ${className}`, weight: 2, interactive: false, pane, renderer }).addTo(group);
       for (const point of track.points) {
-        const marker=L.circleMarker([point.lat, point.lon], { radius: point === last ? 7 : 3, className: `storm-dot storm-${cellIntensity(point.dbz)}`, weight: 1, fillOpacity: 1, pane, renderer }).bindTooltip(`${clock(point.time)} UTC · ~${Math.round(point.dbz)} dBZ`).addTo(group);
+        const marker=L.circleMarker([point.lat, point.lon], { radius: point === last ? 5 : 2.5, className: `storm-dot storm-${cellIntensity(point.dbz)}`, weight: 1, fillOpacity: 1, pane, renderer }).bindTooltip(`${clock(point.time)} UTC · ~${Math.round(point.dbz)} dBZ`).addTo(group);
         if(point===last) marker.bindPopup(content.cloneNode(true) as HTMLElement,{maxWidth:300});
       }
     }
