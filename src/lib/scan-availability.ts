@@ -6,6 +6,20 @@ export function defaultsToLongRange(stationId: string): boolean {
   return ["0-724-0-eslid", "0-724-0-essse"].includes(stationId);
 }
 
+/** Composite uses the finer short-range volume whenever one exists in this slot. */
+export function pickCompositeRadarScan(candidates: ScanCandidate[], product: string, at: number, maxAge: number): ScanCandidate | null {
+  const matching = candidates.filter(c => c.products?.includes(product));
+  return pickScan(matching.filter(c => scanRange(c) === "short"), at, maxAge)
+    ?? pickScan(matching, at, maxAge);
+}
+
+/** Long-range individual defaults must not inherit the composite's short-range pick. */
+export function individualSharedCandidate<T extends ScanCandidate>(stationId: string, candidate: T | null, scan?: { rangeKm?: number } | null): T | null {
+  if (!candidate || !defaultsToLongRange(stationId)) return candidate;
+  const measured = { ...candidate, ...(scan?.rangeKm !== undefined ? { rangeKm: scan.rangeKm } : {}) };
+  return scanRange(measured) === "long" ? candidate : null;
+}
+
 /** Read each volume family's physical range once, shared by both views. */
 export async function measureRadarRanges(stationId: string, candidates: ScanCandidate[], read: (href: string, product: string, level: number) => Promise<number>): Promise<ScanCandidate[]> {
   if (!defaultsToLongRange(stationId)) return candidates;

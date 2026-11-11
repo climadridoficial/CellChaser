@@ -4,7 +4,7 @@ import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanCandidate } from "@/lib/ord";
 import { fetchScanHistory, pickScan } from "@/lib/ord";
 import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
-import { measureRadarRanges, pickDefaultRadarScan, stationHasScans } from "@/lib/scan-availability";
+import { measureRadarRanges, pickCompositeRadarScan, stationHasScans } from "@/lib/scan-availability";
 import { aemetCodeFor } from "@/lib/aemet-radars";
 import { AEMET_REFRESH_MS, loadAemetImages, processAemetImage, type RadarBounds } from "@/lib/aemet-overlay";
 import { AEMET_CALIBRATION, AEMET_CORNERS } from "@/lib/aemet-calibration";

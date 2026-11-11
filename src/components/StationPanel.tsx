@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { defaultsToLongRange, measureRadarRanges, initialRadarSelection, individualRangeOptions, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { defaultsToLongRange, measureRadarRanges, initialRadarSelection, individualRangeOptions, individualSharedCandidate, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
