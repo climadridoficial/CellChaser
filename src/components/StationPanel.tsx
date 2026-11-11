@@ -73,6 +73,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">(defaultsToLongRange(station.id) ? "long" : "short");
   const sharedStation = !station.offline;
+  const inheritedCandidate = individualSharedCandidate(station.id, sharedCandidate, sharedScan);
   const [manualSelection, setManualSelection] = useState(false);
   const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);

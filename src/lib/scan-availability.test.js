@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { measureRadarRanges, pickDefaultRadarScan, initialRadarSelection, individualRangeOptions, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
+import { measureRadarRanges, pickCompositeRadarScan, pickDefaultRadarScan, initialRadarSelection, individualRangeOptions, individualSharedCandidate, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans, matchingVelocityScan } from "./scan-availability";
 
 const now = Date.parse("2026-11-01T13:07:00Z");
 const maxAge = 20 * 60_000;

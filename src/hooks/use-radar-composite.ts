@@ -80,7 +80,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
   const picks = radars.map((s, i) => {
     const list = history[i]?.data?.filter(c => c.products?.includes("DBZH"));
     if (!list) return undefined;
-    return pickDefaultRadarScan(s.id, list, "DBZH", at ?? now, at === null ? OPERA_MAX_AGE_MS : STEP_MS);
+    return pickCompositeRadarScan(list, "DBZH", at ?? now, at === null ? OPERA_MAX_AGE_MS : STEP_MS);
   });
 
   const scans = useQueries({
@@ -211,7 +211,7 @@ export function useRadarComposite(mode: CompositeMode, radars: RadarStation[], a
       const t = slotAt(slot, base)!;
       radars.forEach((s, i) => {
         const list = history[i]?.data;
-        const pick = list ? pickDefaultRadarScan(s.id, list, "DBZH", t, STEP_MS) : null;
+        const pick = list ? pickCompositeRadarScan(list, "DBZH", t, STEP_MS) : null;
         const code = aemetCodes[i];
         const useAemet = !!code && (mode === "opendata" || (mode === "opera-fallback" && (s.offline || (!!list && !history[i]?.isError && !stationHasScans(list, t, OPERA_MAX_AGE_MS, base)))));
         const useOpera = !useAemet && mode !== "opendata" ? true : !code && mode === "opendata";
