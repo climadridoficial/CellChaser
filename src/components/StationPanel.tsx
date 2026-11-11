@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NO_PRELOAD, runPool, type PreloadProgress } from "@/lib/preload";
 import type { RadarStation, ScanEntry, ScanFile, ScanCandidate } from "@/lib/ord";
 import { countryLabel, fetchScanHistory, fetchStationScans } from "@/lib/ord";
-import { defaultsToLongRange, measureRadarRanges, initialRadarSelection, individualRangeOptions, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
+import { defaultsToLongRange, measureRadarRanges, initialRadarSelection, individualRangeOptions, individualSharedCandidate, scanRange, sharedIndividualScan, selectionCandidates, usableLevels, stationHasScans } from "@/lib/scan-availability";
 import { decodeAndRender, readScanRange, type RenderedScan } from "@/lib/odim";
 import AemetBackup from "@/components/AemetBackup";
 import { aemetCodeFor } from "@/lib/aemet-radars";
@@ -73,6 +73,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
   const [availabilityFailed, setAvailabilityFailed] = useState(false);
   const [rangeMode, setRangeMode] = useState<"short" | "long">(defaultsToLongRange(station.id) ? "long" : "short");
   const sharedStation = !station.offline;
+  const inheritedCandidate = individualSharedCandidate(station.id, sharedCandidate, sharedScan);
   const [manualSelection, setManualSelection] = useState(false);
   const initialSelectionDone = useRef(false);
   const availabilityKey = JSON.stringify([station.id, hours, apiKey]);
@@ -146,7 +147,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
     if (sharedStation) {
       setScans([]);
       setProduct("DBZH");
-      setLevel(sharedCandidate?.level ?? 0.5);
+      setLevel(inheritedCandidate?.level ?? 0.5);
       setStatus(null);
       return;
     }
@@ -215,9 +216,9 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
 
   useEffect(() => {
     if (currentHistory === null) return;
-    if (sharedStation && !manualSelection && sharedCandidate) {
-      setRangeMode(scanRange({ ...sharedCandidate, ...(sharedScan ? { rangeKm: sharedScan.rangeKm } : {}) }));
-      setLevel(sharedCandidate.level);
+    if (sharedStation && !manualSelection && inheritedCandidate) {
+      setRangeMode(scanRange({ ...inheritedCandidate, ...(sharedScan ? { rangeKm: sharedScan.rangeKm } : {}) }));
+      setLevel(inheritedCandidate.level);
       initialSelectionDone.current = true;
       return;
     }
@@ -231,15 +232,15 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
       }
     }
     if (level === null || !levels.includes(level)) setLevel(levels[0] ?? null);
-  }, [currentHistory, levels, level, product, at, now, sharedStation, manualSelection, sharedCandidate, sharedScan]);
+  }, [currentHistory, levels, level, product, at, now, sharedStation, manualSelection, inheritedCandidate, sharedScan]);
 
   useEffect(() => {
-    setSelectedTime(sharedStation && !manualSelection && sharedCandidate ? sharedCandidate.href : files ? fileFor(files, at) : null);
-  }, [files, at, now, sharedStation, manualSelection, sharedCandidate]);
+    setSelectedTime(sharedStation && !manualSelection && inheritedCandidate ? inheritedCandidate.href : files ? fileFor(files, at) : null);
+  }, [files, at, now, sharedStation, manualSelection, inheritedCandidate]);
 
   // Decode + render the selected scan
   useEffect(() => {
-    const shared = sharedIndividualScan(station.id, sharedScan, manualSelection || aemetView, at, OPERA_MAX_AGE_MS, now);
+    const shared = sharedIndividualScan(station.id, inheritedCandidate ? sharedScan : null, manualSelection || aemetView, at, OPERA_MAX_AGE_MS, now);
     if (shared) {
       setScan(shared);
       onScan(shared);
@@ -276,7 +277,7 @@ export default function StationPanel({ station, sharedScan, sharedCandidate, sha
     return () => {
       cancelled = true;
     };
-  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan, sharedStation, manualSelection, sharedScan, aemetView, at, now, station.id]);
+  }, [files, filesKey, selectionKey, selectedTime, product, level, decodeCached, onScan, sharedStation, manualSelection, inheritedCandidate, sharedScan, aemetView, at, now, station.id]);
 
   // History mode: decode every scan in the slider window once.
   const historyMode = at !== null;
