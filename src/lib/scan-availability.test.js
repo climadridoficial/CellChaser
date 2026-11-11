@@ -113,3 +113,28 @@ test('nearby but different observation times and elevations are not relabelled a
   expect(matchingVelocityScan([{...dbz,level:1.5}],dbz)).toBeNull();
   expect(matchingVelocityScan([dbz],dbz)?.href).toBe('volume');
 });
+
+test('OPERA composite prefers the finer short-range scan at the same elevation', () => {
+  const volumes = [
+    { ...candidates[0], href: 'short', rangeKm: 120 },
+    { ...candidates[2], href: 'long', level: 0.5, rangeKm: 240 },
+  ];
+  expect(pickCompositeRadarScan(volumes, 'DBZH', now, maxAge)?.href).toBe('short');
+});
+
+test('OPERA composite uses long range only when short range is absent from the slot', () => {
+  const expiredShort = { ...candidates[0], href: 'expired-short', time: '2026-11-01T12:00:00Z', rangeKm: 120 };
+  const freshLong = { ...candidates[2], href: 'fresh-long', level: 0.5, rangeKm: 240 };
+  expect(pickCompositeRadarScan([expiredShort, freshLong], 'DBZH', now, maxAge)?.href).toBe('fresh-long');
+  expect(pickCompositeRadarScan([freshLong], 'DBZH', now, maxAge)?.href).toBe('fresh-long');
+});
+
+for (const id of ['0-724-0-eslid', '0-724-0-essse']) {
+  test(`${id} keeps its individual long-range default instead of inheriting composite short range`, () => {
+    const short = { ...candidates[0], href: 'short', rangeKm: 120 };
+    const long = { ...candidates[2], href: 'long', level: 0.5, rangeKm: 240 };
+    expect(individualSharedCandidate(id, short, { rangeKm: 120 })).toBeNull();
+    expect(individualSharedCandidate(id, long, { rangeKm: 240 })).toBe(long);
+    expect(pickDefaultRadarScan(id, [short, long], 'DBZH', now, maxAge)?.href).toBe('long');
+  });
+}
