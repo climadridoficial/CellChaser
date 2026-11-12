@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { operaTarget } from '@/lib/opera-cache-policy';
+import { operaBrowserResponse } from '@/lib/opera-transport';
 
 export const Route = createFileRoute("/api/public/odim")({
   server: {
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/api/public/odim")({
           return new Response("Invalid radar url", { status: 400 });
         }
         const { sharedOperaResponse } = await import('@/lib/opera-cache.server');
-        return sharedOperaResponse(raw, request.headers.get('authorization'), new URL(request.url).origin);
+        return operaBrowserResponse(await sharedOperaResponse(raw, request.headers.get('authorization'), new URL(request.url).origin));
       },
     },
   },

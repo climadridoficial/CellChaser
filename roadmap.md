@@ -1,4 +1,6 @@
 # Radar scan corrections
+- [x] Explain external OPERA hosting: current Vercel proxy delegates to managed shared cache; moving the shared download coordination is necessary, with provider limits and separate hosting costs retained.
+- [x] Handle paused Cloud OPERA cache as explicit browser service unavailability, not an empty scan; preserve map, AEMET, freshness and fallback policy. Nineteen tests pass; deployment still needed.
 - [x] Fix Vercel delegated OPERA response decoding and preserve verified Tenerife/Buenavista marker on catalogue failure. Reproduced ERR_CONTENT_DECODING_FAILED on www.cellchaser.com; 14 tests/build pass, real 09:30 UTC Tenerife scan and clickable panel verified locally. Vercel redeployment still required.
 - [x] Make forecast corridors distinguishable with dark/light casing and lower fill; 27 regression tests pass, real 20:10 UTC light/36 dBZ/19 km/h advisory and desktop/mobile rendering checked. Investigation found overlapping fragment areas may inflate merged width; no arbitrary intensity/motion changes applied.
 - [x] User clarified the issue is colours blending with radar, not a request to alter numerical forecasts: preserve the existing colours and add contrast outlines; no numerical changes.

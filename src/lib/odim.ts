@@ -4,6 +4,7 @@
 import { colorFor, productInfo, type ProductInfo } from "./radar-products";
 import { rangeStartMetres, mercatorY, latitudeFromY, polarAt, rayLookup } from "./radar-geometry";
 import type { EchoGrid } from "./storm-tracking";
+import { assertOperaAvailable } from './opera-transport';
 
 export interface RenderedScan {
   dataUrl: string;
@@ -53,6 +54,7 @@ function downloadScan(href: string): Promise<ArrayBuffer> {
       // 503 = our shared queue is momentarily busy (not an OPERA limit): retry briefly.
       for (let attempt = 0; ; attempt++) {
         const res = await fetch(proxiedFileUrl(href));
+        assertOperaAvailable(res);
         if (res.ok) return res.arrayBuffer();
         if (res.status !== 503 || attempt >= 2) throw new Error(`Could not download the radar scan (${res.status})`);
         const wait = Math.min(Number(res.headers.get('retry-after')) || 2, 10) * 1000;

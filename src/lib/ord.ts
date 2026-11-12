@@ -1,6 +1,7 @@
 // EUMETNET OPERA / OpenRadarData (ORD) EDR API client — browser safe.
 // Metadata and volumes share the server cache across users and scheduled jobs.
 import { createServerOnlyFn } from '@tanstack/react-start';
+import { assertOperaAvailable } from './opera-transport';
 
 const serverOperaRead = createServerOnlyFn(async (url: string, authorization?: string) => {
   const { sharedOperaResponse } = await import('./opera-cache.server');
@@ -55,11 +56,13 @@ async function getJson<T>(url: string, apiKey?: string): Promise<T> {
     // 503 = our shared queue briefly busy (not an OPERA limit): retry a couple of times.
     for (let attempt = 0; ; attempt++) {
       res = await fetch(`/api/public/odim?url=${encodeURIComponent(url)}`, { headers: { Accept: 'application/json', ...authHeaders(apiKey) } });
+      assertOperaAvailable(res);
       if (res.status !== 503 || attempt >= 2) break;
       const wait = Math.min(Number(res.headers.get('retry-after')) || 2, 10) * 1000;
       await new Promise(resolve => setTimeout(resolve, wait * (attempt + 1)));
     }
   }
+  assertOperaAvailable(res);
   if (!res.ok) {
     throw new Error(
       res.status === 429
