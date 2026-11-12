@@ -25,7 +25,7 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     // Fetch decodes the upstream body on Node/Vercel. Forwarding its gzip
     // header makes the browser try to decode the already decoded bytes again.
     const headers = new Headers();
-    for (const name of ['content-type', 'cache-control', 'retry-after', 'x-opera-cache', 'location']) {
+    for (const name of ['content-type', 'cache-control', 'retry-after', 'x-opera-cache', 'x-opera-unavailable', 'location']) {
       const value = response.headers.get(name);
       if (value !== null) headers.set(name, value);
     }
