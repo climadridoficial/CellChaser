@@ -62,6 +62,7 @@ async function getJson<T>(url: string, apiKey?: string): Promise<T> {
       await new Promise(resolve => setTimeout(resolve, wait * (attempt + 1)));
     }
   }
+  assertOperaAvailable(res);
   if (!res.ok) {
     throw new Error(
       res.status === 429
