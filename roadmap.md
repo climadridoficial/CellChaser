@@ -1,4 +1,5 @@
 # Radar scan corrections
+- [x] Restore OPERA while Cloud is paused: server downloads directly (in-memory dedupe, 429 cooldowns) and accepts the new ECMWF object-store file host. 177 tests pass; preview map shows 16 OPERA overlays. Publishing required for live sites.
 - [x] Explain external OPERA hosting: current Vercel proxy delegates to managed shared cache; moving the shared download coordination is necessary, with provider limits and separate hosting costs retained.
 - [x] Handle paused Cloud OPERA cache as explicit browser service unavailability, not an empty scan; preserve map, AEMET, freshness and fallback policy. Nineteen tests pass; deployment still needed.
 - [x] Fix Vercel delegated OPERA response decoding and preserve verified Tenerife/Buenavista marker on catalogue failure. Reproduced ERR_CONTENT_DECODING_FAILED on www.cellchaser.com; 14 tests/build pass, real 09:30 UTC Tenerife scan and clickable panel verified locally. Vercel redeployment still required.

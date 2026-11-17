@@ -1,4 +1,4 @@
-const HOSTS = new Set(['s3.waw3-1.cloudferro.com', 'api.meteogate.eu', 'radar.meteogate.eu']);
+const HOSTS = new Set(['s3.waw3-1.cloudferro.com', 'api.meteogate.eu', 'radar.meteogate.eu', 'object-store.os-api.cci1.ecmwf.int']);
 
 export function operaTarget(raw: string): URL {
   const url = new URL(raw);

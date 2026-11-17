@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { operaTarget, operaCacheTtl, operaRetrySeconds } from './opera-cache-policy';
+import { directOperaResponse } from './opera-direct';
+
+// Skip the backend briefly after it fails (e.g. paused) so requests are not slowed by timeouts.
+let backendDownUntil = 0;
 
 type Claim = { kind: 'hit' | 'fetch' | 'wait' | 'blocked'; body?: string; contentType?: string; status?: number; retryAt?: string; ttl?: number };
 const bytesToBase64 = (bytes: Uint8Array) => {
@@ -18,10 +22,19 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
   if (!key || !backend) {
     // External deployments share the managed cache, not a new anonymous ORD quota.
     const origin = process.env['OPERA_CACHE_ORIGIN'] || 'https://cellchaser.lovable.app';
-    if (requestOrigin === new URL(origin).origin) return new Response('Shared radar cache unavailable', { status: 503 });
-    const response = await fetch(`${origin}/api/public/odim?url=${encodeURIComponent(target.href)}`, {
+    if (requestOrigin === new URL(origin).origin) return directOperaResponse(target, authorization);
+    let response: Response;
+    try {
+      response = await fetch(`${origin}/api/public/odim?url=${encodeURIComponent(target.href)}`, {
       headers: authorization ? { authorization } : {}, redirect: 'manual', signal: AbortSignal.timeout(30_000),
-    });
+      });
+    } catch {
+      return directOperaResponse(target, authorization);
+    }
+    // Managed cache paused or unreachable: download directly rather than losing OPERA.
+    if (response.headers.get('x-opera-unavailable') === 'cache' || (response.status === 503 && (await response.clone().text()) === 'Shared radar cache unavailable') || response.status >= 520) {
+      return directOperaResponse(target, authorization);
+    }
     // Fetch decodes the upstream body on Node/Vercel. Forwarding its gzip
     // header makes the browser try to decode the already decoded bytes again.
     const headers = new Headers();
@@ -31,11 +44,12 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     }
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
+  if (Date.now() < backendDownUntil) return directOperaResponse(target, authorization);
   const client = createClient<Database>(backend, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (input, init) => {
     const headers = new Headers(init?.headers);
     if (key.startsWith('sb_') && headers.get('Authorization') === `Bearer ${key}`) headers.delete('Authorization');
     headers.set('apikey', key);
-    return fetch(input, { ...init, headers });
+    return fetch(input, { ...init, headers, signal: init?.signal ?? AbortSignal.timeout(6_000) });
   } } });
   const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))).map(b => b.toString(16).padStart(2, '0')).join('');
   const scope = authorization ? await digest(authorization) : 'anonymous';
@@ -46,7 +60,10 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
   let claim: Claim;
   while (true) {
     const result = await client.rpc('claim_opera_cache', { p_key: cacheKey, p_host: host, p_token: token });
-    if (result.error || !result.data) return new Response('Shared radar cache unavailable', { status: 503 });
+    if (result.error || !result.data) {
+      backendDownUntil = Date.now() + 60_000;
+      return directOperaResponse(target, authorization);
+    }
     claim = result.data as unknown as Claim;
     if (claim.kind !== 'wait') break;
     // Our own queue being busy is not an OPERA rate limit; never report it as 429.
@@ -79,7 +96,8 @@ export async function sharedOperaResponse(raw: string, authorization?: string | 
     }
   } catch { status = 502; body = null; bytes = undefined; cooldown = 0; }
   const saved = await client.rpc('finish_opera_cache', { p_key: cacheKey, p_token: token, p_body: body ?? '', p_type: contentType, p_status: status, p_ttl: ttl, p_host: host, p_retry: cooldown });
-  if (saved.error) return new Response('Shared radar cache unavailable', { status: 503 });
+  // Already downloaded: a failed cache write must not discard real radar data.
+  if (saved.error) backendDownUntil = Date.now() + 60_000;
   if (status === 429) return retry(cooldown);
   if (status !== 200 && status !== 204) return new Response('Radar download unavailable', { status: status >= 400 && status <= 599 ? status : 502 });
   return new Response(status === 204 ? null : bytes, { status, headers: {
