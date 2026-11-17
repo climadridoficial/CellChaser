@@ -20,4 +20,7 @@ test('volumes are reusable for the three-hour slider but failures are never fres
 });
 test('untrusted schemes, credentials, hosts and overlong time windows are rejected', () => {
   for (const url of ['http://api.meteogate.eu/file', 'https://user:pass@api.meteogate.eu/file', 'https://evil.example/file', 'https://api.meteogate.eu/file?datetime=2026-11-01T00:00:00Z/2026-11-03T00:00:00Z']) expect(() => operaTarget(url)).toThrow();
+});test('current OPERA file host is accepted everywhere the shared allowlist is used', () => {
+  expect(operaTarget('https://object-store.os-api.cci1.ecmwf.int/openradar-24h-backup/x.h5').hostname).toBe('object-store.os-api.cci1.ecmwf.int');
+  expect(() => operaTarget('https://evil.example/x.h5')).toThrow();
 });

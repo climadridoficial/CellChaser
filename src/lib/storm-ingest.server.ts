@@ -18,8 +18,9 @@ export async function ingestStormSource<T, R>(client: SupabaseClient<Database>, 
 
 /** Workers support manual redirects; reject every redirect rather than following an unchecked host. */
 export async function fetchStormVolume(href: string): Promise<ArrayBuffer> {
-  const url = new URL(href);
-  if (url.protocol !== 'https:' || !['s3.waw3-1.cloudferro.com', 'api.meteogate.eu', 'radar.meteogate.eu', 'object-store.os-api.cci1.ecmwf.int'].includes(url.hostname)) throw new Error('Untrusted radar host');
+  // One shared allowlist: OPERA moves file hosts (e.g. ECMWF object store) and every path must accept them.
+  const { operaTarget } = await import('./opera-cache-policy');
+  const url = operaTarget(href);
   const { sharedOperaResponse } = await import('./opera-cache.server');
   const response = await sharedOperaResponse(url.href);
   if (!response.ok) throw new Error('Radar download unavailable');
